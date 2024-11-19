@@ -183,17 +183,34 @@ public class BlockNode {
 	    int x2 = end.getX();
 	    int y2 = end.getY();
 	    int z2 = end.getZ();
+	    
+	    boolean isJumpingOneBlock = y2-y1 == 1;
 		TungstenMod.TEST.clear();
+//		TungstenMod.TEST.add(new Cuboid(new Vec3d(x1, y1, z1), new Vec3d(1.0D, 1.0D, 1.0D), Color.GREEN));
+//		TungstenMod.TEST.add(new Cuboid(new Vec3d(x2, y2, z2), new Vec3d(1.0D, 1.0D, 1.0D), Color.GREEN));
 //		TungstenMod.TEST.add(new Cuboid(new Vec3d(x1, y1, z1), new Vec3d(1.0D, 1.0D, 1.0D), Color.GREEN));
 //		TungstenMod.TEST.add(new Cuboid(new Vec3d(x2, y2, z2),
 //		TungstenMod.TEST.add(new Cuboid(new Vec3d(x1, y1, z1), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 //		TungstenMod.TEST.add(new Cuboid(new Vec3d(x2, y2, z2), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 		BlockPos.Mutable currPos = new BlockPos.Mutable();
 		int x = x1;
-        int y = y1;
+        int y = isJumpingOneBlock ? y1+1 : y1;
         int z = z1;
 
         while (x != x2 || y != y2 || z != z2) {
+        	if (TungstenMod.PATHFINDER.stop) return false;
+            currPos.set(x, y, z);
+            if (isObscured(world, currPos)) {
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				try {
+//					Thread.sleep(450);
+//				} catch (InterruptedException ignored) {}
+				return false;
+			} else {
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
+			}
             if (z < z2) {
                 z++;
             } else if (z > z2) {
@@ -203,8 +220,11 @@ public class BlockNode {
 
             currPos.set(x, y, z);
             if (isObscured(world, currPos)) {
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
 //				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				try {
+//					Thread.sleep(450);
+//				} catch (InterruptedException ignored) {}
 				return false;
 			} else {
 //				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
@@ -220,8 +240,11 @@ public class BlockNode {
             currPos.set(x, y, z);
 
             if (isObscured(world, currPos)) {
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				try {
+//					Thread.sleep(450);
+//				} catch (InterruptedException ignored) {}
 				return false;
 			} else {
 //				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
@@ -237,16 +260,16 @@ public class BlockNode {
             currPos.set(x, y, z);
             
             if (isObscured(world, currPos)) {
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
+//				try {
+//					Thread.sleep(450);
+//				} catch (InterruptedException ignored) {}
 				return false;
 			} else {
 //				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 //				TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y+1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 			}
-//			try {
-//			Thread.sleep(450);
-//		} catch (InterruptedException ignored) {}
         }
 //		try {
 //		Thread.sleep(250);

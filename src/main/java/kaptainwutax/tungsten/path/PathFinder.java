@@ -316,7 +316,7 @@ public class PathFinder {
 	    double dx = position.x - target.x;
 	    double dy = 0;
 	    if (target.y != Double.MIN_VALUE) {
-		    dy = (position.y - target.y) * 3.8;//*16;
+		    dy = (position.y - target.y) * 3.6;//*16;
 		    if (!onGround || dy < 1.6 && dy > -1.6) dy = 0;
 	    }
 	    double dz = position.z - target.z;
@@ -348,7 +348,7 @@ public class PathFinder {
 	    	int closestPosIDX = findClosestPositionIDX(world, new BlockPos(child.agent.blockX, child.agent.blockY, child.agent.blockZ), blockPath);
 	    	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
 //	    	if (closestPosIDX+1 - NEXT_CLOSEST_BLOCKNODE_IDX <= 2) {
-		    	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size() && child.agent.getPos().distanceTo(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX).getPos()) < 0.58) {
+		    	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size() && child.agent.getPos().distanceTo(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX).getPos()) < 0.52) {
 		    		NEXT_CLOSEST_BLOCKNODE_IDX = closestPosIDX+1;
 			    	closestPos = blockPath.get(closestPosIDX+1);
 		    	}
