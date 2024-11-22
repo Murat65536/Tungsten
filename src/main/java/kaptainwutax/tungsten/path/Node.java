@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.render.Color;
+import kaptainwutax.tungsten.render.Cuboid;
+import kaptainwutax.tungsten.render.Line;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.Vec3d;
@@ -178,26 +181,64 @@ public class Node {
 		} else {
 			List<Node> nodes = new ArrayList<Node>();
 			try {
+				long jumpCost = 8;
+				ClientPlayerEntity player = Objects.requireNonNull(MinecraftClient.getInstance().player);
+				Node newNode = new Node(this, world, new PathInput(true, false, false, false, false,
+						false, player.getHungerManager().getFoodLevel() > 6, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + jumpCost);
+
+				for (float yaw = this.agent.yaw - 45; yaw < 180.0f; yaw += 22.5) {
+					for (boolean right : new boolean[]{false, true}) {
+						while (!newNode.agent.onGround && !newNode.agent.isClimbing(world) && this.agent.getPos().y - newNode.agent.getPos().y < 5) {
+								if (TungstenMod.PATHFINDER.stop) return nodes;
+								newNode = new Node(newNode, world, new PathInput(true, false, right, false, false,
+										false, true, this.agent.pitch, yaw), new Color(0, 255, 255), this.cost + jumpCost);
+						}
+//						Node renderNode = newNode;
+//						while(renderNode.parent != null) {
+//							TungstenMod.RENDERERS.add(new Line(renderNode.agent.getPos(), renderNode.parent.agent.getPos(), renderNode.color));
+//							TungstenMod.RENDERERS.add(new Cuboid(renderNode.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), renderNode.color));
+//							renderNode = renderNode.parent;
+//						}
+//						try {
+//							Thread.sleep(50);
+//						} catch (InterruptedException ignored) {}	
+						nodes.add(newNode);
+					}
+				}
 //				for (boolean forward : new boolean[]{true, false}) {
 //					for (boolean sprint : new boolean[]{true, false}) {
 //						for (boolean right : new boolean[]{false, true}) {
-//							for (float yaw = -180.0f; yaw < 180.0f; yaw += 45) {
+//							
 //								Node newNode = new Node(this, world, new PathInput(forward, false, right, false, false,
-//										false, sprint, this.agent.pitch, yaw), new Color(0, 255, 255), this.cost + 1);
-//								nodes.add(newNode);
-//							}
+//										false, sprint, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + 1);
+//								if (newNode.agent.onGround) nodes.add(newNode);
+//								else {
+//									for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5) {
+//										newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false,
+//												false, sprint, this.agent.pitch, yaw), new Color(0, 255, 255), this.cost + 1);
+//									}
+//								}
 //						}
 //					}
 //				}
-				ClientPlayerEntity player = Objects.requireNonNull(MinecraftClient.getInstance().player);
-				Node newNode = new Node(this, world, new PathInput(true, false, false, false, false,
-						false, player.getHungerManager().getFoodLevel() > 6, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + 100000);
-				nodes.add(newNode);
+//				ClientPlayerEntity player = Objects.requireNonNull(MinecraftClient.getInstance().player);
+//				Node newNode = new Node(this, world, new PathInput(true, false, false, false, false,
+//						false, player.getHungerManager().getFoodLevel() > 6, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + 100000);
+//				nodes.add(newNode);
 			} catch (java.util.ConcurrentModificationException e) {
 				try {
 					Thread.sleep(2);
 				} catch (InterruptedException e1) {}
 			}
+			nodes.sort((n1, n2) -> {
+				double desiredYaw = PathFinder.calcYawFromVec3d(this.agent.getPos(), target);
+			    
+			    double diff1 = Math.abs(n1.agent.yaw - desiredYaw);
+			    double diff2 = Math.abs(n2.agent.yaw - desiredYaw);
+			    
+			    // Compare the absolute differences
+			    return Double.compare(diff1, diff2);
+			});
 			return nodes;
 		}
 	}

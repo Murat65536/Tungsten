@@ -52,22 +52,26 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 		if(TungstenMod.runBlockSearchKeyBinding.isPressed() && !TungstenMod.PATHFINDER.active) {
 			BlockSpacePathFinder.find(getWorld(), TungstenMod.TARGET);
 		}
-		
-		try {
-			
-        	if(TungstenMod.pauseKeyBinding.isPressed() && (TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning())) {
-        		TungstenMod.PATHFINDER.stop = true;
-        		TungstenMod.EXECUTOR.stop = true;
-        		if (TungstenMod.PATHFINDER.thread != null && TungstenMod.PATHFINDER.thread.isAlive()) {
-        			TungstenMod.PATHFINDER.thread.interrupt();
-        			TungstenMod.RENDERERS.clear();
-        			TungstenMod.TEST.clear();
-        		}
-				Debug.logMessage("Stopped!");
-    		}
+		if (TungstenMod.pauseKeyBinding.isPressed()) {
+			try {
+				
+	        	if((TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning())) {
+	        		TungstenMod.PATHFINDER.stop = true;
+	        		TungstenMod.EXECUTOR.stop = true;
+	        		if (TungstenMod.PATHFINDER.thread != null && TungstenMod.PATHFINDER.thread.isAlive()) {
+	        			TungstenMod.PATHFINDER.thread.interrupt();
+	        			TungstenMod.RENDERERS.clear();
+	        			TungstenMod.TEST.clear();
+	        		}
+					Debug.logMessage("Stopped!");
+	    		} else {
+					Debug.logMessage("Nothing to stop.");
+	    		}
 
-		} catch (Exception e) {
-			// TODO: handle exception
+	
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
 		}
 		
 		if (TungstenMod.createGoalKeyBinding.isPressed()) {

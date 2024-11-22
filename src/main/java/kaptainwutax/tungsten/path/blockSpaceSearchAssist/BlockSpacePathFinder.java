@@ -59,7 +59,7 @@ public class BlockSpacePathFinder {
         int numNodes = 0;
         int timeCheckInterval = 1 << 6;
         long startTime = System.currentTimeMillis();
-        long primaryTimeoutTime = startTime + 600L;
+        long primaryTimeoutTime = startTime + 6000000L;
 		
 		TungstenMod.RENDERERS.clear();
 		Debug.logMessage("Searchin...");

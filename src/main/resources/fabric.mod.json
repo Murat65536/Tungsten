@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "id": "tungsten",
-  "version": "${version}",
+  "version": "${mod_version}",
 
   "name": "Tungsten",
   "description": "Pathfinder!",
   "authors": [
-    "Me!"
+    "Hackerokuz"
   ],
   "contact": {
     "homepage": "https://github.com/Hackerokuz/Tungsten",

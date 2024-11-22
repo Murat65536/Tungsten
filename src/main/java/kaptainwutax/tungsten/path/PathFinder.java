@@ -62,7 +62,7 @@ public class PathFinder {
 		TungstenMod.RENDERERS.clear();
 		NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 		long startTime = System.currentTimeMillis();
-		long primaryTimeoutTime = startTime + 250L;
+		long primaryTimeoutTime = startTime + 2500000L;
 		int numNodesConsidured = 0;
 		int timeCheckInterval = 1 << 3;
 		ClientPlayerEntity player = Objects.requireNonNull(MinecraftClient.getInstance().player);
@@ -95,7 +95,7 @@ public class PathFinder {
 			
 			if(TungstenMod.pauseKeyBinding.isPressed()) break;
 			double minVel = 0.07;
-			if(next.agent.getPos().squaredDistanceTo(target) <= 0.2D && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
+			if(next.agent.getPos().squaredDistanceTo(target) <= 0.1D && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
 				TungstenMod.RENDERERS.clear();
 				if (blockPath.isPresent()) renderBlockPath(blockPath.get());
 				Node n = next;
@@ -109,13 +109,16 @@ public class PathFinder {
 
 				path.add(n);
 				Collections.reverse(path);
-				if (!TungstenMod.EXECUTOR.isRunning() && path.get(path.size()-1).agent.velX < minVel && path.get(path.size()-1).agent.velX > -minVel && path.get(path.size()-1).agent.velZ < minVel && path.get(path.size()-1).agent.velZ > -minVel) {					
+				if (!TungstenMod.EXECUTOR.isRunning() 
+						&& path.get(path.size()-1).agent.velX < minVel && path.get(path.size()-1).agent.velX > -minVel && path.get(path.size()-1).agent.velZ < minVel && path.get(path.size()-1).agent.velZ > -minVel
+						) {					
 					TungstenMod.EXECUTOR.cb = () -> {
 						Debug.logMessage("Finished!");
 						TungstenMod.RENDERERS.clear();
 	        			TungstenMod.TEST.clear();
 					};
 					TungstenMod.EXECUTOR.setPath(path);
+					stop = true;
 					return;
 				}
 			} 
@@ -327,7 +330,7 @@ public class PathFinder {
 	    Vec3d childPos = child.agent.getPos();
 
 	    double collisionScore = 0;
-	    double tentativeCost = current.cost + 1; // Assuming uniform cost for each step
+	    double tentativeCost = child.cost + 1; // Assuming uniform cost for each step
 	    if (child.agent.horizontalCollision) {
 	        collisionScore += 2500 + (Math.abs(current.agent.velZ - child.agent.velZ) + Math.abs(current.agent.velX - child.agent.velX)) * 120;
 	    }
@@ -348,7 +351,7 @@ public class PathFinder {
 	    	int closestPosIDX = findClosestPositionIDX(world, new BlockPos(child.agent.blockX, child.agent.blockY, child.agent.blockZ), blockPath);
 	    	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
 //	    	if (closestPosIDX+1 - NEXT_CLOSEST_BLOCKNODE_IDX <= 2) {
-		    	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size() && child.agent.getPos().distanceTo(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX).getPos()) < 0.8) {
+		    	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size() && child.agent.getPos().distanceTo(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX).getPos()) < 1.0) {
 		    		NEXT_CLOSEST_BLOCKNODE_IDX = closestPosIDX+1;
 			    	closestPos = blockPath.get(closestPosIDX+1);
 		    	}
@@ -356,7 +359,7 @@ public class PathFinder {
 	    	estimatedCostToGoal +=  computeHeuristic(childPos, child.agent.onGround || child.agent.slimeBounce, new Vec3d(closestPos.x + 0.5, closestPos.y, closestPos.z + 0.5)) * 600.5;
 	    }
 
-	    child.parent = current;
+//	    child.parent = current;
 	    child.cost = tentativeCost;
 	    child.estimatedCostToGoal = estimatedCostToGoal;
 	    child.combinedCost = tentativeCost + estimatedCostToGoal;
