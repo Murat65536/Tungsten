@@ -12,8 +12,17 @@ public class BlockPosShifter {
 	
 	public static Vec3d getPosOnLadder(WorldView world, BlockNode blockNode) {
 		BlockState blockState = world.getBlockState(blockNode.getBlockPos());
+		BlockState blockBelowState = world.getBlockState(blockNode.getBlockPos().down());
 		Vec3d currPos = blockNode.getPos(true);
-		if (!(blockState.getBlock() instanceof LadderBlock)) {
+		if (!(blockState.getBlock() instanceof LadderBlock) && !(blockBelowState.getBlock() instanceof LadderBlock)) {
+			return currPos;
+		}
+		
+		if (blockBelowState.getBlock() instanceof LadderBlock) {
+			Direction ladderFacingDir = blockBelowState.get(Properties.HORIZONTAL_FACING);
+			
+			currPos = currPos.offset(ladderFacingDir.getOpposite(), 0.2).add(0, 0.6, 0);
+			
 			return currPos;
 		}
 		

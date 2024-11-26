@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.render.Line;
@@ -49,7 +50,7 @@ public class Node {
 	        return heapPosition != -1;
     }
 
-	public List<Node> getChildren(WorldView world, Vec3d target) {
+	public List<Node> getChildren(WorldView world, Vec3d target, BlockNode nextBlockNode) {
 		Node n = this.parent;
 		boolean mismatch = false;
 		int i;
@@ -194,7 +195,7 @@ public class Node {
 
 				for (float yaw = this.agent.yaw - 45; yaw < 180.0f; yaw += 22.5) {
 					for (boolean right : new boolean[]{false, true}) {
-						while (!newNode.agent.onGround && !newNode.agent.isClimbing(world) && this.agent.getPos().y - newNode.agent.getPos().y < 8) {
+						while (!newNode.agent.onGround && !newNode.agent.isClimbing(world) && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()) {
 								if (TungstenMod.PATHFINDER.stop) return nodes;
 								newNode = new Node(newNode, world, new PathInput(true, false, right, false, false,
 										false, true, this.agent.pitch, yaw), new Color(0, 255, 255), this.cost + jumpCost);
