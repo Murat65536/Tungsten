@@ -180,7 +180,8 @@ public class PathFinder {
         		Optional<List<Node>> result = bestSoFar(true, numNodesConsidured, start);
                 if (((!failing && now - primaryTimeoutTime >= 0))) {
 					numNodesConsidured = 0;
-                	if (result.isPresent() && result.get().getLast().input != null) {
+                	if (result.isPresent() && result.get().getLast().input != null
+                			&&  result.get().getLast().agent.getPos().squaredDistanceTo(target) > 2.0D) {
                     	Debug.logMessage("Time ran out");
 	            		if (player.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 1) {
 		            		if (result.isPresent()) {
