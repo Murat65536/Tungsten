@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.path.calculators.ActionCosts;
@@ -41,6 +42,7 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.fluid.LavaFluid;
 import net.minecraft.state.property.Properties;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Direction.Axis;
@@ -767,30 +769,64 @@ public class BlockNode {
     }
     
     private static boolean isObscured(WorldView world, BlockPos pos, boolean isJumpingUp) {
-    	return ((world.getBlockState(pos).isFullCube(world, pos)
+//		TungstenMod.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY()+1, pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
+//		TungstenMod.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY(), pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
+//		try {
+//			Thread.sleep(250);
+//		} catch (InterruptedException ignored) {}
+    	return (
+    			(world.getBlockState(pos).isFullCube(world, pos)
     			|| (world.getBlockState(pos).getBlock() instanceof SlabBlock && !isJumpingUp)
     			|| world.getBlockState(pos).getBlock() instanceof LeavesBlock
-    			) 
+    			)
     			&& (!hasBiggerCollisionShapeThanAbove(world, pos) && !isJumpingUp)
     			// This causes it not to understand bottom slab under fence
     			|| hasBiggerCollisionShapeThanAbove(world, pos)
-    			&& !(world.getBlockState(pos.up()).getBlock() instanceof FenceBlock)
-    			&& !(world.getBlockState(pos.up()).getBlock() instanceof WallBlock)
     			&& !(world.getBlockState(pos.up()).getBlock() instanceof LeavesBlock)
-				) 
-		&& !(world.getBlockState(pos).getBlock() instanceof SlabBlock)
-		&& !(world.getBlockState(pos).getBlock() instanceof CarpetBlock)
-		&& !(world.getBlockState(pos).getBlock() instanceof DaylightDetectorBlock)
-		&& !(world.getBlockState(pos).getBlock()  == Blocks.LAVA )
-		|| (world.getBlockState(pos.up()).isFullCube(world, pos.up())
-    			|| world.getBlockState(pos.up()).getBlock() instanceof SlabBlock
-				|| (world.getBlockState(pos.up()).getBlock() instanceof LeavesBlock)
-				) 
-//		&& !(world.getBlockState(pos.up()).getBlock() instanceof SlabBlock)
-		&& !(world.getBlockState(pos.up()).getBlock() instanceof CarpetBlock)
-//		&& !(world.getBlockState(pos.up()).getBlock() instanceof DaylightDetectorBlock)
-		&& !(world.getBlockState(pos).getBlock()  == Blocks.LAVA )
-		;
+				)
+    			&& !(world.getBlockState(pos).getBlock() instanceof SlabBlock)
+    			&& !(world.getBlockState(pos).getBlock() instanceof CarpetBlock)
+    			&& !(world.getBlockState(pos).getBlock() instanceof DaylightDetectorBlock)
+    			&& !(world.getBlockState(pos).getBlock()  == Blocks.LAVA )
+    			|| (world.getBlockState(pos.up()).isFullCube(world, pos.up())
+    	    			|| world.getBlockState(pos.up()).getBlock() instanceof SlabBlock
+    					|| (world.getBlockState(pos.up()).getBlock() instanceof LeavesBlock)
+    					)
+//    			&& !(world.getBlockState(pos.up()).getBlock() instanceof SlabBlock)
+    			&& !(world.getBlockState(pos.up()).getBlock() instanceof CarpetBlock)
+//    			&& !(world.getBlockState(pos.up()).getBlock() instanceof DaylightDetectorBlock)
+    			&& !(world.getBlockState(pos).getBlock()  == Blocks.LAVA )
+    			||
+    			(BlockStateChecker.isConnected(pos)
+    			|| BlockStateChecker.isConnected(pos.up()));
+//    	return ((world.getBlockState(pos).isFullCube(world, pos)
+//    			|| (world.getBlockState(pos).getBlock() instanceof SlabBlock && !isJumpingUp)
+//    			|| world.getBlockState(pos).getBlock() instanceof LeavesBlock
+//    			)
+//    			&& (!hasBiggerCollisionShapeThanAbove(world, pos) && !isJumpingUp)
+//    			&& ((world.getBlockState(pos.up()).getBlock() instanceof FenceBlock)
+//    			|| (world.getBlockState(pos.up()).getBlock() instanceof WallBlock))
+//    			// This causes it not to understand bottom slab under fence
+//    			|| hasBiggerCollisionShapeThanAbove(world, pos)
+//    			&& !(world.getBlockState(pos.up()).getBlock() instanceof FenceBlock)
+//    			&& !(world.getBlockState(pos.up()).getBlock() instanceof WallBlock)
+//    			&& !(world.getBlockState(pos.up()).getBlock() instanceof LeavesBlock)
+//				)
+//		&& !(world.getBlockState(pos).getBlock() instanceof SlabBlock)
+//		&& !(world.getBlockState(pos).getBlock() instanceof CarpetBlock)
+//		&& !(world.getBlockState(pos).getBlock() instanceof DaylightDetectorBlock)
+//		&& !(world.getBlockState(pos).getBlock()  == Blocks.LAVA )
+//		|| (world.getBlockState(pos.up()).isFullCube(world, pos.up())
+//    			|| world.getBlockState(pos.up()).getBlock() instanceof SlabBlock
+//				|| (world.getBlockState(pos.up()).getBlock() instanceof LeavesBlock)
+//				)
+//		&& (world.getBlockState(pos.up()).getBlock() instanceof FenceBlock)
+//		&& (world.getBlockState(pos.up()).getBlock() instanceof WallBlock)
+////		&& !(world.getBlockState(pos.up()).getBlock() instanceof SlabBlock)
+//		&& !(world.getBlockState(pos.up()).getBlock() instanceof CarpetBlock)
+////		&& !(world.getBlockState(pos.up()).getBlock() instanceof DaylightDetectorBlock)
+//		&& !(world.getBlockState(pos).getBlock()  == Blocks.LAVA )
+//		;
     }
     
     public static boolean hasBiggerCollisionShapeThanAbove(WorldView world, BlockPos pos) {
@@ -908,6 +944,13 @@ public class BlockNode {
         if (childBelowState.isAir() && !(childBlock instanceof LadderBlock)) {
             if (!(childBlock instanceof SlabBlock)) return true;
         }
+
+//        if (BlockStateChecker.isConnected(child.getBlockPos())) {
+//    		TungstenMod.TEST.add(new Cuboid(new Vec3d(child.getBlockPos().getX(), child.getBlockPos().getY(), child.getBlockPos().getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
+//    		try {
+//    			Thread.sleep(250);
+//    		} catch (InterruptedException ignored) {}
+//        }
 
         // Check for water
 //        if (isWater(childState) && wasCleared(world, getBlockPos(), child.getBlockPos())) return false;
