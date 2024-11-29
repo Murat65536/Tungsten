@@ -199,7 +199,7 @@ public class BlockSpacePathFinder {
 	    Vec3d childPos = child.getPos();
 	    double tentativeCost = child.cost + ActionCosts.WALK_ONE_BLOCK_COST; // Assuming uniform cost for each step
 
-	    double estimatedCostToGoal = computeHeuristic(childPos, target) + DistanceCalculator.getHorizontalDistanceSquared(current.getPos(true), child.getPos(true)) * 18;
+	    double estimatedCostToGoal = computeHeuristic(childPos, target) + DistanceCalculator.getHorizontalDistanceSquared(current.getPos(true), child.getPos(true)) * 28;
 
 	    child.previous = current;
 	    child.cost = tentativeCost;
