@@ -2,6 +2,8 @@ package kaptainwutax.tungsten.helpers.blockPath;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.render.Color;
+import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.state.property.Properties;
@@ -42,6 +44,18 @@ public class BlockPosShifter {
 			throw new IllegalArgumentException("Only horizontal directions may be passed!");
 		}
 		Vec3d currPos = new Vec3d(blockNode.getBlockPos().getX() + 0.5, blockNode.getBlockPos().getY(), blockNode.getBlockPos().getZ() + 0.5).offset(dir, 0.55);
+		
+		return currPos;
+	}
+	
+	public static Vec3d shiftForLongJump(BlockNode blockNode, Direction dir) {
+		if (dir == Direction.DOWN || dir == Direction.UP) {
+			throw new IllegalArgumentException("Only horizontal directions may be passed!");
+		}
+		Vec3d currPos = new Vec3d(blockNode.getBlockPos().getX() + 0.5, blockNode.getBlockPos().getY(), blockNode.getBlockPos().getZ() + 0.5);//.offset(dir.getOpposite(), 0.4);
+
+//		TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()).subtract(0.1D, 0, 0.1D).offset(dir.getOpposite(), 0.4), new Vec3d(0.2D, 0.2D, 0.2D), Color.RED));
+//		System.out.println(dir);
 		
 		return currPos;
 	}

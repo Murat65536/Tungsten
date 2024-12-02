@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.swing.text.AsyncBoxView.ChildLocator;
+
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
+import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.path.calculators.ActionCosts;
@@ -32,6 +35,8 @@ import net.minecraft.block.SlabBlock;
 import net.minecraft.block.SlimeBlock;
 import net.minecraft.block.SnowBlock;
 import net.minecraft.block.SnowyBlock;
+import net.minecraft.block.StainedGlassBlock;
+import net.minecraft.block.StainedGlassPaneBlock;
 import net.minecraft.block.StairsBlock;
 import net.minecraft.block.TrapdoorBlock;
 import net.minecraft.block.WallBlock;
@@ -158,10 +163,23 @@ public class BlockNode {
     public Vec3d getPos(boolean shift) {
     	if (shift) {
     		if (isDoingNeo) return BlockPosShifter.shiftForStraightNeo(this, neoSide);
-
         	return BlockPosShifter.getPosOnLadder(this);
     	}
     	return new Vec3d(x, y, z);
+    }
+    
+    public boolean isDoingLongJump() {
+    	if (this.previous != null) {
+            double distance = DistanceCalculator.getHorizontalDistanceSquared(this.previous.getPos(), this.getPos());
+    		if (distance >= 4 && distance < 6) {
+    			return true;
+    		}
+		}
+    	return false;
+    }
+    
+    public boolean isDoingNeo() {
+    	return this.isDoingNeo;
     }
     
     public BlockPos getBlockPos() {
@@ -888,7 +906,7 @@ public class BlockNode {
 //		}
 //		if (yMax != 2.0)System.out.println(yMax);
 		int distanceWanted = d;
-		for( int py = -64; py < yMax; py++ ) {
+		for( int py = -104; py < yMax; py++ ) {
 		
 			if (py < 0 && py < -5) {
 				double t = Math.sqrt((2 * py*-1) / g);
@@ -939,7 +957,7 @@ public class BlockNode {
         Block childBelowBlock = childBelowState.getBlock();
     	double heightDiff = this.y - child.y; // -1 is going up and +1 is going down, in negative y levels its reversed
         double distance = DistanceCalculator.getHorizontalDistanceSquared(getPos(true), child.getPos(true));
-
+        
         // Check for air below
         if (childBelowState.isAir() && !(childBlock instanceof LadderBlock)) {
             if (!(childBlock instanceof SlabBlock)) return true;

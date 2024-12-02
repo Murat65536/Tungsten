@@ -12,6 +12,7 @@ import java.util.Set;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
@@ -21,10 +22,12 @@ import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.render.Line;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.CobwebBlock;
 import net.minecraft.block.FenceBlock;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.block.PaneBlock;
+import net.minecraft.block.StainedGlassBlock;
 import net.minecraft.block.StainedGlassPaneBlock;
 import net.minecraft.block.WallBlock;
 import net.minecraft.client.MinecraftClient;
@@ -72,7 +75,7 @@ public class PathFinder {
 		TungstenMod.RENDERERS.clear();
 		NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 		long startTime = System.currentTimeMillis();
-		long primaryTimeoutTime = startTime + 250L;
+		long primaryTimeoutTime = startTime + 25000L;
 		int numNodesConsidured = 0;
 		int timeCheckInterval = 1 << 3;
 		ClientPlayerEntity player = Objects.requireNonNull(TungstenMod.mc.player);
@@ -100,7 +103,7 @@ public class PathFinder {
 			 renderPathCurrentlyExecuted();
 			if (blockPath.isPresent()) renderBlockPath(blockPath.get());
 			Node next = openSet.removeLowest();
-			if (shouldNodeBeSkiped(next, target, closed, true)) continue;
+			if (shouldNodeBeSkiped(next, target, closed, true, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingLongJump() || blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingNeo())) continue;
 
 			
 			if(TungstenMod.pauseKeyBinding.isPressed()) break;
@@ -228,7 +231,7 @@ public class PathFinder {
 			for(Node child : next.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX))) {
 				if(stop) break;
 				if (child.agent.touchingWater
-						&& shouldNodeBeSkiped(next, target, closed, true)) continue;
+						&& shouldNodeBeSkiped(next, target, closed, true, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingLongJump() || blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingNeo())) continue;
 				if (player.getHungerManager().getFoodLevel() <= 6 && (child.input.sprint)) continue;
 //				if (!child.agent.isSubmergedInWater && !child.agent.isClimbing(world) && shouldNodeBeSkiped(child, target, closed)) continue;
 //				if(closed.contains(child.agent.getPos()))continue;
@@ -314,16 +317,25 @@ public class PathFinder {
         return Optional.empty();
     }
 	
-	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed) {
-		return shouldNodeBeSkiped(n, target, closed, false);
+	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed, boolean isDoingLongJump) {
+		return shouldNodeBeSkiped(n, target, closed, false, isDoingLongJump);
 	}
 	
-	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed, boolean addToClosed) {
+	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed, boolean addToClosed, boolean isDoingLongJump) {
+
+		int hashCode = n.hashCode();
 		if (n.agent.getPos().distanceTo(target) < 1.0 /*|| n.agent.isSubmergedInWater*/ /*|| n.agent.isClimbing(MinecraftClient.getInstance().world)*/) {
-			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*1000), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)))) return true;
-			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*1000), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)));
-		} else if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*100), Math.round(n.agent.getPos().y * 100), Math.round(n.agent.getPos().z*100)))) return true;
-		if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*100), Math.round(n.agent.getPos().y * 100), Math.round(n.agent.getPos().z*100)));
+			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*1000 + hashCode), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)))) return true;
+			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*1000 + hashCode), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)));
+		}
+		else if (isDoingLongJump) {
+			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*10 + hashCode), Math.round(n.agent.getPos().y * 100), Math.round(n.agent.getPos().z*10)))) return true;
+			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*10 + hashCode), Math.round(n.agent.getPos().y * 100), Math.round(n.agent.getPos().z*10)));
+		}
+		else {
+			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*100 + hashCode), Math.round(n.agent.getPos().y * 100), Math.round(n.agent.getPos().z*100)))) return true;
+			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*100 + hashCode), Math.round(n.agent.getPos().y * 100), Math.round(n.agent.getPos().z*100)));
+		}
 		
 		return false;
 	}
@@ -368,9 +380,10 @@ public class PathFinder {
 	    	int closestPosIDX = findClosestPositionIDX(world, new BlockPos(child.agent.blockX, child.agent.blockY, child.agent.blockZ), blockPath);
 	    	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
 	        BlockState stateBelow = world.getBlockState(closestPos.getBlockPos().down());
+	        
 //	    	if (closestPosIDX+1 - NEXT_CLOSEST_BLOCKNODE_IDX <= 2) {
-		    	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size() && 
-		    			(
+		    	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size()
+		    			&& (
 		    					child.agent.onGround
 		    					|| child.agent.isClimbing(world)
 		    					|| stateBelow.getBlock() instanceof LadderBlock
@@ -383,7 +396,7 @@ public class PathFinder {
 			    						)
 			    		&& child.agent.getPos().isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.5, 0.5) 
 			    		|| world.getBlockState(closestPos.getBlockPos().down()).getCollisionShape(world, closestPos.getBlockPos().down()).getMax(Axis.Y) > 1.3
-			    		&& child.agent.getPos().isWithinRangeOf(closestPos.getPos(true), 1.2, 0.3) 
+			    		&& child.agent.getPos().isWithinRangeOf(closestPos.getPos(true), 0.4, 0.58) 
 			    		|| !(world.getBlockState(closestPos.getBlockPos()).getBlock() instanceof LadderBlock)
 			    		&& !(world.getBlockState(closestPos.getBlockPos().down()).getBlock() instanceof LadderBlock)
 			    		&& !(world.getBlockState(closestPos.getBlockPos().down()).getBlock() instanceof PaneBlock)

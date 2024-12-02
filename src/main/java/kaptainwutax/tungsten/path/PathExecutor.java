@@ -65,6 +65,7 @@ public class PathExecutor {
 		    player.getAbilities().allowFlying = allowedFlying;
 		    this.path = null;
 		    stop = false;
+			player.setVelocity(0, 0, 0);
 		    if (cb != null) {
 		    	cb.run();
 		    	cb = null;
@@ -76,8 +77,6 @@ public class PathExecutor {
 		    }
 
 		    if(node.input != null) {
-			    player.prevYaw = player.getYaw();
-			    player.prevPitch = player.getPitch();
 			    player.setYaw(node.input.yaw);
 			    player.setPitch(node.input.pitch);
 			    if (player.isCreative()) player.stopFallFlying();

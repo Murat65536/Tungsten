@@ -63,6 +63,7 @@ import net.minecraft.entity.player.HungerManager;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.EntityTypeTags;
 import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.util.hit.BlockHitResult;
@@ -179,7 +180,16 @@ public class Agent {
         this.blockX = MathHelper.floor(x);
         this.blockY = MathHelper.floor(y);
         this.blockZ = MathHelper.floor(z);
+//		this.setBoundingBox(this.calculateBoundingBox());
     }
+    
+    public final void setBoundingBox(Box boundingBox) {
+		this.box = boundingBox;
+	}
+    
+    protected Box calculateBoundingBox() {
+		return this.dimensions.getBoxAt(this.getPos());
+	}
 
     public Agent tick(WorldView world) {
         this.tickPlayer(world);
@@ -473,7 +483,7 @@ public class Agent {
 
     public float getJumpVelocityMultiplier(WorldView world) {
         BlockPos pos1 = new BlockPos(this.blockX, this.blockY, this.blockZ);
-        BlockPos pos2 = new BlockPos((int) this.blockX, (int) (this.box.minY - 0.5000001D), (int) this.blockZ);
+        BlockPos pos2 = new BlockPos((int) this.blockX, (int) (this.box.minY - 0.500001D), (int) this.blockZ);
         float f = world.getBlockState(pos1).getBlock().getJumpVelocityMultiplier();
         float g = world.getBlockState(pos2).getBlock().getJumpVelocityMultiplier();
         return (double)f == 1.0D ? g : f;
@@ -1106,6 +1116,9 @@ public class Agent {
     }
 
     public int computeFallDamage(float fallDistance, float damageMultiplier) {
+    	if (TungstenMod.mc.player.getType().isIn(EntityTypeTags.FALL_DAMAGE_IMMUNE)) {
+    		return 0;
+    	}
         float f = this.jumpBoost < 0 ? 0.0F : (float)(this.jumpBoost + 1);
         return MathHelper.ceil((fallDistance - 3.0f - f) * damageMultiplier);
     }
@@ -1400,7 +1413,7 @@ public class Agent {
                 player.getPos().z == this.posZ ? "z" : this.posZ));
             // I know this is probably a really stupid way to fix a mismatch but server doesnt seem to care so I'm doing it anyway!
             if (TungstenMod.EXECUTOR.isRunning()) {
-            	player.setPosition(this.posX, this.posY, this.posZ);
+//            	player.setPosition(this.posX, this.posY, this.posZ);
             	
             	TungstenMod.RENDERERS.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
             }
@@ -1506,6 +1519,12 @@ public class Agent {
 //        if(this.airStrafingSpeed != player.airStrafingSpeed) {
 //            values.add(String.format("Air Strafe Speed mismatch %s vs %s", player.airStrafingSpeed, this.airStrafingSpeed));
 //        }
+        
+//        if(!this.box.equals(player.getBoundingBox())) {
+//            values.add(String.format("Bounding box mismatch %s vs %s", player.getBoundingBox(), this.box));
+//            this.box = player.getBoundingBox();
+//        }
+
 
         if(this.firstUpdate != ((AccessorEntity)player).getFirstUpdate()) {
             values.add(String.format("First Update mismatch %s vs %s", ((AccessorEntity)player).getFirstUpdate(), this.firstUpdate));

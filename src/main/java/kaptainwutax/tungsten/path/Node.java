@@ -14,6 +14,7 @@ import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.render.Line;
+import kaptainwutax.tungsten.world.BetterBlockPos;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.Box;
@@ -55,6 +56,40 @@ public class Node {
 	 public boolean isOpen() {
 	        return heapPosition != -1;
     }
+	 
+	 public int hashCode() {
+		 return (int) hashCode(1);
+	 }
+	 
+	 public int hashCode(int round) {
+		 long result = 3241;
+		 if (this.input != null) {
+		 	result = Boolean.hashCode(this.input.forward);
+		    result = result + Boolean.hashCode(this.input.back);
+		    result = result + Boolean.hashCode(this.input.right);
+		    result = result + Boolean.hashCode(this.input.left);
+		    result = result + Boolean.hashCode(this.input.jump);
+		    result = result + Boolean.hashCode(this.input.sneak);
+		    result = result + Boolean.hashCode(this.input.sprint);
+//		    result = result + (Math.round(this.input.pitch));
+		    result = result + (Math.round(this.input.yaw));
+		 }
+//	    if (round > 1) {
+//		    result = 34L * result + Double.hashCode(roundToPrecision(this.agent.getPos().x, round));
+//		    result = 87L * result + Double.hashCode(roundToPrecision(this.agent.getPos().y, round));
+//		    result = 28L * result + Double.hashCode(roundToPrecision(this.agent.getPos().z, round));
+//	    } else {
+//		    result = 34L * result + Double.hashCode(this.agent.getPos().x);
+//		    result = 87L * result + Double.hashCode(this.agent.getPos().y);
+//		    result = 28L * result + Double.hashCode(this.agent.getPos().z);
+//	    }
+	    return (int) result;
+    }
+	 
+	 private static double roundToPrecision(double value, int precision) {
+		    double scale = Math.pow(10, precision);
+		    return Math.round(value * scale);
+	}
 
 	public List<Node> getChildren(WorldView world, Vec3d target, BlockNode nextBlockNode) {
 		Node n = this.parent;
@@ -80,6 +115,9 @@ public class Node {
 			List<Node> nodes = new ArrayList<>();
 			// float[] pitchValues = {0.0f, 45.0f, 90.0f}; // Example pitch values
 //        	float[] yawValues = {-135.0f, -90.0f, -67.5f, -45.0f, -22.5f, 0.0f, 22.5f, 45.0f, 67.5f, 90.0f, 135.0f, 180.0f}; // Example yaw values
+	        Box adjustedBox = this.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
+	        boolean isDoingLongJump = nextBlockNode.isDoingLongJump();
+	        boolean isCloseToBlockNode = DistanceCalculator.getHorizontalDistanceSquared(this.agent.getPos(), nextBlockNode.getPos(true)) < 1;
 
 			for (boolean forward : new boolean[]{true, false}) {
 //				for (boolean back : new boolean[]{true, false}) {
@@ -88,7 +126,7 @@ public class Node {
 								for (boolean sneak : new boolean[]{false, true}) {
 										// for (float pitch : pitchValues) {
 //											for (float yaw : yawValues) {
-										for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5) {
+										for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5 + Math.random()) {
 											for (boolean sprint : new boolean[]{true, false}) {
 												if ((sneak || ((right || left) && !forward)) && sprint) continue;
 												for (boolean jump : new boolean[]{true, false}) {
@@ -98,12 +136,13 @@ public class Node {
 														boolean isMoving = (forward || right || left);
 
 														if (isMoving && sprint && jump && !sneak) addNodeCost -= 0.2;
-												        Box adjustedBox = this.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
-												        Stream<VoxelShape> blockCollisions = Streams.stream(TungstenMod.mc.world.getBlockCollisions(TungstenMod.mc.player, adjustedBox));
-														if (DistanceCalculator.getHorizontalDistance(this.agent.getPos(), nextBlockNode.getPos(true)) >= 4 
-																&& (sneak
-																|| jump
-																&& blockCollisions.findAny().isPresent())) continue;
+												        if (!isCloseToBlockNode) {
+												        	if (isDoingLongJump && (sneak || !isMoving)) continue;
+													        Stream<VoxelShape> blockCollisions = Streams.stream(TungstenMod.mc.world.getBlockCollisions(TungstenMod.mc.player, adjustedBox));
+															if (isDoingLongJump 
+																	&& (jump
+																	&& blockCollisions.findAny().isPresent())) continue;
+												        }
 														if (sneak) addNodeCost += 2;
 														if (this.agent.isSubmergedInWater || this.agent.touchingWater) {
 															for (float pitch = -90.0f; pitch < 90.0f; pitch += 45) {
