@@ -2,7 +2,6 @@ package kaptainwutax.tungsten.path;
 
 import java.util.List;
 
-import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
@@ -52,6 +51,8 @@ public class PathExecutor {
 		    player.getAbilities().allowFlying = allowedFlying;
 		    this.path = null;
 		    stop = false;
+		    TungstenMod.RUNNING_PATH_RENDERER.clear();
+		    TungstenMod.BLOCK_PATH_RENDERER.clear();
     		return;
     	}
     	if(this.tick == this.path.size()) {
@@ -65,6 +66,8 @@ public class PathExecutor {
 		    player.getAbilities().allowFlying = allowedFlying;
 		    this.path = null;
 		    stop = false;
+		    TungstenMod.RUNNING_PATH_RENDERER.clear();
+		    TungstenMod.BLOCK_PATH_RENDERER.clear();
 			player.setVelocity(0, 0, 0);
 		    if (cb != null) {
 		    	cb.run();

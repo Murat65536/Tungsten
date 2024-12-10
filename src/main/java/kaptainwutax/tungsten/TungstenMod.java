@@ -22,7 +22,6 @@ import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -38,6 +37,8 @@ public class TungstenMod implements ClientModInitializer {
     public static final String NAME;
 
     public static MinecraftClient mc;
+	public static Collection<Renderer> BLOCK_PATH_RENDERER = Collections.synchronizedCollection(new ArrayList<>());
+	public static Collection<Renderer> RUNNING_PATH_RENDERER = Collections.synchronizedCollection(new ArrayList<>());
 	public static Collection<Renderer> RENDERERS = Collections.synchronizedCollection(new ArrayList<>());
 	public static Collection<Renderer> TEST = Collections.synchronizedCollection(new ArrayList<>());
 	public static Vec3d TARGET = new Vec3d(0.5D, 10.0D, 0.5D);
@@ -96,7 +97,14 @@ public class TungstenMod implements ClientModInitializer {
         
         ClientTickEvents.START_CLIENT_TICK.register((a) -> {
         	
-        	boolean isRunning = this.PATHFINDER.active || this.EXECUTOR.isRunning();
+        	boolean isRunning = TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning();
+        	
+        	if (!isRunning) {
+        		TungstenMod.BLOCK_PATH_RENDERER.clear();
+				TungstenMod.RUNNING_PATH_RENDERER.clear();
+				TungstenMod.RENDERERS.clear();
+				TungstenMod.TEST.clear();
+        	}
         	
         	if (clickMode != clickModeEnum.OFF && mc.options.useKey.isPressed() && !isRunning) {
         		
@@ -121,7 +129,6 @@ public class TungstenMod implements ClientModInitializer {
                  
                  if (hitResult.getType() == HitResult.Type.BLOCK) {
                      BlockPos pos = ((BlockHitResult) hitResult).getBlockPos();
-                     Direction side = ((BlockHitResult) hitResult).getSide();
 	                 if (mc.world.getBlockState(pos).onUse(mc.world, mc.player, (BlockHitResult) hitResult) != ActionResult.PASS) return;
 	
 		                 BlockState state = mc.world.getBlockState(pos);
@@ -131,12 +138,12 @@ public class TungstenMod implements ClientModInitializer {
 		
 		                 double height = shape.isEmpty() ? 1 : shape.getMax(Direction.Axis.Y);
 		
-		                 Vec3d newPos = new Vec3d(pos.getX() + 0.5 + side.getOffsetX(), pos.getY() + height, pos.getZ() + 0.5 + side.getOffsetZ());
+		                 Vec3d newPos = new Vec3d(pos.getX() + 0.5, pos.getY() + height, pos.getZ() + 0.5);
 		         		TungstenMod.TARGET = newPos;
 		         		
 
 		        		if (clickMode == clickModeEnum.GOTO && !TungstenMod.PATHFINDER.active) {
-		        			PATHFINDER.find(this.mc.world, TARGET);
+		        			PATHFINDER.find(TungstenMod.mc.world, TARGET);
 		        		}
 	        		}
         		}

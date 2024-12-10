@@ -22,11 +22,6 @@ public class StopCommand extends Command {
 	        	if(TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning()) {
 	        		TungstenMod.PATHFINDER.stop = true;
 	        		TungstenMod.EXECUTOR.stop = true;
-	        		if (TungstenMod.PATHFINDER.thread != null && TungstenMod.PATHFINDER.thread.isAlive()) {
-	        			TungstenMod.PATHFINDER.thread.interrupt();
-	        			TungstenMod.RENDERERS.clear();
-	        			TungstenMod.TEST.clear();
-	        		}
 					Debug.logMessage("Stopped!");
 	    		} else {
 					Debug.logMessage("Nothing to stop.");

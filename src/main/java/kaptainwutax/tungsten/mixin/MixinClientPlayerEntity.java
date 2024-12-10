@@ -1,24 +1,5 @@
 package kaptainwutax.tungsten.mixin;
 
-import com.mojang.authlib.GameProfile;
-
-import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.agent.Agent;
-import kaptainwutax.tungsten.path.PathFinder;
-import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathFinder;
-import kaptainwutax.tungsten.render.Color;
-import kaptainwutax.tungsten.render.Cuboid;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.network.encryption.PlayerPublicKey;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,10 +7,21 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.mojang.authlib.GameProfile;
+
+import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathFinder;
+import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.network.encryption.PlayerPublicKey;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+
 @Mixin(ClientPlayerEntity.class)
 public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity {
-
-	private Thread patfinderThread = null;
 
 	public MixinClientPlayerEntity(ClientWorld world, GameProfile profile, @Nullable PlayerPublicKey publicKey) {
 		super(world, profile);
@@ -58,11 +50,6 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	        	if((TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning())) {
 	        		TungstenMod.PATHFINDER.stop = true;
 	        		TungstenMod.EXECUTOR.stop = true;
-	        		if (TungstenMod.PATHFINDER.thread != null && TungstenMod.PATHFINDER.thread.isAlive()) {
-	        			TungstenMod.PATHFINDER.thread.interrupt();
-	        			TungstenMod.RENDERERS.clear();
-	        			TungstenMod.TEST.clear();
-	        		}
 					Debug.logMessage("Stopped!");
 	    		} else {
 					Debug.logMessage("Nothing to stop.");

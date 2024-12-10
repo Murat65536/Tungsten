@@ -1,5 +1,8 @@
 package kaptainwutax.tungsten.helpers;
 
+/**
+ * Helper class to process strings.
+ */
 public class StringProcessorHelper {
 	public static int findClosestCharIndex(String str, char target, int index) {
         // Edge case: If the string is empty, return -1
