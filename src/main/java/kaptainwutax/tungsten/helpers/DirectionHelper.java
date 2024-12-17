@@ -9,6 +9,29 @@ import net.minecraft.util.math.Vec3d;
 public class DirectionHelper {
 
 	/**
+     * Calculates the yaw from rotation.
+     * 
+     * @param rotation rotation from Direction::asRotation function
+     * @return yaw value calculated from Direction::asRotation function.
+     */
+	public static float calcYawFromRotation(Direction direction) {
+		return calcYawFromRotation(direction.asRotation());
+	}
+	
+	
+	/**
+     * Calculates the yaw from rotation.
+     * 
+     * @param rotation rotation from Direction::asRotation function
+     * @return yaw value calculated from Direction::asRotation function.
+     */
+	public static float calcYawFromRotation(float rotation) {
+        float normalized = ((rotation % 360) + 360) % 360;
+        
+        return normalized;
+    }
+
+	/**
      * Calculates the yaw from origin Vec3d to destination Vec3d positions.
      * 
      * @param orig origin position

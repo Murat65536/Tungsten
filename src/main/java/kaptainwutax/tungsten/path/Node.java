@@ -14,7 +14,9 @@ import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.MathHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.path.specialMoves.CornerJump;
 import kaptainwutax.tungsten.path.specialMoves.LongJump;
+import kaptainwutax.tungsten.path.specialMoves.neo.NeoJump;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LadderBlock;
@@ -108,6 +110,9 @@ public class Node {
 	    sortNodesByYaw(nodes, target);
 
 	    if (agent.onGround) {
+	    	if (nextBlockNode.isDoingNeo()) {
+	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
+	    	}
 //		    nodes.add(CornerJump.generateMove(this, nextBlockNode));
 //		    if (nextBlockNode.isDoingLongJump()) {
 		    	nodes.add(LongJump.generateMove(this, nextBlockNode));
@@ -144,7 +149,7 @@ public class Node {
 		    	return;
 	    	}
 	    	if (nextBlockNode.getBlockPos().getY() < agent.blockY) {
-	    		createAndAddNode(world, nextBlockNode, nodes, false, false, false, false, false, false, (float) desiredYaw, isDoingLongJump, isCloseToBlockNode);
+	    		createAndAddNode(world, nextBlockNode, nodes, true, false, false, false, false, false, (float) desiredYaw, isDoingLongJump, isCloseToBlockNode);
 	    		return;
 	    	}
 	    }
