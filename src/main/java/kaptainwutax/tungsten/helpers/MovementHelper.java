@@ -852,7 +852,8 @@ public class MovementHelper {
 		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
 		    		|| isStairs || isAboveStairs) return true;
 		    
-		    if (isSlab || isAboveSlab) return true;
+		    // TODO: fix corner jump issue from slab to slab
+//		    if (isSlab || isAboveSlab) return true;
 		    
 		    if (isBlockConnected || isAboveBlockConnected) return true;
 //		    TungstenMod.TEST.clear();

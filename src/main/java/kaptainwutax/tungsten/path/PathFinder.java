@@ -19,12 +19,15 @@ import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
+import kaptainwutax.tungsten.render.Color;
+import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CobwebBlock;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.block.PaneBlock;
 import net.minecraft.block.StainedGlassPaneBlock;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.util.Colors;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
@@ -131,6 +134,12 @@ public class PathFinder {
 	        failing = processNodeChildren(world, next, target, blockPath, openSet, closed, bestHeuristicSoFar);
 	        numNodesConsidered++;
 	        RenderHelper.renderNode(next);
+//	        try {
+//				Thread.sleep(250);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 	    }
 	
 	    if (stop) {
@@ -186,6 +195,24 @@ public class PathFinder {
 	}
 	
 	private boolean shouldSkipNode(Node node, Vec3d target, Set<Vec3d> closed, Optional<List<BlockNode>> blockPath) {
+	    BlockNode bN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX);
+	    BlockNode lBN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX-1);
+	    boolean isBottomSlab = BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(bN.getBlockPos().down()));
+	    Vec3d agentPos = node.agent.getPos();
+	    Vec3d parentAgentPos = node.parent == null ? null : node.parent.agent.getPos();
+//	    System.out.println(agentPos.y - parentAgentPos.y);
+	    if (!isBottomSlab && !node.agent.onGround && agentPos.y < bN.y && lBN != null && lBN.y <= bN.y && parentAgentPos != null && parentAgentPos.y > agentPos.y) {
+//	    	TungstenMod.RENDERERS.clear();
+//	    	TungstenMod.RENDERERS.add(new Cuboid(node.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.GREEN));
+//	    	 TungstenMod.BLOCK_PATH_RENDERER.add(new Cuboid(new Vec3d((double)bN.getBlockPos().getX(), (double)bN.getBlockPos().down().getY(), (double)bN.getBlockPos().getZ()), new Vec3d(0.2D, 0.2D, 0.2D), Color.GREEN));
+//	    	try {
+//				Thread.sleep(250);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+	    	return true;
+	    }
 	    return shouldNodeBeSkipped(node, target, closed, true, 
 	        blockPath.isPresent() && (
 	            blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingLongJump() ||
@@ -247,7 +274,7 @@ public class PathFinder {
 	}
 	
 	private static double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
-		double xzMultiplier = 1.8;
+		double xzMultiplier = 1.3;
 	    double dx = (position.x - target.x)*xzMultiplier;
 	    double dy = 0;
 	    if (target.y != Double.MIN_VALUE) {
@@ -283,8 +310,7 @@ public class PathFinder {
 
 	    double estimatedCostToGoal = /*computeHeuristic(childPos, child.agent.onGround, target) - 200 +*/ collisionScore;
 	    if (blockPath != null) {
-
-	        	updateNextClosestBlockNodeIDX(blockPath, child);
+	    		updateNextClosestBlockNodeIDX(blockPath, child);
 		    	Vec3d posToGetTo = BlockPosShifter.getPosOnLadder(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX));
 		    	
 		    	if (child.agent.getPos().squaredDistanceTo(target) <= 2.0D) {
@@ -504,7 +530,7 @@ public class PathFinder {
         // General position conditions
         boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane 
             && !isBlockBelowTall
-            && distanceToClosestPos < 1.2;
+            && distanceToClosestPos < 1.02;
 
 
         // Glass pane conditions

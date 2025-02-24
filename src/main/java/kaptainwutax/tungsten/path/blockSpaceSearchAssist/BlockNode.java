@@ -3,6 +3,7 @@ package kaptainwutax.tungsten.path.blockSpaceSearchAssist;
 import java.util.ArrayList;
 import java.util.List;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
@@ -393,14 +394,34 @@ public class BlockNode {
 
 		return false;
 	}
+	
+	/**
+	 * Returns jump height.
+	 * 
+	 * @param from
+	 * @param to
+	 * @return positive is going up and negative is going down
+	 */
+	private int getJumpHeight(int from, int to) {
+		
+		int diff = to - from;
+		
+		// if `to` is higher then `from` return value should be positive
+		if (to > from) {
+			return diff > 0 ? diff : diff * -1;
+		}
+		return diff > 0 ? diff * -1 : diff;
+	}
 
 	private boolean isJumpImpossible(WorldView world, BlockNode child) {
-		double heightDiff = this.y - child.y; // -1 is going up and +1 is going down, in negative y levels its reversed
+		double heightDiff = getJumpHeight(this.y, child.y); // positive is going up and negative is going down
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(getPos(true), child.getPos(true));
 
 		BlockState childBlockState = world.getBlockState(child.getBlockPos().down());
 		BlockState currentBlockState = world.getBlockState(getBlockPos().down());
 		Block childBlock = childBlockState.getBlock();
+        double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(child.getBlockPos().down());
+		boolean isBlockBelowTall = closestBlockBelowHeight > 1.3;
 
 //    	if (world.getBlockState(child.getBlockPos().down()).getBlock() instanceof TrapdoorBlock) {
 //			System.out.println(!world.getBlockState(child.getBlockPos().down()).get(Properties.OPEN));
@@ -414,6 +435,8 @@ public class BlockNode {
 
 		double blockHeightDiff = currentBlockHeight - childBlockHeight; // Negative values means currentBlockHeight is
 																		// lower, and positive means currentBlockHeight
+		
+		if (isBlockBelowTall && heightDiff > 0) return true;
 								
 		// VoxelShape-based checks
 		if (!Double.isInfinite(blockHeightDiff) && !Double.isNaN(blockHeightDiff)) {
@@ -429,23 +452,23 @@ public class BlockNode {
 			}
 
 			if (BlockStateChecker.isClosedBottomTrapdoor(childBlockState)) {
-				if (heightDiff >= -1 && distance <= 6.4) return false;
-				if (heightDiff == -2 && distance <= 4.4) return false;
+				if (heightDiff <= 1 && distance <= 6.4) return false;
+				if (heightDiff == 2 && distance <= 4.4) return false;
 			}
 			
 			if (BlockStateChecker.isClosedBottomTrapdoor(currentBlockState)) {
-				if (heightDiff >= 0 && distance <= 6.4) return false;
-				if (heightDiff < 0 && BlockStateChecker.isTopSlab(childBlockState)) return true;
+				if (heightDiff <= 0 && distance <= 6.4) return false;
+				if (heightDiff > 0 && BlockStateChecker.isTopSlab(childBlockState)) return true;
 			}
 			
 			if (blockHeightDiff != 0) {
 				
 				if (Math.abs(blockHeightDiff) > 0.5 && Math.abs(blockHeightDiff) <= 1.0) {
-					if (heightDiff < 0 && (blockShape.getMin(Axis.Y) == 0.0 && currentBlockHeight <= 1.0))
+					if (heightDiff > 0 && (blockShape.getMin(Axis.Y) == 0.0 && currentBlockHeight <= 1.0))
 						return true;
-					if (heightDiff == -2 && distance <= 5.3)
+					if (heightDiff == 2 && distance <= 5.3)
 						return false;
-					if (heightDiff <= 0 && distance <= 5.3)
+					if (heightDiff >= 0 && distance <= 5.3)
 						return false;
 				}
 				
@@ -455,11 +478,11 @@ public class BlockNode {
 				}
 
 				if (Math.abs(blockHeightDiff) <= 0.5 && (blockShape.getMin(Axis.Y) == 0.0 || childBlockHeight > 1.0)) {
-					if (blockHeightDiff == -0.5 && heightDiff <= -1)
+					if (blockHeightDiff == 0.5 && heightDiff <= -1)
 						return true;
 					if (heightDiff == 0 && distance >= 4.4)
 						return true;
-					if (heightDiff >= -1 && distance <= 7.4)
+					if (heightDiff <= 1 && distance <= 7.4)
 						return false;
 				}
 
@@ -470,39 +493,39 @@ public class BlockNode {
 
 		if (!wasOnSlime) {
 			// Basic height and distance checks
-			if (heightDiff <= -2)
+			if (heightDiff >= 2)
 				return true;
 			if (heightDiff == 1 && distance > 6)
 				return true;
-			if (heightDiff >= 2 && distance > 7)
+			if (heightDiff <= -2 && distance > 7)
 				return true;
-			if (heightDiff == -1 && distance >= 4.5)
+			if (heightDiff == 1 && distance >= 4.5)
 				return true;
 			if ((heightDiff == 0) && distance >= 6.3)
 				return true;
-			if ((heightDiff == 1) && distance >= 6.3)
+			if ((heightDiff == -1) && distance >= 6.3)
 				return true;
-			if (heightDiff < 1 && distance >= 5.5)
+			if (heightDiff > -1 && distance >= 5.5)
 				return true;
-			if (heightDiff > 2 && distance >= 6.5)
+			if (heightDiff < -2 && distance >= 6.5)
 				return true;
 
 			// Trapdoor checks
 			if (heightDiff == 1 && BlockStateChecker.isOpenTrapdoor(childBlockState) && distance > 5)
 				return true;
-			if (heightDiff >= 2 && BlockStateChecker.isOpenTrapdoor(childBlockState) && distance > 6)
+			if (heightDiff <= -2 && BlockStateChecker.isOpenTrapdoor(childBlockState) && distance > 6)
 				return true;
 		}
 
 		// Large height drop
-		if (heightDiff < 1 && distance >= 6)
+		if (heightDiff > -1 && distance >= 6)
 			return true;
 
 		if (BlockStateChecker.isWater(currentBlockState) && distance >= 2)
 			return true;
 
 		// Bottom slab checks
-		if (currentBlockHeight <= 0.5 && heightDiff < 0 && childBlockHeight > 0.5) {
+		if (currentBlockHeight <= 0.5 && heightDiff > 0 && childBlockHeight > 0.5) {
 			return true;
 		}
 //		TungstenMod.TEST.add(new Cuboid(new Vec3d(child.x, child.x, child.x), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
