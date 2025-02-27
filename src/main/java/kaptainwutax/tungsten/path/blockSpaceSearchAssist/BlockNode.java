@@ -251,7 +251,20 @@ public class BlockNode {
 		
 		double g = 32.656; // Acceleration due to gravity in m/s^2
 		double v_sprint = 5.8; // Sprinting speed in m/s 5.8 based on meteor player.speed var
-		double yMax = (parent.wasOnSlime && parent.previous != null && parent.previous.y - parent.y != 0
+		
+		if (parent.wasOnSlime && parent.previous != null && parent.previous.y - parent.y < 0) {
+			TungstenMod.RENDERERS.clear();
+//	    	TungstenMod.RENDERERS.add(new Cuboid(node.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.GREEN));
+	    	 TungstenMod.BLOCK_PATH_RENDERER.add(new Cuboid(new Vec3d((double)parent.getBlockPos().getX(), (double)parent.getBlockPos().getY(), (double)parent.getBlockPos().getZ()), new Vec3d(0.2D, 0.2D, 0.2D), Color.GREEN));
+			try {
+				Thread.sleep(250);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		double yMax = (parent.wasOnSlime && parent.previous != null && parent.previous.y - parent.y < 0
 				? MovementHelper.getSlimeBounceHeight(parent.previous.y - parent.y) - 0.5
 				: 4);
 //		if (parent.wasOnLadder) {
@@ -402,7 +415,7 @@ public class BlockNode {
 	 * @param to
 	 * @return positive is going up and negative is going down
 	 */
-	private int getJumpHeight(int from, int to) {
+	public int getJumpHeight(int from, int to) {
 		
 		int diff = to - from;
 		
@@ -491,7 +504,7 @@ public class BlockNode {
 			}
 		}
 
-		if (!wasOnSlime) {
+		if (!wasOnSlime || this.previous.y - this.y >= 0) {
 			// Basic height and distance checks
 			if (heightDiff >= 2)
 				return true;
@@ -505,7 +518,7 @@ public class BlockNode {
 				return true;
 			if ((heightDiff == -1) && distance >= 6.3)
 				return true;
-			if (heightDiff > -1 && distance >= 5.5)
+			if (heightDiff == -1 && distance >= 5.5)
 				return true;
 			if (heightDiff < -2 && distance >= 6.5)
 				return true;

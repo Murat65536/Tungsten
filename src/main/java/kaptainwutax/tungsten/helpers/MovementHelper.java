@@ -849,11 +849,14 @@ public class MovementHelper {
 		    boolean isAboveStairs = aboveBlock instanceof StairsBlock;
 		    boolean isAboveBlockConnected = BlockStateChecker.isConnected(pos.up());
 		    
+		    if (isStairs && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
+		    if (isFullCube && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
+		    
 		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
 		    		|| isStairs || isAboveStairs) return true;
 		    
-		    // TODO: fix corner jump issue from slab to slab
-//		    if (isSlab || isAboveSlab) return true;
+		    // TODO: fix corner jump issue from slab to slab, removing the line below causes bot to think it can go through a wall made of slabs
+		    if (isSlab || isAboveSlab) return true;
 		    
 		    if (isBlockConnected || isAboveBlockConnected) return true;
 //		    TungstenMod.TEST.clear();
