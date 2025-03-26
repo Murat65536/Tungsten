@@ -18,8 +18,8 @@ public class RenderHelper {
 
 	public static void renderBlockPath(List<BlockNode> nodes, int nextNodeIDX) {
 		TungstenMod.BLOCK_PATH_RENDERER.clear();
-		TungstenMod.RENDERERS.clear();
-		TungstenMod.TEST.clear();
+//		TungstenMod.RENDERERS.clear();
+//		TungstenMod.TEST.clear();
 		for (Iterator<BlockNode> iterator = nodes.iterator(); iterator.hasNext();) {
 			BlockNode node = iterator.next();
 			
@@ -82,7 +82,7 @@ public class RenderHelper {
 	
 	public static void clearRenderers() {
 	    TungstenMod.RENDERERS.clear();
-	    TungstenMod.RUNNING_PATH_RENDERER.clear();
+//	    TungstenMod.RUNNING_PATH_RENDERER.clear();
 	    TungstenMod.BLOCK_PATH_RENDERER.clear();
 	    TungstenMod.TEST.clear();
 	}

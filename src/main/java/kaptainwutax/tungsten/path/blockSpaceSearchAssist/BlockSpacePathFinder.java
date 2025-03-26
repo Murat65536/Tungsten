@@ -215,8 +215,15 @@ public class BlockSpacePathFinder {
 		List<BlockNode> path = new ArrayList<>();
 
 		Debug.logMessage("FOUND IT");
+		path.add(n);
 		while(n.previous != null) {
-			path.add(n);
+			if (n.getPos(true).getY() - n.previous.getPos(true).getY() != 0) {
+				path.add(n);
+				path.add(n.previous);
+			} else if (n.previous.getPos(true).distanceTo(n.getPos(true)) > 1.44 || n.previous == null) {
+				path.add(n);
+				path.add(n.previous);
+			}
 			n = n.previous;
 		}
 

@@ -98,14 +98,20 @@ public class TungstenMod implements ClientModInitializer {
         ClientTickEvents.START_CLIENT_TICK.register((a) -> {
         	
         	boolean isRunning = TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning();
-        	
         	if (!isRunning) {
-        		TungstenMod.BLOCK_PATH_RENDERER.clear();
-				TungstenMod.RUNNING_PATH_RENDERER.clear();
-				TungstenMod.RENDERERS.clear();
-				TungstenMod.TEST.clear();
+	        	if (TungstenMod.BLOCK_PATH_RENDERER.isEmpty()) {
+	        		TungstenMod.BLOCK_PATH_RENDERER.clear();
+	        	}
+	        	if (TungstenMod.RUNNING_PATH_RENDERER.isEmpty()) {
+					TungstenMod.RUNNING_PATH_RENDERER.clear();
+	        	}
+	        	if (TungstenMod.RENDERERS.isEmpty()) {
+					TungstenMod.RENDERERS.clear();
+	        	}
+	        	if (TungstenMod.TEST.isEmpty()) {
+					TungstenMod.TEST.clear();
+	        	}
         	}
-        	
         	if (clickMode != clickModeEnum.OFF && mc.options.useKey.isPressed() && !isRunning) {
         		
         		 Camera camera = mc.gameRenderer.getCamera();

@@ -82,7 +82,9 @@ public class PathFinder {
 	
 	    Node start = initializeStartNode(player, target);
 	    Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
-	    
+	    if (blockPath.isPresent()) {
+        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX);
+        }
 //	    if (blockPath.isEmpty()) {
 //	    	Debug.logWarning("Failed!");
 //	    	return;
@@ -99,7 +101,7 @@ public class PathFinder {
 	            break;
 	        }
 	
-	        if (blockPath.isPresent()) {
+	        if (blockPath.isPresent() && TungstenMod.BLOCK_PATH_RENDERER.isEmpty()) {
 	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX);
 	        }
 	
@@ -129,10 +131,13 @@ public class PathFinder {
 	            handleTimeout(startTime, primaryTimeoutTime, next, target, start, bestHeuristicSoFar, player);
 	        }
 	        
-	        RenderHelper.renderPathSoFar(next);
+	        if (numNodesConsidered % 20 == 0) {	        	
+	        	RenderHelper.renderPathSoFar(next);
+	        }
 	
 	        failing = processNodeChildren(world, next, target, blockPath, openSet, closed, bestHeuristicSoFar);
 	        numNodesConsidered++;
+        	TungstenMod.TEST.clear();
 	        RenderHelper.renderNode(next);
 //	        try {
 //				Thread.sleep(250);
@@ -475,6 +480,7 @@ public class PathFinder {
         if (player.getPos().distanceTo(result.get().get(0).agent.getPos()) < 1 && player.getPos().distanceTo(result.get().getLast().agent.getPos()) > 3 && next.agent.getPos().distanceTo(target) > 1) {
             Debug.logMessage("Time ran out");
             TungstenMod.EXECUTOR.setPath(result.get());
+            RenderHelper.renderPathCurrentlyExecuted();
             clearParentsForBestSoFar(result.get().getLast());
         }
     }
@@ -557,6 +563,7 @@ public class PathFinder {
 //			    && (child.agent.getBlockPos().getY() == blockPath.get(closestPosIDX).getBlockPos().getY())
     			) {
 	    		NEXT_CLOSEST_BLOCKNODE_IDX = closestPosIDX+1;
+	        	RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX);
     	}
     }
 	
