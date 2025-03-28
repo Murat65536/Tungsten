@@ -46,6 +46,7 @@ public class StreightMovementHelper {
 
 	        BlockPos.Mutable currPos = new BlockPos.Mutable();
 	        TungstenMod.TEST.clear(); // Clear visual markers
+	        renderBlock(endPos, Color.BLUE);
 
 	        while (x != endX || y != endY || z != endZ) {
 	            if (TungstenMod.PATHFINDER.stop) return false;
@@ -76,6 +77,7 @@ public class StreightMovementHelper {
 	            y = moveCoordinate(y, endY);
 	            
 	        }
+	        renderBlock(endPos, Color.BLUE);
 	        slowDownIfNeeded();
 	        return true; // Successfully navigated the path
 	    }

@@ -849,8 +849,13 @@ public class MovementHelper {
 		    boolean isAboveStairs = aboveBlock instanceof StairsBlock;
 		    boolean isAboveBlockConnected = BlockStateChecker.isConnected(pos.up());
 		    
-		    if (isStairs && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
-		    if (isFullCube && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
+		    boolean isAboveX2Leaves =  world.getBlockState(pos.up(2)).getBlock() instanceof LeavesBlock;
+
+	    	if (isJumpingUp && !world.getBlockState(pos.up(2)).isAir()) return true;
+	    	
+		    if (isJumpingUp && isStairs && aboveState.isAir() && !isAboveLeaves && !isAboveX2Leaves && world.getBlockState(pos.up(2)).isAir()) return false;
+		    if (isJumpingUp && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
+		    
 		    
 		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
 		    		|| isStairs || isAboveStairs) return true;
@@ -859,6 +864,8 @@ public class MovementHelper {
 		    if (isSlab || isAboveSlab) return true;
 		    
 		    if (isBlockConnected || isAboveBlockConnected) return true;
+//		    if (!state.isAir() || !aboveState.isAir()) return true;
+		    if (isLava || isAboveLeaves) return true;
 //		    TungstenMod.TEST.clear();
 ////			TungstenMod.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY()+1, pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 //			TungstenMod.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY(), pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
