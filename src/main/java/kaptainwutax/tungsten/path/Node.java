@@ -114,9 +114,9 @@ public class Node {
 	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
 	    	}
 //		    nodes.add(CornerJump.generateMove(this, nextBlockNode));
-//		    if (nextBlockNode.isDoingLongJump()) {
+		    if (nextBlockNode.isDoingLongJump()) {
 		    	nodes.add(LongJump.generateMove(this, nextBlockNode));
-//		    }
+		    }
 	    }
     	
 	    return nodes;
@@ -179,6 +179,7 @@ public class Node {
 	                              float yaw, boolean isDoingLongJump, boolean isCloseToBlockNode) {
 	    try {
 
+            if (jump && sneak) return;
 	        Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
 	                new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
 	        double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, isCloseToBlockNode, isDoingLongJump, newNode.agent);
@@ -186,10 +187,11 @@ public class Node {
 	        if (newNode.agent.isClimbing(world)) jump = this.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY();
 
 	            for (int j = 0; j < ((sneak || !jump) && !newNode.agent.isClimbing(world) ? 3 : 10); j++) {
-	                if (newNode.agent.getPos().y < nextBlockNode.getBlockPos().getY() && !newNode.agent.isClimbing(world) || !isMoving) break;
+	                if (newNode.agent.getPos().y < nextBlockNode.getPos(true).getY() && !newNode.agent.isClimbing(world) || !isMoving) break;
 	                Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
 	                Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
 	                if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
+//	                if (!newNode.agent.onGround && sneak) continue;
 	                newNode = new Node(newNode, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
 	                        jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
 	            }

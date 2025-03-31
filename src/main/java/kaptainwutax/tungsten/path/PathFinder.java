@@ -40,6 +40,7 @@ public class PathFinder {
 	protected static final double[] COEFFICIENTS = {1.5, 2, 2.5, 3, 4, 5, 10};
 	protected static final Node[] bestSoFar = new Node[COEFFICIENTS.length];
 	private static final double minimumImprovement = 0.21;
+	private static Optional<List<BlockNode>> blockPath = Optional.empty();
 	protected static final double MIN_DIST_PATH = 5;
 	protected static int NEXT_CLOSEST_BLOCKNODE_IDX = 1;
 	
@@ -84,6 +85,7 @@ public class PathFinder {
 	    Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
 	    if (blockPath.isPresent()) {
         	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX);
+        	this.blockPath = blockPath;
         }
 //	    if (blockPath.isEmpty()) {
 //	    	Debug.logWarning("Failed!");
@@ -138,7 +140,6 @@ public class PathFinder {
 	        failing = processNodeChildren(world, next, target, blockPath, openSet, closed, bestHeuristicSoFar);
 	        numNodesConsidered++;
 	        if (numNodesConsidered % 150 == 0) {
-	        	TungstenMod.TEST.clear();
 		        RenderHelper.renderNode(next);
 	        }
 //	        try {
@@ -250,7 +251,7 @@ public class PathFinder {
 	        xScale = 1;
 	        yScale = 10000;
 	        zScale = 1;
-	    }else {
+	    } else {
 	        xScale = 100;
 	        yScale = 10;
 	        zScale = 100;
@@ -289,7 +290,7 @@ public class PathFinder {
 		    if (!onGround || dy < 1.6 && dy > -1.6) dy = 0;
 	    }
 	    double dz = (position.z - target.z)*xzMultiplier;
-	    return (Math.sqrt(dx * dx + dy * dy + dz * dz) + ((NEXT_CLOSEST_BLOCKNODE_IDX - 1) * -20));
+	    return (Math.sqrt(dx * dx + dy * dy + dz * dz) + (((blockPath.isPresent() ? blockPath.get().size() : 0) - NEXT_CLOSEST_BLOCKNODE_IDX) * 40));
 	}
 	
 	private static void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath) {
@@ -500,10 +501,18 @@ public class PathFinder {
 
     private boolean processNodeChildren(WorldView world, Node parent, Vec3d target, Optional<List<BlockNode>> blockPath, BinaryHeapOpenSet openSet, Set<Vec3d> closed, double[] bestHeuristicSoFar) {
         boolean failing = true;
+//        TungstenMod.RENDERERS.clear();
+        Node lastChild = null;
     	for (Node child : parent.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX))) {
             if (stop) break;
-
-            if (shouldSkipChild(child, target, closed, blockPath)) continue;
+            if (shouldSkipChild(child, target, closed, blockPath) 
+            		|| (lastChild != null 
+	            		&& lastChild.agent.getPos().distanceTo(child.agent.getPos()) < 0.07)
+            		|| blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingNeo() 
+            			&& !child.agent.onGround
+            		|| blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingLongJump() 
+            			&& !child.agent.onGround
+            		) continue;
 
             updateNode(world, parent, child, target, blockPath.get());
             if (child.isOpen()) {
@@ -513,6 +522,7 @@ public class PathFinder {
             }
             failing = updateBestSoFar(child, bestHeuristicSoFar, target);
 //            RenderHelper.renderNode(child);
+            lastChild = child;
         }
     	return failing;
     }
@@ -529,7 +539,7 @@ public class PathFinder {
         double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(closestPos.getBlockPos().down());
         double closestBlockVolume = BlockShapeChecker.getShapeVolume(closestPos.getBlockPos());
         double distanceToClosestPos = nodePos.distanceTo(closestPos.getPos(true));
-        int heightDiff = closestPos.getJumpHeight((int) nodePos.y, closestPos.y);
+        int heightDiff = closestPos.getJumpHeight((int) Math.ceil(nodePos.y), closestPos.y);
         
         boolean isLadder = state.getBlock() instanceof LadderBlock;
         boolean isConnected = BlockStateChecker.isConnected(nodeBlockPos);
@@ -550,14 +560,13 @@ public class PathFinder {
             && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.4, 0.58);
 
         boolean validBottomSlabProximity = isBelowBottomSlab && distanceToClosestPos < 0.90
-                && heightDiff < 1.5;
+                && heightDiff < 2;
         
         // General position conditions
         boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane 
             && !isBlockBelowTall
             && distanceToClosestPos < 0.90
-            && heightDiff < 0.2;
-
+            && heightDiff < 1;
 
         // Glass pane conditions
         boolean validGlassPaneProximity = isBelowGlassPane && distanceToClosestPos < 0.1;
