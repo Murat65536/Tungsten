@@ -856,20 +856,8 @@ public class MovementHelper {
 
 	    	if (isJumpingUp && !world.getBlockState(pos.up(2)).isAir()) return true;
 	    	
-//		    if (isJumpingUp && isJumpingOneBlock && isStairs && aboveState.isAir() && !isAboveLeaves && !isAboveX2Leaves && world.getBlockState(pos.up(2)).isAir()) return false;
-//		    if (isJumpingUp && isJumpingOneBlock && isFullCube && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) {
-//
-//			    TungstenMod.TEST.clear();
-////				TungstenMod.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY()+1, pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-//				TungstenMod.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY(), pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-//				try {
-//					Thread.sleep(50);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//		    	return false;
-//		    }
+		    if (isJumpingUp && isJumpingOneBlock && isStairs && aboveState.isAir() && !isAboveLeaves && !isAboveX2Leaves && world.getBlockState(pos.up(2)).isAir()) return false;
+		    if (isJumpingUp && isJumpingOneBlock && isFullCube && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
 		    
 		    
 		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
