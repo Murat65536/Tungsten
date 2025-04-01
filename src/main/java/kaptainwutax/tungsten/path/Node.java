@@ -140,7 +140,7 @@ public class Node {
 	    if (n != null && (n.agent.isInLava() || agent.isInLava() || (agent.fallDistance > 
 	    this.agent.getPos().y - nextBlockNode.getBlockPos().getY()+2
 	    && !agent.slimeBounce 
-//	    && !agent.touchingWater
+	    && !agent.touchingWater
 	    ))) {
 	        return true;
 	    }
@@ -206,7 +206,8 @@ public class Node {
 	                Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
 	                if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
 //	                if (!newNode.agent.onGround && sneak) continue;
-	                if (newNode.agent.touchingWater && sneak && newNode.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY()) continue;
+	                if (newNode.agent.touchingWater && (sneak || jump) && newNode.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY()) continue;
+	                if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY()) continue;
 	                newNode = new Node(newNode, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
 	                        jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
 	            }

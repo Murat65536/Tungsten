@@ -518,6 +518,7 @@ public class PathFinder {
 	            		&& lastChild.agent.getPos().distanceTo(child.agent.getPos()) < 0.07)
             		|| blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingNeo() 
             			&& !child.agent.onGround
+            			&& child.agent.getBlockPos().getY() - blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).getBlockPos().getY() == 0
             			// This makes normal movement outside of parkour slower.
             			// TODO: Add option to turn this on and off
 //            		|| blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingLongJump() 
@@ -565,7 +566,7 @@ public class PathFinder {
 
         // Ladder-specific conditions
         boolean validLadderProximity = (isLadder || isBelowLadder) 
-            && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.5, 0.6);
+            && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.5, 0.7);
 
         // Tall block position conditions. Things like fences and walls
         boolean validTallBlockProximity = isBlockBelowTall 

@@ -16,21 +16,27 @@ public class StreightMovementHelper {
 	
 	public static boolean isPossible(WorldView world, BlockPos startPos, BlockPos endPos, boolean shouldRender, boolean shouldSlow) {
 		
-		boolean isJumpingOneBlock = endPos.getY() - startPos.getY() == 1;
-		
-	    PathNavigator navigator = new PathNavigator(world, isJumpingOneBlock, shouldRender, shouldSlow);
+		boolean isJumpingUp = endPos.getY() - startPos.getY() == 1;
+
+    	int dx = startPos.getX() - endPos.getX();
+    	int dz = startPos.getZ() - endPos.getZ();
+    	double distance = Math.sqrt(dx * dx + dz * dz);
+		boolean isJumpingOneBlock = distance == 1;
+	    PathNavigator navigator = new PathNavigator(world, isJumpingUp, isJumpingOneBlock, shouldRender, shouldSlow);
 
 	    return navigator.traversePath(startPos, endPos);
 	}
 
 	private static class PathNavigator {
 	    private final WorldView world;
+	    private final boolean isJumpingUp;
 	    private final boolean isJumpingOneBlock;
 	    private final boolean shouldRender;
 	    private final boolean shouldSlow;
 
-	    public PathNavigator(WorldView world, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
+	    public PathNavigator(WorldView world, boolean isJumpingUp, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
 	        this.world = world;
+	        this.isJumpingUp = isJumpingUp;
 	        this.isJumpingOneBlock = isJumpingOneBlock;
 	        this.shouldRender = shouldRender;
 	        this.shouldSlow = shouldSlow;
@@ -83,7 +89,7 @@ public class StreightMovementHelper {
 	    }
 
 	    private boolean processStep(BlockPos.Mutable position) {
-	        if (MovementHelper.isObscured(world, position, isJumpingOneBlock)) {
+	        if (MovementHelper.isObscured(world, position, isJumpingUp, isJumpingOneBlock)) {
 	            renderBlock(position, Color.RED);
 	            slowDownIfNeeded();
 	            return false;

@@ -31,13 +31,13 @@ public class SwimmingMove {
 		int limit = 0;
         // Run forward to the node
 		while (distance > 0.2 && limit < 20 && newNode.agent.touchingWater) {
-        	RenderHelper.renderNode(newNode);
-        	try {
-				Thread.sleep(5);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//        	RenderHelper.renderNode(newNode);
+//        	try {
+//				Thread.sleep(5);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
         	limit++;
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
     		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
@@ -48,13 +48,13 @@ public class SwimmingMove {
             while (i < 28 && distance > 0.2 && !newNode.agent.horizontalCollision) {
         		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
         		desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
-            	RenderHelper.renderNode(newNode);
-            	try {
-    				Thread.sleep(2);
-    			} catch (InterruptedException e) {
-    				// TODO Auto-generated catch block
-    				e.printStackTrace();
-    			}
+//            	RenderHelper.renderNode(newNode);
+//            	try {
+//    				Thread.sleep(2);
+//    			} catch (InterruptedException e) {
+//    				// TODO Auto-generated catch block
+//    				e.printStackTrace();
+//    			}
                 newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, false, true, desiredPitch, desiredYaw + 45),
                 		new Color(0, 255, 150), newNode.cost + cost);
                 i++;

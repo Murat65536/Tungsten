@@ -169,7 +169,7 @@ public class BlockSpacePathFinder {
 	private static double computeHeuristic(Vec3d position, Vec3d target) {
 		double xzMultiplier = 1.2;
 	    double dx = (position.x - target.x)*xzMultiplier;
-	    double dy = DistanceCalculator.getHorizontalManhattanDistance(position, target) > 16 ? 0 : (position.y - target.y)*1.5;
+	    double dy = DistanceCalculator.getHorizontalManhattanDistance(position, target) > 32 ? 0 : (position.y - target.y)*1.5;
 	    double dz = (position.z - target.z)*xzMultiplier;
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) * 3;
 	}
