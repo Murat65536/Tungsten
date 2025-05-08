@@ -421,6 +421,8 @@ public class PathFinder {
     private boolean isPathComplete(Node node, Vec3d target, boolean failing) {
     	if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))))
     		return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
+    	if (TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ())).getBlock() instanceof LadderBlock)
+    		return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
         return node.agent.getPos().squaredDistanceTo(target) <= 0.2D && !failing;
     }
 
@@ -435,7 +437,8 @@ public class PathFinder {
 				e.printStackTrace();
 			}
     	}
-        if (AgentChecker.isAgentStationary(node.agent, minVelocity)) {
+        if (AgentChecker.isAgentStationary(node.agent, minVelocity) || 
+        		TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ())).getBlock() instanceof LadderBlock) {
             List<Node> path = constructPath(node);
             executePath(path);
             return true;
@@ -517,7 +520,10 @@ public class PathFinder {
 //            		shouldSkipChild(child, target, closed, blockPath) 
 //            		||
             		(lastChild != null 
-	            		&& lastChild.agent.getPos().distanceTo(child.agent.getPos()) < 0.07)
+            			&& (!child.agent.isClimbing(world) && !lastChild.agent.isClimbing(world)
+	            		&& lastChild.agent.getPos().distanceTo(child.agent.getPos()) < 0.19
+            			|| child.agent.isClimbing(world) && lastChild.agent.isClimbing(world)
+	            		&& lastChild.agent.getPos().distanceTo(child.agent.getPos()) < 0.04))
             		|| blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingNeo() 
             			&& !child.agent.onGround
             			&& child.agent.getBlockPos().getY() - blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).getBlockPos().getY() == 0
@@ -525,6 +531,7 @@ public class PathFinder {
             			// TODO: Add option to turn this on and off
 //            		|| blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).isDoingLongJump() 
 //            			&& !child.agent.onGround
+//            			&& blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX).getBlockPos().getY() - child.agent.posY > 1
             		) continue;
 
             updateNode(world, parent, child, target, blockPath.get());
@@ -568,7 +575,7 @@ public class PathFinder {
 
         // Ladder-specific conditions
         boolean validLadderProximity = (isLadder || isBelowLadder) 
-            && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.5, 0.7);
+            && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.4, 0.7);
 
         // Tall block position conditions. Things like fences and walls
         boolean validTallBlockProximity = isBlockBelowTall 

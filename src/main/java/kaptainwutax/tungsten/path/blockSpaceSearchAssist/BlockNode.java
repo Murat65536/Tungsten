@@ -226,22 +226,22 @@ public class BlockNode {
 		if (isStreightPossible) return true;
 		if (endNode == null) return false;
 		
-//		boolean shouldCheckNeo = start.isWithinDistance(end, 4.2) && true;
-//		if (shouldCheckNeo) {
-//			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
-//			if (neoDirection != null) {
-//				endNode.isDoingNeo = true;
-//				endNode.neoSide = neoDirection;
-//				endNode.isDoingCornerJump = false;
-//				return true;
-//			}
-//		}
-//		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
-//		if (isCornerJumpPossible) {
-//			endNode.isDoingNeo = false;
-//			endNode.isDoingCornerJump = true;
-//			return true;
-//		}
+		boolean shouldCheckNeo = start.isWithinDistance(end, 4.2) && true;
+		if (shouldCheckNeo) {
+			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
+			if (neoDirection != null) {
+				endNode.isDoingNeo = true;
+				endNode.neoSide = neoDirection;
+				endNode.isDoingCornerJump = false;
+				return true;
+			}
+		}
+		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+		if (isCornerJumpPossible) {
+			endNode.isDoingNeo = false;
+			endNode.isDoingCornerJump = true;
+			return true;
+		}
 
 		return false;
 	}
@@ -310,13 +310,14 @@ public class BlockNode {
 			return true;
 
 		BlockState currentBlockState = world.getBlockState(getBlockPos());
+		BlockState currentBlockBelowState = world.getBlockState(getBlockPos().down());
 		BlockState childAboveState = world.getBlockState(child.getBlockPos().up());
 		BlockState childState = world.getBlockState(child.getBlockPos());
 		BlockState childBelowState = world.getBlockState(child.getBlockPos().down());
 		Block currentBlock = currentBlockState.getBlock();
 		Block childBlock = childState.getBlock();
 		Block childBelowBlock = childBelowState.getBlock();
-		double heightDiff = this.y - child.y; // -1 is going up and +1 is going down, in negative y levels its reversed
+		double heightDiff = getJumpHeight(this.y, child.y); // positive is going up and negative is going down
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(getPos(true), child.getPos(true));
 
 
@@ -324,6 +325,10 @@ public class BlockNode {
 //			if (distance > 1) return true;
 //			if (!wasCleared(world, getBlockPos(), child.getBlockPos())) return true;
 //			return false;
+//		}
+		// Search for a path without fall damage
+//		if (!BlockStateChecker.isAnyWater(childState)) {
+//			if (heightDiff < -2) return true;
 //		}
 		if (BlockStateChecker.isAnyWater(childState)) {
 			if (distance > 1 || heightDiff > 1) return true;
@@ -362,6 +367,12 @@ public class BlockNode {
 		}
 
 		// Ladder checks
+		if ((childBlock instanceof LadderBlock || childBelowBlock instanceof LadderBlock) && heightDiff > 1) {
+			return true;
+		}
+		if (BlockStateChecker.isBottomSlab(currentBlockBelowState) && (childBlock instanceof LadderBlock || childBelowBlock instanceof LadderBlock) && heightDiff > 0) {
+			return true;
+		}
 		if ((currentBlock instanceof LadderBlock) && distance > 2.3) {
 			return true;
 		}
@@ -470,10 +481,17 @@ public class BlockNode {
 		double blockHeightDiff = currentBlockHeight - childBlockHeight; // Negative values means currentBlockHeight is
 																		// lower, and positive means currentBlockHeight
 
+		
+		if (BlockStateChecker.isBottomSlab(currentBlockState) && childBlockHeight == 1 && heightDiff > 0) {
+			return true;
+		}
 
 		if (BlockStateChecker.isAnyWater(currentBlockState)) {
 			if (distance >= 2) return true;
 			return false;
+		}
+		if (childBlockHeight == 1.5 && currentBlockHeight == 1.5 && heightDiff <= 1) {
+			if (distance <= 4) return false;
 		}
 		
 		if (isBlockBelowTall && heightDiff > 0) return true;
@@ -503,6 +521,7 @@ public class BlockNode {
 			
 			if (blockHeightDiff != 0) {
 				
+				
 				if (Math.abs(blockHeightDiff) > 0.5 && Math.abs(blockHeightDiff) <= 1.0) {
 					if (heightDiff > 0 && (blockShape.getMin(Axis.Y) == 0.0 && currentBlockHeight <= 1.0))
 						return true;
@@ -528,6 +547,7 @@ public class BlockNode {
 
 				if (Math.abs(blockHeightDiff) >= 0.5 && (blockShape.getMin(Axis.Y) == 0.0 || childBlockHeight > 1.0))
 					return true;
+				
 			}
 		}
 
@@ -544,8 +564,6 @@ public class BlockNode {
 			if ((heightDiff == 0) && distance >= 6.3)
 				return true;
 			if ((heightDiff == -1) && distance >= 6.3)
-				return true;
-			if (heightDiff == -1 && distance >= 5.5)
 				return true;
 			if (heightDiff < -2 && distance >= 6.5)
 				return true;
@@ -565,11 +583,6 @@ public class BlockNode {
 		if (currentBlockHeight <= 0.5 && heightDiff > 0 && childBlockHeight > 0.5) {
 			return true;
 		}
-//		TungstenMod.TEST.add(new Cuboid(new Vec3d(child.x, child.x, child.x), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-//		try {
-//			Thread.sleep(350);
-//		} catch (InterruptedException ignored) {}
-//		TungstenMod.TEST.clear();
 
 		return false;
 	}

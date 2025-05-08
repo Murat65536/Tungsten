@@ -200,20 +200,22 @@ public class Node {
 	        boolean isMoving = (forward || right || left);
 	        if (newNode.agent.isClimbing(world)) jump = this.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY();
 
-	            for (int j = 0; j < ((sneak || !jump) && !newNode.agent.isClimbing(world) ? 3 : 10); j++) {
-	                if (newNode.agent.getPos().y < nextBlockNode.getPos(true).getY() && !newNode.agent.isClimbing(world) || !isMoving) break;
-	                Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
-	                Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
-	                if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
-	                if (!newNode.agent.touchingWater && !newNode.agent.onGround && sneak) continue;
-	                if (!newNode.agent.touchingWater && sneak && jump) continue;
-	                if (!newNode.agent.touchingWater && (sneak && sprint)) continue;
-	                if (!newNode.agent.touchingWater && sneak && (right || left) && forward) continue;
-	                if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80) continue;
-	                if (newNode.agent.touchingWater && (sneak || jump) && newNode.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY()) continue;
-	                if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY()) continue;
-	                newNode = new Node(newNode, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
-	                        jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
+	            if (!newNode.agent.touchingWater && !newNode.agent.onGround && sneak) return;
+	            if (!newNode.agent.touchingWater && sneak && jump) return;
+	            if (!newNode.agent.touchingWater && (sneak && sprint)) return;
+	            if (!newNode.agent.touchingWater && sneak && (right || left) && forward) return;
+	            if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80) return;
+	            if (newNode.agent.touchingWater && (sneak || jump) && newNode.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY()) return;
+	            if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY()) return;
+	            if (!sneak) {
+		            for (int j = 0; j < ((!jump) && !newNode.agent.isClimbing(world) ? 3 : 10); j++) {
+		                if (newNode.agent.getPos().y <= nextBlockNode.getPos(true).getY() && !newNode.agent.isClimbing(world) || !isMoving) break;
+		                Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
+		                Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
+			            if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
+		                newNode = new Node(newNode, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
+		                        jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
+		            }
 	            }
 
 	        nodes.add(newNode);

@@ -34,6 +34,7 @@ public class PathExecutor {
 	}
 	
 	public Node getCurrentNode() {
+		if (this.path == null) return null;
 		if (this.tick >= this.path.size()) return this.path.get(this.path.size()-1);
 		return this.path.get(this.tick);
 	}
