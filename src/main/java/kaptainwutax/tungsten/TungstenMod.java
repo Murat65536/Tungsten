@@ -113,9 +113,9 @@ public class TungstenMod implements ClientModInitializer {
 	        	if (!TungstenMod.TEST.isEmpty()) {
 					TungstenMod.TEST.clear();
 	        	}
-	        	if (!TungstenMod.ERROR.isEmpty()) {
-	        		TungstenMod.ERROR.clear();
-	        	}
+//	        	if (!TungstenMod.ERROR.isEmpty()) {
+//	        		TungstenMod.ERROR.clear();
+//	        	}
         	}
         	if (clickMode != clickModeEnum.OFF && mc.options.useKey.isPressed() && !isRunning) {
         		
