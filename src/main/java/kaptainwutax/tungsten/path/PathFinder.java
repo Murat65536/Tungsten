@@ -3,6 +3,7 @@ package kaptainwutax.tungsten.path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -593,11 +594,14 @@ public class PathFinder {
     
     private static void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node) {
     	if (blockPath == null) return;
+
+    	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
+    	Vec3d nodePos = node.agent.getPos();
+    	
+    	if (nodePos.distanceTo(closestPos.getPos(true)) > 1.8) return;
     	WorldView world = TungstenMod.mc.world;
     	BlockPos nodeBlockPos = new BlockPos(node.agent.blockX, node.agent.blockY, node.agent.blockZ);
-    	Vec3d nodePos = node.agent.getPos();
     	int closestPosIDX = findClosestPositionIDX(world, nodeBlockPos, blockPath);
-    	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
         BlockState state = world.getBlockState(closestPos.getBlockPos());
         BlockState stateBelow = world.getBlockState(closestPos.getBlockPos().down());
         double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(closestPos.getBlockPos().down());
@@ -631,7 +635,7 @@ public class PathFinder {
         // General position conditions
         boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane 
             && !isBlockBelowTall
-            && distanceToClosestPos < 0.90
+            && distanceToClosestPos < 0.80
             && heightDiff < 1;
 
         // Glass pane conditions
@@ -640,6 +644,17 @@ public class PathFinder {
         // Block volume conditions
         boolean validSmallBlockProximity = !isBelowGlassPane && closestBlockVolume > 0 && closestBlockVolume < 1 && distanceToClosestPos < 0.7;
         
+//        for (int j = 0; j < blockPath.size(); j++) {
+//			if (j >= closestPosIDX) {
+//	        	RenderHelper.renderBlockPath(blockPath, j);
+//				try {
+//					Thread.sleep(200);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//		}
         
     	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX && closestPosIDX +1 < blockPath.size()
     			&& ( validWaterProximity || !isConnected

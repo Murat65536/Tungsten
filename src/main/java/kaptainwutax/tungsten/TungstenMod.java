@@ -3,6 +3,10 @@ package kaptainwutax.tungsten;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -97,7 +101,17 @@ public class TungstenMod implements ClientModInitializer {
         mc = MinecraftClient.getInstance();
 
         initializeCommands();
-        
+
+    	ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        Runnable toRun = new Runnable() {
+            public void run() {
+	        	if (!TungstenMod.ERROR.isEmpty()) {
+	        		TungstenMod.ERROR.clear();
+	        	}
+            }
+        };
+        ScheduledFuture<?> handle = scheduler.scheduleAtFixedRate(toRun, 1, 15, TimeUnit.SECONDS);
+    
         ClientTickEvents.START_CLIENT_TICK.register((a) -> {
         	
         	boolean isRunning = TungstenMod.PATHFINDER.active || TungstenMod.EXECUTOR.isRunning();
@@ -114,9 +128,6 @@ public class TungstenMod implements ClientModInitializer {
 	        	if (!TungstenMod.TEST.isEmpty()) {
 					TungstenMod.TEST.clear();
 	        	}
-//	        	if (!TungstenMod.ERROR.isEmpty()) {
-//	        		TungstenMod.ERROR.clear();
-//	        	}
         	}
         	if (clickMode != clickModeEnum.OFF && mc.options.useKey.isPressed() && !isRunning) {
         		

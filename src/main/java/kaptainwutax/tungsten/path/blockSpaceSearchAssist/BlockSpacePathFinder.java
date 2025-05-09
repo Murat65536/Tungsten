@@ -230,8 +230,10 @@ public class BlockSpacePathFinder {
 
 		        BlockState state = TungstenMod.mc.world.getBlockState(n.getBlockPos());
 		        boolean isWater = BlockStateChecker.isAnyWater(state);
+		        BlockNode lastN = path.getLast();
+		        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenMod.mc.world, n.getBlockPos(), lastN.getBlockPos());
 				if (n.getPos(true).getY() - n.previous.getPos(true).getY() != 0) {
-					if (isWater && !StreightMovementHelper.isPossible(TungstenMod.mc.world, n.getBlockPos(), n.previous.previous.getBlockPos()))
+					if (isWater && !canGetFromLastNToCurrent)
 					{
 						path.add(n);
 						path.add(n.previous.previous);
@@ -241,11 +243,11 @@ public class BlockSpacePathFinder {
 					}
 				} else if (
 						!isWater &&
-						(n.previous.getPos(true).distanceTo(n.getPos(true)) > 1.44 ||
-						!StreightMovementHelper.isPossible(TungstenMod.mc.world, n.getBlockPos(), n.previous.previous.getBlockPos()))
+						(DistanceCalculator.getHorizontalEuclideanDistance(n.previous.getBlockPos(), n.getBlockPos()) > 1.44 ||
+						!canGetFromLastNToCurrent)
 						) {
-					path.add(n);
-					if (n.previous != null) path.add(n.previous);
+						path.add(n);
+						if (n.previous != null) path.add(n.previous);
 				}
 			}
 			n = n.previous;

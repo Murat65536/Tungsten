@@ -563,7 +563,7 @@ public class BlockNode {
 				return true;
 			if (heightDiff == 1 && distance >= 4.5)
 				return true;
-			if ((heightDiff == 0) && distance >= 6.3)
+			if ((heightDiff == 0) && distance >= 5.3)
 				return true;
 			if ((heightDiff == -1) && distance >= 6.3)
 				return true;
