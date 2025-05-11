@@ -595,10 +595,14 @@ public class PathFinder {
     private static void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node) {
     	if (blockPath == null) return;
 
+    	BlockNode lastClosestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX-1);
     	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
+    	
+    	boolean isRunningLongDist = lastClosestPos.getPos(true).distanceTo(closestPos.getPos(true)) > 7;
+    	
     	Vec3d nodePos = node.agent.getPos();
     	
-    	if (nodePos.distanceTo(closestPos.getPos(true)) > 1.8) return;
+    	if (nodePos.distanceTo(closestPos.getPos(true)) > (isRunningLongDist ? 2.80 : 0.80)) return;
     	WorldView world = TungstenMod.mc.world;
     	BlockPos nodeBlockPos = new BlockPos(node.agent.blockX, node.agent.blockY, node.agent.blockZ);
     	int closestPosIDX = findClosestPositionIDX(world, nodeBlockPos, blockPath);
@@ -635,11 +639,11 @@ public class PathFinder {
         // General position conditions
         boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane 
             && !isBlockBelowTall
-            && distanceToClosestPos < 0.80
+            && distanceToClosestPos < (isRunningLongDist ? 1.80 : 0.80)
             && heightDiff < 1;
 
         // Glass pane conditions
-        boolean validGlassPaneProximity = isBelowGlassPane && distanceToClosestPos < 0.1;
+        boolean validGlassPaneProximity = isBelowGlassPane && distanceToClosestPos < 0.5;
         
         // Block volume conditions
         boolean validSmallBlockProximity = !isBelowGlassPane && closestBlockVolume > 0 && closestBlockVolume < 1 && distanceToClosestPos < 0.7;
