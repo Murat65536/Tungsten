@@ -381,6 +381,9 @@ public class BlockNode {
 		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock) && distance > 6.3) {
 			return true;
 		}
+		if ((childBelowBlock instanceof LadderBlock && !(childState.isAir() || childBlock instanceof LadderBlock))) {
+			return true;
+		}
 		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock) && distance < 1 && heightDiff >= -1) {
 			return false;
 		}

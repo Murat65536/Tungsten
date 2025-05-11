@@ -129,11 +129,14 @@ public class Node {
 	    	if (nextBlockNode.isDoingNeo()) {
 	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
 	    	}
-//		    nodes.add(CornerJump.generateMove(this, nextBlockNode));
-		    if (nextBlockNode.isDoingLongJump()) {
+		    if (nextBlockNode.isDoingLongJump() || world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock) {
 		    	nodes.add(LongJump.generateMove(this, nextBlockNode));
 		    }
 	    }
+    	if (!agent.isClimbing(world) && world.getBlockState(agent.getBlockPos().down()).getBlock() instanceof LadderBlock) {	
+	    	nodes.add(LongJump.generateMove(this, nextBlockNode));    		
+//    		nodes.add(CornerJump.generateMove(this, nextBlockNode));
+    	}
     	
 	    return nodes;
 	}

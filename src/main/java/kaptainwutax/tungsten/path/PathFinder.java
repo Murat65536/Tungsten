@@ -597,12 +597,18 @@ public class PathFinder {
 
     	BlockNode lastClosestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX-1);
     	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX);
+    	if (NEXT_CLOSEST_BLOCKNODE_IDX+1 >= blockPath.size()) return;
+    	BlockNode nextNodePos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX+1);
     	
     	boolean isRunningLongDist = lastClosestPos.getPos(true).distanceTo(closestPos.getPos(true)) > 7;
     	
     	Vec3d nodePos = node.agent.getPos();
     	
     	if (nodePos.distanceTo(closestPos.getPos(true)) > (isRunningLongDist ? 2.80 : 0.80)) return;
+    	
+    	boolean isNextNodeAbove = nextNodePos.getBlockPos().getY() > closestPos.getBlockPos().getY();
+    	boolean isNextNodeBelow = nextNodePos.getBlockPos().getY() < closestPos.getBlockPos().getY();
+    	
     	WorldView world = TungstenMod.mc.world;
     	BlockPos nodeBlockPos = new BlockPos(node.agent.blockX, node.agent.blockY, node.agent.blockZ);
     	int closestPosIDX = findClosestPositionIDX(world, nodeBlockPos, blockPath);
@@ -627,7 +633,9 @@ public class PathFinder {
 
         // Ladder-specific conditions
         boolean validLadderProximity = (isLadder || isBelowLadder) 
-            && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.4, 0.7);
+            && (nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.4, 0.7) || 
+            		(isNextNodeAbove && nodePos.getY() > closestPos.getBlockPos().getY() || !isNextNodeBelow && nodePos.getY() < closestPos.getBlockPos().getY()) 
+            		&& nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 3.4, 0.7));
 
         // Tall block position conditions. Things like fences and walls
         boolean validTallBlockProximity = isBlockBelowTall 
