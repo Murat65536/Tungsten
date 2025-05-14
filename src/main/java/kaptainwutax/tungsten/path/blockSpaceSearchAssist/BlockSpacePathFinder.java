@@ -50,6 +50,14 @@ public class BlockSpacePathFinder {
 	}
 	
 	public static Optional<List<BlockNode>> search(WorldView world, Vec3d target) {
+		return search(world, target, false);
+	}
+
+	public static Optional<List<BlockNode>> search(WorldView world, BlockNode start, Vec3d target) {
+		return search(world, start, target, false);
+	}
+	
+	private static Optional<List<BlockNode>> search(WorldView world, Vec3d target, boolean generateDeep) {
 		ClientPlayerEntity player = Objects.requireNonNull(TungstenMod.mc.player);
 		if (!world.getBlockState(player.getBlockPos()).isAir() && BlockShapeChecker.getShapeVolume(player.getBlockPos()) != 0) {
 			return search(world, new BlockNode(player.getBlockPos().up(), new Goal((int) target.x, (int) target.y, (int) target.z)), target);
@@ -57,7 +65,7 @@ public class BlockSpacePathFinder {
 		return search(world, new BlockNode(player.getBlockPos(), new Goal((int) target.x, (int) target.y, (int) target.z)), target);
 	}
 	
-	public static Optional<List<BlockNode>> search(WorldView world, BlockNode start, Vec3d target) {
+	private static Optional<List<BlockNode>> search(WorldView world, BlockNode start, Vec3d target, boolean generateDeep) {
 		Goal goal = new Goal((int) target.x, (int) target.y, (int) target.z);
 		boolean failing = true;
         int numNodes = 0;
@@ -111,7 +119,7 @@ public class BlockSpacePathFinder {
 			 RenderHelper.renderPathSoFar(next);
 
 			
-			for(BlockNode child : next.getChildren(world, goal)) {
+			for(BlockNode child : next.getChildren(world, goal, generateDeep)) {
 				if (TungstenMod.PATHFINDER.stop) return Optional.empty();
 //				if (closed.contains(child)) continue;
 				
@@ -130,6 +138,9 @@ public class BlockSpacePathFinder {
 		}
 
 		if (openSet.isEmpty()) {
+			if (!generateDeep) {
+				return search(world, start, target, true);
+			}
 			Debug.logWarning("Ran out of nodes");
 			return Optional.empty();
 		}

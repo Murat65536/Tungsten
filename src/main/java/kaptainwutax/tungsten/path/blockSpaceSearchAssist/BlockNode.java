@@ -201,9 +201,9 @@ public class BlockNode {
 		return x == other.x && y == other.y && z == other.z;
 	}
 
-	public List<BlockNode> getChildren(WorldView world, Goal goal) {
+	public List<BlockNode> getChildren(WorldView world, Goal goal, boolean generateDeep) {
 
-		List<BlockNode> nodes = getNodesIn3DCircule(8, this, goal);
+		List<BlockNode> nodes = getNodesIn3DCircule(8, this, goal, generateDeep);
 //		nodes.removeIf((child) -> {
 //			return shouldRemoveNode(world, child);
 //		});
@@ -256,7 +256,7 @@ public class BlockNode {
 		return false;
 	}
 
-	private List<BlockNode> getNodesIn3DCircule(int d, BlockNode parent, Goal goal) {
+	private List<BlockNode> getNodesIn3DCircule(int d, BlockNode parent, Goal goal, boolean generateDeep) {
 		ConcurrentLinkedQueue<BlockNode> nodes = new ConcurrentLinkedQueue<>();
 
 	    double g = 32.656;
@@ -264,7 +264,7 @@ public class BlockNode {
 
 	    double yMax = (parent.wasOnSlime && parent.previous != null && parent.previous.y - parent.y < 0)
 	        ? MovementHelper.getSlimeBounceHeight(parent.previous.y - parent.y) - 0.5
-	        : 4;
+	        : generateDeep ? 4 : 2;
 
 	    if (parent.wasOnSlime && parent.previous != null && parent.previous.y - parent.y < 0) {
 	        TungstenMod.BLOCK_PATH_RENDERER.add(new Cuboid(
@@ -284,7 +284,7 @@ public class BlockNode {
 
 	    try {
 	        customPool.submit(() ->
-	            IntStream.range(-64, finalYMax).parallel().forEach(py -> {
+	            IntStream.range(generateDeep ? -64 : -4, finalYMax).parallel().forEach(py -> {
 	                int localD;
 
 	                if (py < 0 && py < -5) {
@@ -333,7 +333,7 @@ public class BlockNode {
 			return true;
 
 		BlockState currentBlockState = world.getBlockState(getBlockPos());
-		if (currentBlockState.isFullCube(world, getBlockPos())) return true;
+		if (currentBlockState.isFullCube(world, getBlockPos()) || world.getBlockState(getBlockPos().down()).isAir()) return true;
 		BlockState currentBlockBelowState = world.getBlockState(getBlockPos().down());
 		BlockState childAboveState = world.getBlockState(child.getBlockPos().up());
 		BlockState childState = world.getBlockState(child.getBlockPos());
