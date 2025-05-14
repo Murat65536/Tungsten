@@ -564,7 +564,7 @@ public class PathFinder {
     	double dist = DistanceCalculator.getHorizontalEuclideanDistance(child.agent.getPos(), nextBlockNode.getPos(true));
     	double distB = DistanceCalculator.getHorizontalEuclideanDistance(lastBlockNode.getPos(true), nextBlockNode.getPos(true));
     	
-    	if (distB > 6 || child.agent.isClimbing(TungstenMod.mc.world)) return  child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY());
+    	if (distB > 6 || child.agent.isClimbing(TungstenMod.mc.world)) return  child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
     	
     	if (nextBlockNode.isDoingNeo())
     		return !child.agent.onGround && child.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY();
@@ -700,7 +700,7 @@ public class PathFinder {
     	if (!nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 0.80), (isRunningLongDist ? 1.20 : 1.80))) return;
     	
     	Node p = node.parent;
-    	for (int i = 0; i < 6; i++) {
+    	for (int i = 0; i < 4; i++) {
     		if (p != null && !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.80), (isRunningLongDist ? 1.20 : 1.80))) return;
 		}
     	
