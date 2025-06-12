@@ -643,7 +643,7 @@ public class PathFinder {
 			        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
 			        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 	
-			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.29) || (isSmallBlock && distance < 0.2)) {
+			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.19) || (isSmallBlock && distance < 0.2)) {
 			            return null; // too close to existing child
 			        }
 			    }

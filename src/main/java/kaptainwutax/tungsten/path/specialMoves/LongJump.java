@@ -21,7 +21,7 @@ import net.minecraft.world.WorldView;
 public class LongJump {
 
 	public static Node generateMove(Node parent, BlockNode nextBlockNode) {
-		double cost = 5.2;
+		double cost = 0.2;
 		WorldView world = TungstenMod.mc.world;
 		Agent agent = parent.agent;
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
@@ -52,7 +52,7 @@ public class LongJump {
 	            Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(boxExpension, 0, boxExpension);
 	        	limit++;
 	        	if (distance > 3) {
-		        	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
+		        	Stream<VoxelShape> blockCollisions = Streams.stream(newNode.agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
 		            if (blockCollisions.findAny().isEmpty()) jump = true;
 	        	} else {
 	        		if (DistanceCalculator.getDistanceToEdge(newNode.agent) < 0.6) jump = true;
@@ -64,22 +64,23 @@ public class LongJump {
 	            		new Color(0, 255, 150), newNode.cost + cost);
 	        }
 	        limit = 0;
-	        while (limit < 20 && !newNode.agent.onGround && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
+    		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
+	        while (limit < 22 && !newNode.agent.onGround && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
 	        	if (newNode.agent.horizontalCollision) break;
-	    		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
-	            newNode = new Node(newNode, world, new PathInput(true, false, false, false, false, false, true, agent.pitch, desiredYaw),
+	            newNode = new Node(newNode, world, new PathInput(true, false, false, false, false, false, false, agent.pitch, desiredYaw),
 	            		new Color(distance < 0.4 ? 180 : 0, 255, 150), newNode.cost + cost);
 	        	limit++;
 	        }
+            newNode = new Node(newNode, world, new PathInput(true, false, false, false, false, false, false, agent.pitch, desiredYaw),
+            		new Color(distance < 0.4 ? 180 : 0, 255, 150), newNode.cost + cost);
 		} else {
 			limit = 0;
 	        // Run forward to the node
-			while (distance > 0.2 && limit < 20) {
+			while (distance > 0.2 && limit < 22) {
 	        	if (newNode.agent.horizontalCollision) break;
 	        	limit++;
 	    		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
-	    		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
-	            newNode = new Node(newNode, world, new PathInput(true, false, false, false, jump, false, true, agent.pitch, desiredYaw),
+	            newNode = new Node(newNode, world, new PathInput(true, false, false, false, jump, false, false, agent.pitch, desiredYaw),
 	            		new Color(0, 255, 150), newNode.cost + cost);
 	        }
 		}

@@ -15,6 +15,8 @@ import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.MovementHelper;
 import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
+import kaptainwutax.tungsten.helpers.movement.CornerJumpMovementHelper;
+import kaptainwutax.tungsten.helpers.movement.NeoMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
 import kaptainwutax.tungsten.path.calculators.ActionCosts;
 import kaptainwutax.tungsten.render.Color;
@@ -233,22 +235,22 @@ public class BlockNode {
 		if (endNode == null) return false;
 		
 		// When running bot in normal environment instead of parkour you need to turn on Neo and Corner jump checks to avoid cases where it can get stuck
-//		boolean shouldCheckNeo = start.isWithinDistance(end, 4.2) && true;
-//		if (shouldCheckNeo) {
-//			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
-//			if (neoDirection != null) {
-//				endNode.isDoingNeo = true;
-//				endNode.neoSide = neoDirection;
-//				endNode.isDoingCornerJump = false;
-//				return true;
-//			}
-//		}
-//		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
-//		if (isCornerJumpPossible) {
-//			endNode.isDoingNeo = false;
-//			endNode.isDoingCornerJump = true;
-//			return true;
-//		}
+		boolean shouldCheckNeo = start.isWithinDistance(end, 4.2) && true;
+		if (shouldCheckNeo) {
+			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
+			if (neoDirection != null) {
+				endNode.isDoingNeo = true;
+				endNode.neoSide = neoDirection;
+				endNode.isDoingCornerJump = false;
+				return true;
+			}
+		}
+		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+		if (isCornerJumpPossible) {
+			endNode.isDoingNeo = false;
+			endNode.isDoingCornerJump = true;
+			return true;
+		}
 
 		return false;
 	}
@@ -593,7 +595,7 @@ public class BlockNode {
 				return true;
 			if ((heightDiff == 0) && distance >= 5.3)
 				return true;
-			if (heightDiff >= -3 && distance >= 6)
+			if (heightDiff >= -3 && distance >= 6.1)
 				return true;
 			if (heightDiff < -2 && distance >= 6.3)
 				return true;

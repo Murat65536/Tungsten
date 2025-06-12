@@ -16,7 +16,7 @@ import net.minecraft.world.WorldView;
 public class SprintJumpMove {
 
 	public static Node generateMove(Node parent, BlockNode nextBlockNode) {
-		double cost = 0.08;
+		double cost = 0.02;
 		WorldView world = TungstenMod.mc.world;
 		Agent agent = parent.agent;
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
@@ -28,6 +28,7 @@ public class SprintJumpMove {
 		Node lastHigheastNodeSinceGround = null;
         // Run forward to the node
 //		TungstenMod.RENDERERS.clear();
+		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
 		while (distance > 0.3 && limit < 80 && !newNode.agent.horizontalCollision && !newNode.agent.isInLava() || (distance <= 0.3 && !newNode.agent.onGround)) {
 //        	RenderHelper.renderNode(newNode);
 //        	try {
@@ -56,7 +57,6 @@ public class SprintJumpMove {
 			
         	limit++;
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
-    		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
             newNode = new Node(newNode, world, new PathInput(true, false, false, false, distance > 1.2, false, true, parent.agent.pitch, desiredYaw),
             		new Color(0, 255, 150), newNode.cost + cost);
             
