@@ -153,7 +153,7 @@ public class PathFinder {
 		    Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
 		    if (blockPath.isPresent()) {
 	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
-	        	this.blockPath = blockPath;
+	        	PathFinder.blockPath = blockPath;
 	        }
 	    }
 //	    if (blockPath.isEmpty()) {
@@ -184,14 +184,26 @@ public class PathFinder {
 	        if (shouldSkipNode(next, target, closed, blockPath)) {
 	            continue;
 	        }
+
 	
 	        if (isPathComplete(next, target, failing)) {
 	            if (tryExecutePath(next, target, minVelocity)) {
 	        		TungstenMod.RENDERERS.clear();
 	        		TungstenMod.TEST.clear();
 	    			closed.clear();
-	    			this.blockPath = Optional.empty();
+	    			PathFinder.blockPath = Optional.empty();
 	                return;
+	            }
+	        } else if (NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size()-1) && blockPath.get().getLast().getPos(true).distanceTo(target) > 5) {
+	        	if (tryExecutePath(next, blockPath.get().getLast().getPos(true), 5)) {
+	        		TungstenMod.RENDERERS.clear();
+	        		TungstenMod.TEST.clear();
+	    			closed.clear();
+	    			PathFinder.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
+	    		    if (blockPath.isPresent()) {
+	    		    	NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
+	    	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
+	    	        }
 	            }
 	        }
 	
@@ -231,7 +243,7 @@ public class PathFinder {
 	    }
 	    RenderHelper.clearRenderers();
 		closed.clear();
-		this.blockPath = Optional.empty();
+		PathFinder.blockPath = Optional.empty();
 	}
 	protected static Optional<List<Node>> bestSoFar(boolean logInfo, int numNodes, Node startNode) {
         if (startNode == null) {
@@ -643,7 +655,7 @@ public class PathFinder {
 			        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
 			        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 	
-			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.19) || (isSmallBlock && distance < 0.2)) {
+			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
 			            return null; // too close to existing child
 			        }
 			    }

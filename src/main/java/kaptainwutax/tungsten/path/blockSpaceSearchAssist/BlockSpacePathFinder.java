@@ -71,7 +71,7 @@ public class BlockSpacePathFinder {
         int numNodes = 0;
         int timeCheckInterval = 1 << 6;
         long startTime = System.currentTimeMillis();
-        long primaryTimeoutTime = startTime + 800000L;
+        long primaryTimeoutTime = startTime + 1800L;
 		
 		TungstenMod.RENDERERS.clear();
 		Debug.logMessage("Searchin...");
@@ -164,14 +164,7 @@ public class BlockSpacePathFinder {
             }
             if (dist > MIN_DIST_PATH * MIN_DIST_PATH) { // square the comparison since distFromStartSq is squared
                 BlockNode n = bestSoFar[i];
-				List<BlockNode> path = new ArrayList<>();
-				while(n.previous != null) {
-					path.add(n);
-					RenderHelper.renderNodeConnection(n, n.previous);
-					n = n.previous;
-				}
-				path.add(n);
-				Collections.reverse(path);
+				List<BlockNode> path = generatePath(n);
                 return Optional.of(path);
             }
         }
