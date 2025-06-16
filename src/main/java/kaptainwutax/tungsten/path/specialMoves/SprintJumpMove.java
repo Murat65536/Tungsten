@@ -51,13 +51,13 @@ public class SprintJumpMove {
 					&& !BlockStateChecker.isAnyWater(world.getBlockState(newNode.agent.getLandingPos(world))))
 					&& DistanceCalculator.getJumpHeight(lastHigheastNodeSinceGround.agent.getPos().y, newNode.agent.getPos().y) < -3) {
 				newNode = new Node(newNode, world, new PathInput(true, false, false, false, distance > 1.2, false, true, parent.agent.pitch, desiredYaw),
-	            		new Color(255, 0, 0), Double.POSITIVE_INFINITY);
+	            		new Color(255, 0, 0), newNode.cost + cost);
 				break;
 			}
 			
         	limit++;
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
-            newNode = new Node(newNode, world, new PathInput(true, false, false, false, distance > 1.2, false, true, parent.agent.pitch, desiredYaw),
+            newNode = new Node(newNode, world, new PathInput(true, false, false, false, distance > 1.2 && newNode.agent.onGround, false, true, parent.agent.pitch, desiredYaw),
             		new Color(0, 255, 150), newNode.cost + cost);
             
         }
