@@ -76,7 +76,7 @@ public class RunToNode {
 			}
 			
 			newNode = new Node(newNode, world, new PathInput(true, false, false, false, jump, false, true, parent.agent.pitch, desiredYaw ),
-            		new Color(0, 255, 150), newNode.cost + 0.5D);
+            		new Color(0, 255, 150), newNode.cost + 0.22D);
 			distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
 
         }

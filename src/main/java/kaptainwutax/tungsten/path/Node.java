@@ -132,7 +132,7 @@ public class Node {
 	    if (agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir()) {
 	    	nodes.add(ExitWaterMove.generateMove(this, nextBlockNode));
 	    }
-	    if (!agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir() && this.agent.canSprint()) {
+	    if (!agent.touchingWater && this.agent.canSprint()) {
 	    	nodes.add(SprintJumpMove.generateMove(this, nextBlockNode));
 	    }
 	    
@@ -140,7 +140,7 @@ public class Node {
 	    	nodes.add(WalkToNode.generateMove(this, nextBlockNode));
 	    }
 	    
-	    if (!agent.touchingWater && this.agent.canSprint()) {
+	    if (!agent.touchingWater && this.agent.canSprint() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 4) {
 	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
 	    }
 	    

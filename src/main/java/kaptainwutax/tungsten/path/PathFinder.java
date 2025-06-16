@@ -781,11 +781,11 @@ public class PathFinder {
     	
     	Vec3d nodePos = node.agent.getPos();
     	
-    	if (!nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80))) return;
+    	if (closestPos.getPos(true).y <= nodePos.y && !nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 3.10), (isRunningLongDist ? 1.20 : 0.80))) return;
     	
     	Node p = node.parent;
     	for (int i = 0; i < 4; i++) {
-    		if (p != null && !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80))) return;
+    		if (p != null && closestPos.getPos(true).y <= p.agent.getPos().y &&  !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 3.10), (isRunningLongDist ? 1.20 : 0.80))) return;
 		}
     	
     	boolean isNextNodeAbove = nextNodePos.getBlockPos().getY() > closestPos.getBlockPos().getY();
@@ -835,7 +835,7 @@ public class PathFinder {
         // General position conditions
         boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane 
             && !isBlockBelowTall
-            && distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.05)
+            && distanceToClosestPos < (isRunningLongDist ? 1.80 : 0.35)
             && heightDiff < 1.8;
 
         // Glass pane conditions
