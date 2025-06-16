@@ -19,9 +19,11 @@ import kaptainwutax.tungsten.path.specialMoves.CornerJump;
 import kaptainwutax.tungsten.path.specialMoves.DivingMove;
 import kaptainwutax.tungsten.path.specialMoves.ExitWaterMove;
 import kaptainwutax.tungsten.path.specialMoves.LongJump;
+import kaptainwutax.tungsten.path.specialMoves.RunToNode;
 import kaptainwutax.tungsten.path.specialMoves.SprintJumpMove;
 import kaptainwutax.tungsten.path.specialMoves.SwimmingMove;
 import kaptainwutax.tungsten.path.specialMoves.TurnACornerMove;
+import kaptainwutax.tungsten.path.specialMoves.WalkToNode;
 import kaptainwutax.tungsten.path.specialMoves.neo.NeoJump;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
@@ -130,11 +132,19 @@ public class Node {
 	    if (agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir()) {
 	    	nodes.add(ExitWaterMove.generateMove(this, nextBlockNode));
 	    }
-	    if (!agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir()) {
+	    if (!agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir() && this.agent.canSprint()) {
 	    	nodes.add(SprintJumpMove.generateMove(this, nextBlockNode));
 	    }
 	    
-	    if (agent.onGround) {
+	    if (!agent.touchingWater && !this.agent.canSprint()) {
+	    	nodes.add(WalkToNode.generateMove(this, nextBlockNode));
+	    }
+	    
+	    if (!agent.touchingWater && this.agent.canSprint()) {
+	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
+	    }
+	    
+	    if (agent.onGround && this.agent.canSprint()) {
 	    	if (nextBlockNode.isDoingNeo()) {
 	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
 	    	}
@@ -190,6 +200,7 @@ public class Node {
 	                for (boolean sneak : new boolean[]{false, true}) {
 	                    for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5 + Math.random()) {
 	                        for (boolean sprint : new boolean[]{true, false}) {
+	                        	if (!this.agent.canSprint() && sprint) continue;
 	                            if ((sneak || ((right || left) && !forward)) && sprint) continue;
 
 	                            for (boolean jump : new boolean[]{true, false}) {
@@ -302,10 +313,10 @@ public class Node {
 	    	if (i > 60) break;
 	    	i++;
 	        newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-	                new Color(0, 255, 255), this.cost + 1);
+	                new Color(0, 255, 255), this.cost + (this.agent.canSprint() ? 1 : 8));
 	    }
         newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-                new Color(0, 255, 255), this.cost + 1);
+                new Color(0, 255, 255), this.cost + (this.agent.canSprint() ? 1 : 8));
 
 	    nodes.add(newNode);
 	}

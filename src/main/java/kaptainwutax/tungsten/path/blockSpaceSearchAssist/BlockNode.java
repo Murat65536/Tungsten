@@ -512,7 +512,10 @@ public class BlockNode {
 
 		double blockHeightDiff = currentBlockHeight - childBlockHeight; // Negative values means currentBlockHeight is
 																		// lower, and positive means currentBlockHeight
+		if (TungstenMod.mc.player.getHungerManager().getFoodLevel() < 6) {
 
+			if (distance >= 4) return true;
+		}
 		
 		if (BlockStateChecker.isBottomSlab(currentBlockState) && childBlockHeight == 1 && heightDiff > 0) {
 			return true;

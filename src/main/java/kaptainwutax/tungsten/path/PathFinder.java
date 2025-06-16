@@ -836,7 +836,7 @@ public class PathFinder {
         boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane 
             && !isBlockBelowTall
             && distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.05)
-            && heightDiff < 1.6;
+            && heightDiff < 1.8;
 
         // Glass pane conditions
         boolean validGlassPaneProximity = isBelowGlassPane && distanceToClosestPos < 0.5;

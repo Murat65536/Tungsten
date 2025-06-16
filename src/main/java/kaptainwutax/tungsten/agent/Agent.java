@@ -1245,7 +1245,7 @@ public class Agent {
         return pos;
     }
     
-    private boolean canSprint() {
+    public boolean canSprint() {
 		return this.hunger.getFoodLevel() > 6.0F;
 	}
     
@@ -1788,6 +1788,8 @@ public class Agent {
         agent.movementSpeed = player.getMovementSpeed();
         agent.airStrafingSpeed = 0.06f;
         agent.jumpingCooldown = ((AccessorLivingEntity)player).getJumpingCooldown();
+        agent.hunger.setFoodLevel(player.getHungerManager().getFoodLevel());
+        agent.hunger.setSaturationLevel(player.getHungerManager().getSaturationLevel());
         //TODO: frame.ticksToNextAutojump
         return agent;
     }
@@ -1801,7 +1803,8 @@ public class Agent {
         agent.keyJump = jump;
         agent.keySneak = sneak;
         agent.keySprint = sprint;
-
+        agent.hunger.setFoodLevel(other.hunger.getFoodLevel());
+        agent.hunger.setSaturationLevel(other.hunger.getSaturationLevel());
         agent.pose = other.pose;
         agent.inSneakingPose = other.inSneakingPose;
         agent.usingItem = other.usingItem;
