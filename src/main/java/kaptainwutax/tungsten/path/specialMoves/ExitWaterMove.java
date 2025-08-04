@@ -19,12 +19,13 @@ public class ExitWaterMove {
 
 	public static Node generateMove(Node parent, BlockNode nextBlockNode) {
 	    if (!parent.agent.touchingWater) return parent;
-		double cost = 0.2;
+		double cost = 0.02;
 		WorldView world = TungstenMod.mc.world;
 		Agent agent = parent.agent;
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 		float desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
+		double closestDistance = Double.MAX_VALUE;
 	    Node newNode = new Node(parent, world, new PathInput(false, false, false, false, false, false, false, desiredPitch, desiredYaw),
 	    				new Color(0, 255, 150), parent.cost + 0.1);
 		int limit = 0;

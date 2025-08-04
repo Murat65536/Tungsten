@@ -30,7 +30,7 @@ public class SprintJumpMove {
 //		TungstenMod.RENDERERS.clear();
 		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(newNode.agent.getPos(), nextBlockNode.getPos(true));
 		if (distance < 0.8) return newNode;
-		while (distance > 0.3 && limit < 200 && !newNode.agent.horizontalCollision && !newNode.agent.isInLava() || (distance <= 0.3 && !newNode.agent.onGround)) {
+		while (distance > 0.5 && limit < 200 && !newNode.agent.horizontalCollision && !newNode.agent.isInLava() || (distance <= 0.3 && !newNode.agent.onGround)) {
 //        	RenderHelper.renderNode(newNode);
 //        	try {
 //				Thread.sleep(50);
@@ -38,12 +38,7 @@ public class SprintJumpMove {
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
 //			}
-        	
-        	if (closestDistance > distance) {
-        		closestDistance = distance;
-        	} else {
-        		break;
-        	}
+        	if (newNode.agent.blockY < nextBlockNode.getBlockPos().getY()-1) break;
 
 			if (newNode.agent.onGround || lastHigheastNodeSinceGround != null && lastHigheastNodeSinceGround.agent.getPos().y < newNode.agent.getPos().y) {
 				lastHigheastNodeSinceGround = newNode;
@@ -60,7 +55,19 @@ public class SprintJumpMove {
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
             newNode = new Node(newNode, world, new PathInput(true, false, false, false, distance > 3.2 && newNode.agent.onGround, false, true, parent.agent.pitch, desiredYaw),
             		new Color(0, 255, 150), newNode.cost + cost);
-            if (newNode.agent.isClimbing(world)) newNode.cost += 1.8;
+            if (newNode.agent.isClimbing(world)) newNode.cost += 12.8;
+            float forwardSpeedScore = 0.98f - Math.abs(newNode.agent.forwardSpeed);
+//	    	float sidewaysSpeedScore = 0.98f - Math.abs(newNode.agent.sidewaysSpeed);
+//	    	Debug.logMessage("" + forwardSpeedScore);
+	    	newNode.cost += 
+//	    			(sidewaysSpeedScore > 1e-8 || sidewaysSpeedScore < -1e-8 ? 5 : 0 ) 
+	    			 (forwardSpeedScore > 1e-8 || forwardSpeedScore < -1e-8 ? 15 : 0 )
+	    			 + (forwardSpeedScore );
+        	if (closestDistance > distance) {
+        		closestDistance = distance;
+        	} else {
+        		break;
+        	}
             
         }
             

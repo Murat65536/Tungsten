@@ -56,6 +56,14 @@ public class BlockNode {
 	public final int x;
 	public final int y;
 	public final int z;
+	
+
+	public Vec3d chachedPos = null;
+	public Vec3d chachedWithOffsetPos = null;
+	public BlockState chachedBlockState = null;
+	public BlockPos chachedBlockPos = null;
+	
+	public Boolean isDoingLongJump = null;
 
 	/**
 	 * Cached, should always be equal to goal.heuristic(pos)
@@ -158,21 +166,30 @@ public class BlockNode {
 	}
 
 	public Vec3d getPos(boolean shift) {
+		if (!shift && chachedPos != null) return chachedPos;
 		if (shift) {
-			if (isDoingNeo)
-				return BlockPosShifter.shiftForStraightNeo(this, neoSide);
-			return BlockPosShifter.getPosOnLadder(this);
+			if (chachedWithOffsetPos != null) return chachedWithOffsetPos;
+			if (isDoingNeo) {
+				chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
+				return chachedWithOffsetPos;
+			}
+			chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this);
+			return chachedWithOffsetPos;
 		}
-		return new Vec3d(x, y, z);
+		chachedPos = new Vec3d(x, y, z);
+		return chachedPos;
 	}
 
 	public boolean isDoingLongJump() {
+		if (isDoingLongJump != null) return isDoingLongJump;
 		if (this.previous != null) {
 			double distance = DistanceCalculator.getHorizontalEuclideanDistance(this.previous.getPos(), this.getPos());
 			if (distance >= 4 && distance < 6) {
+				isDoingLongJump = true;
 				return true;
 			}
 		}
+		isDoingLongJump = false;
 		return false;
 	}
 
@@ -189,11 +206,15 @@ public class BlockNode {
 	}
 
 	public BlockState getBlockState() {
-		return TungstenMod.mc.world.getBlockState(getBlockPos());
+		if (chachedBlockState != null) return chachedBlockState;
+		chachedBlockState = TungstenMod.mc.world.getBlockState(getBlockPos());
+		return chachedBlockState;
 	}
 
 	public BlockPos getBlockPos() {
-		return new BlockPos(x, y, z);
+		if (chachedBlockPos != null) return chachedBlockPos;
+		chachedBlockPos = new BlockPos(x, y, z);
+		return chachedBlockPos;
 	}
 
 	@Override
@@ -507,6 +528,11 @@ public class BlockNode {
 //    	if (world.getBlockState(child.getBlockPos().down()).getBlock() instanceof TrapdoorBlock) {
 //			System.out.println(!world.getBlockState(child.getBlockPos().down()).get(Properties.OPEN));
 //    	}
+		boolean isAboveSolid = BlockShapeChecker.getShapeVolume(getBlockPos().up(2)) > 0;
+		
+		if (isAboveSolid && distance > 3) {
+			return true;
+		}
 
 		VoxelShape blockShape = childBlockState.getCollisionShape(world, child.getBlockPos().down());
 		VoxelShape currentBlockShape = currentBlockState.getCollisionShape(world, getBlockPos().down());
@@ -594,11 +620,11 @@ public class BlockNode {
 			// Basic height and distance checks
 			if (heightDiff >= 2)
 				return true;
-			if (heightDiff == 1 && distance > 6)
+			if (heightDiff == 1 && distance > 4.24)
 				return true;
 			if (heightDiff == -1 && distance > 5.3)
 				return true;
-			if (heightDiff == -2 && distance > 7)
+			if (heightDiff == -2 && distance > 6.2)
 				return true;
 			if (heightDiff == 1 && distance >= 4.5)
 				return true;

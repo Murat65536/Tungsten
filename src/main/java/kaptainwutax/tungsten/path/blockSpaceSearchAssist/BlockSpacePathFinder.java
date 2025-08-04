@@ -183,6 +183,8 @@ public class BlockSpacePathFinder {
 	    	dy = (position.y - target.y)*1.8;
 	    } else if (DistanceCalculator.getHorizontalManhattanDistance(position, target) < 32) {
 	    	dy = (position.y - target.y)*1.5;
+	    } else {
+	    	dy = (position.y - target.y)*0.5;
 	    }
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) * 3;
 	}
@@ -193,7 +195,7 @@ public class BlockSpacePathFinder {
 	    double tentativeCost = child.cost + (childBlock instanceof LadderBlock || childBlock instanceof VineBlock ? 12.2 : 0) + ActionCosts.WALK_ONE_BLOCK_COST; // Assuming uniform cost for each step
 //	    tentativeCost += BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos())) ? 50 : 0; // Assuming uniform cost for each step
 
-	    double estimatedCostToGoal = computeHeuristic(childPos, target) + DistanceCalculator.getHorizontalEuclideanDistance(current.getPos(true), child.getPos(true)) * 4 + (current.getBlockPos().getY() != child.getBlockPos().getY() ? 4.8 : 0);
+	    double estimatedCostToGoal = computeHeuristic(childPos, target) + DistanceCalculator.getHorizontalEuclideanDistance(current.getPos(true), child.getPos(true)) * 4 + (current.getBlockPos().getY() != child.getBlockPos().getY() ? 5.8 : 0);
 
 	    child.previous = current;
 	    child.cost = tentativeCost;
@@ -243,18 +245,21 @@ public class BlockSpacePathFinder {
 					if (isWater && n.previous.previous != null)
 					{
 						path.add(n);
+						path.add(n.previous);
 						path.add(n.previous.previous);
 					} else if (!isWater) {
 						path.add(n);
 //						path.add(n.previous);
 					}
+				} else if (isWater && !canGetFromLastNToCurrent) {
+					path.add(n);
 				} else if (
 						!isWater &&
 						(DistanceCalculator.getHorizontalEuclideanDistance(n.previous.getBlockPos(), n.getBlockPos()) > 1.44 ||
 						!canGetFromLastNToCurrent)
 						) {
 						path.add(n);
-//						if (n.previous != null) path.add(n.previous);
+						if (n.previous != null && heightDiff > 0) path.add(n.previous);
 				}
 			n = n.previous;
 		}

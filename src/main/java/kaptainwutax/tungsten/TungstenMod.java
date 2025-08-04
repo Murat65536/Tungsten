@@ -59,6 +59,7 @@ public class TungstenMod implements ClientModInitializer {
     private static CommandExecutor _commandExecutor;
     public static boolean renderPositonBoxes = true;
     public static boolean ignoreFallDamage = true;
+    public static boolean LOG_DEBUG_DATA = false;
 	
 	
 	static {

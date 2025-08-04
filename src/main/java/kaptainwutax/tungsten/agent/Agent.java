@@ -177,6 +177,10 @@ public class Agent {
     public BlockPos getBlockPos() {
         return new BlockPos(this.blockX, this.blockY, this.blockZ);
     }
+    
+    public BlockState getBlockState() {
+    	return TungstenMod.mc.world.getBlockState(getBlockPos());
+    }
 
     public void setPos(double x, double y, double z) {
         this.posX = x;
@@ -1565,89 +1569,96 @@ public class Agent {
 
         if(this.movementSpeed != player.getMovementSpeed()) {
 
-        	Node node = TungstenMod.EXECUTOR.getCurrentNode();
-        	if (node != null) {
-	        	StringBuilder string = new StringBuilder();
-	
-	    		string.append("{\n");
-	    		if (node.input.forward != player.input.playerInput.forward()) {
-	        		string.append("forward: ");
-	        		string.append(player.input.playerInput.forward());
-	        		string.append(" vs ");
-	        		string.append(node.input.forward);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.back != player.input.playerInput.backward()) {
-	        		string.append("back: ");
-	        		string.append(player.input.playerInput.backward());
-	        		string.append(" vs ");
-	        		string.append(node.input.back);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.right != player.input.playerInput.right()) {
-	        		string.append("right: ");
-	        		string.append(player.input.playerInput.right());
-	        		string.append(" vs ");
-	        		string.append(node.input.right);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.left != player.input.playerInput.left()) {
-	        		string.append("left: ");
-	        		string.append(player.input.playerInput.left());
-	        		string.append(" vs ");
-	        		string.append(node.input.left);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.jump != player.input.playerInput.jump()) {
-	        		string.append("jump: ");
-	        		string.append(player.input.playerInput.jump());
-	        		string.append(" vs ");
-	        		string.append(node.input.jump);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.sneak != player.input.playerInput.sneak()) {
-	        		string.append("sneak: ");
-	        		string.append(player.input.playerInput.sneak());
-	        		string.append(" vs ");
-	        		string.append(node.input.sneak);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.sprint != player.input.playerInput.sprint()) {
-	        		string.append("sprint: ");
-	        		string.append(player.input.playerInput.sprint());
-	        		string.append(" vs ");
-	        		string.append(node.input.sprint);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.pitch != player.getPitch()) {
-	        		string.append("pitch: ");
-	        		string.append(player.getPitch());
-	        		string.append(" vs ");
-	        		string.append(node.input.pitch);
-	        		string.append("\n");
-	    		}
-	    		if (node.input.yaw != player.getYaw()) {
-	        		string.append("yaw: ");
-	        		string.append(player.getYaw());
-	        		string.append(" vs ");
-	        		string.append(node.input.yaw);
-	        		string.append("\n");
-	    		}
-	    		if (node.agent.onGround != player.isOnGround()) {
-	        		string.append("isOnGround: ");
-	        		string.append(player.isOnGround());
-	        		string.append(" vs ");
-	        		string.append(node.agent.onGround);
-	        		string.append("\n");
-	    		}
-	    		string.append("\n");
-	    		string.append("}");
-	
-	        	Debug.logMessage("------------");
-	        	Debug.logMessage(string.toString());
-	        	Debug.logMessage(player.getMovementSpeed() + " " + this.movementSpeed + "");
-	        	Debug.logMessage("------------");
+        	if (TungstenMod.LOG_DEBUG_DATA) {
+        		Node node = TungstenMod.EXECUTOR.getCurrentNode();
+            	if (node != null) {
+    	        	StringBuilder string = new StringBuilder();
+    	
+    	    		string.append("{\n");
+    	    		if (node.input.forward != player.input.playerInput.forward()) {
+    	        		string.append("forward: ");
+    	        		string.append(player.input.playerInput.forward());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.forward);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.back != player.input.playerInput.backward()) {
+    	        		string.append("back: ");
+    	        		string.append(player.input.playerInput.backward());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.back);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.right != player.input.playerInput.right()) {
+    	        		string.append("right: ");
+    	        		string.append(player.input.playerInput.right());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.right);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.left != player.input.playerInput.left()) {
+    	        		string.append("left: ");
+    	        		string.append(player.input.playerInput.left());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.left);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.jump != player.input.playerInput.jump()) {
+    	        		string.append("jump: ");
+    	        		string.append(player.input.playerInput.jump());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.jump);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.sneak != player.input.playerInput.sneak()) {
+    	        		string.append("sneak: ");
+    	        		string.append(player.input.playerInput.sneak());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.sneak);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.sprint != player.input.playerInput.sprint()) {
+    	        		string.append("sprint: ");
+    	        		string.append(player.input.playerInput.sprint());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.sprint);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.pitch != player.getPitch()) {
+    	        		string.append("pitch: ");
+    	        		string.append(player.getPitch());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.pitch);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.input.yaw != player.getYaw()) {
+    	        		string.append("yaw: ");
+    	        		string.append(player.getYaw());
+    	        		string.append(" vs ");
+    	        		string.append(node.input.yaw);
+    	        		string.append("\n");
+    	    		}
+    	    		if (node.agent.onGround != player.isOnGround()) {
+    	        		string.append("isOnGround: ");
+    	        		string.append(player.isOnGround());
+    	        		string.append(" vs ");
+    	        		string.append(node.agent.onGround);
+    	        		string.append("\n");
+    	    		}
+    	    		string.append("\n");
+    	    		string.append("}");
+    	
+    	        	if (string.toString().length() > 4) {
+    		        	Debug.logMessage("------------");
+    		        	Debug.logMessage(string.toString());
+    		        	Debug.logMessage("Current Movement Speed: " + player.getMovementSpeed() + " \nExpected to be: " + this.movementSpeed + "");
+    		        	Debug.logMessage("------------");
+    	        	} else {
+    		        	Debug.logMessage("Current Movement Speed: " + player.getMovementSpeed() + " \nExpected to be: " + this.movementSpeed + "");
+    	        	}
+            	}	
         	}
+        	
             values.add(String.format("Movement Speed mismatch %f vs %f", player.getMovementSpeed(), this.movementSpeed));
         }
 

@@ -27,6 +27,7 @@ public class PathExecutor {
 	}
 
 	public void setPath(List<Node> path) {
+		this.cb = null;
 		this.startTime = System.currentTimeMillis();
     	this.allowedFlying = TungstenMod.mc.player.getAbilities().allowFlying;
 	    stop = false;

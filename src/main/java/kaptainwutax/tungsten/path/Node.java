@@ -10,6 +10,7 @@ import com.google.common.collect.Streams;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.helpers.BlockShapeChecker;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
@@ -17,6 +18,7 @@ import kaptainwutax.tungsten.helpers.MathHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.path.specialMoves.CornerJump;
 import kaptainwutax.tungsten.path.specialMoves.DivingMove;
+import kaptainwutax.tungsten.path.specialMoves.EnterWaterAndSwimMove;
 import kaptainwutax.tungsten.path.specialMoves.ExitWaterMove;
 import kaptainwutax.tungsten.path.specialMoves.LongJump;
 import kaptainwutax.tungsten.path.specialMoves.RunToNode;
@@ -108,6 +110,38 @@ public class Node {
 	    }
 
 	    List<Node> nodes = new ArrayList<>();
+	    
+	    if (!agent.touchingWater && BlockStateChecker.isAnyWater(nextBlockNode.getBlockState())) {
+	    	Node enterWaterAndSwimMove = EnterWaterAndSwimMove.generateMove(this, nextBlockNode);
+	    	boolean isEnterWaterAndSwimMoveClose = enterWaterAndSwimMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) > 1.5;
+	    	nodes.add(enterWaterAndSwimMove);
+	    	if (isEnterWaterAndSwimMoveClose) return nodes;
+	    }
+
+	    if (!agent.touchingWater && this.agent.canSprint()) {
+	    	Node sprintJumpMove = SprintJumpMove.generateMove(this, nextBlockNode);
+	    	boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.55;
+	    	if (!sprintJumpMove.agent.onGround || !isSprintJumpMoveClose) {
+			    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
+			        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
+			    } else {
+			        generateAirborneNodes(world, nextBlockNode, nodes);
+			    }
+		    	
+			    sortNodesByYaw(nodes, target);
+	    	}
+	    	nodes.add(sprintJumpMove);
+	    	if (isSprintJumpMoveClose) return nodes;
+	    } else {
+		    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
+		        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
+		    } else {
+		        generateAirborneNodes(world, nextBlockNode, nodes);
+		    }
+	    	
+		    sortNodesByYaw(nodes, target);
+	    }
+	    
 	    if (agent.onGround) {
 	    	if (!world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3) {
 	//    		nodes.add(TurnACornerMove.generateMove(this, nextBlockNode, false));
@@ -116,24 +150,17 @@ public class Node {
 	    		nodes.add(CornerJump.generateMove(this, nextBlockNode, true));
 	    	}
 	    }
-    	
-	    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
-	        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
-	    } else {
-	        generateAirborneNodes(world, nextBlockNode, nodes);
-	    }
-    	
-	    sortNodesByYaw(nodes, target);
 
-	    if (agent.touchingWater && BlockStateChecker.isAnyWater(world.getBlockState(nextBlockNode.getBlockPos()))) {
-	    	if (world.getBlockState(nextBlockNode.getBlockPos().up()).isAir()) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
+	    if (agent.touchingWater && BlockStateChecker.isAnyWater(nextBlockNode.getBlockState())) {
+	    	if (BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos()) == 0) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
 	    	else  nodes.add(DivingMove.generateMove(this, nextBlockNode));
+	    	return nodes;
 	    }
-	    if (agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir()) {
-	    	nodes.add(ExitWaterMove.generateMove(this, nextBlockNode));
-	    }
-	    if (!agent.touchingWater && this.agent.canSprint()) {
-	    	nodes.add(SprintJumpMove.generateMove(this, nextBlockNode));
+	    if (agent.touchingWater && BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos()) == 0) {
+	    	Node exitWaterMove = ExitWaterMove.generateMove(this, nextBlockNode);
+	    	boolean isExitWaterMoveClose = exitWaterMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 1.5;
+	    	nodes.add(exitWaterMove);
+	    	if (isExitWaterMoveClose) return nodes;
 	    }
 	    
 	    if (!agent.touchingWater && !this.agent.canSprint()) {
@@ -193,12 +220,15 @@ public class Node {
 	    		return;
 	    	}
 	    }
-
+	    float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
+	    float a = 134.4f;
+	    float fromYaw = desiredYaw-a<-180.0f ? -180f: desiredYaw-a;
+	    float toYaw = desiredYaw+a > 180f ? 180f : desiredYaw+a;
 	    for (boolean forward : new boolean[]{true, false}) {
 	        for (boolean right : new boolean[]{true, false}) {
 	            for (boolean left : new boolean[]{true, false}) {
 	                for (boolean sneak : new boolean[]{false, true}) {
-	                    for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5 + Math.random()) {
+	                    for (float yaw = fromYaw; yaw < toYaw; yaw += 22.5 + Math.random()) {
 	                        for (boolean sprint : new boolean[]{true, false}) {
 	                        	if (!this.agent.canSprint() && sprint) continue;
 	                            if ((sneak || ((right || left) && !forward)) && sprint) continue;
@@ -225,10 +255,10 @@ public class Node {
 	                new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
 	        double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, isCloseToBlockNode, isDoingLongJump, newNode.agent);
 	        if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
-	        double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
-	        double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
+//	        double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
+//	        double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
 	        
-	        if (newNodeDistanceToBlockNode >= parentNodeDistanceToBlockNode) return;
+//	        if (newNodeDistanceToBlockNode >= parentNodeDistanceToBlockNode) return;
 	        
 	        boolean isMoving = (forward || right || left);
 	        if (newNode.agent.isClimbing(world)) jump = this.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY();
@@ -258,9 +288,9 @@ public class Node {
 
 	        nodes.add(newNode);
 	    } catch (ConcurrentModificationException e) {
-	        try {
-	            Thread.sleep(2);
-	        } catch (InterruptedException ignored) {}
+//	        try {
+//	            Thread.sleep(2);
+//	        } catch (InterruptedException ignored) {}
 	    }
 	}
 
@@ -281,17 +311,17 @@ public class Node {
 
 	private void generateAirborneNodes(WorldView world, BlockNode nextBlockNode, List<Node> nodes) {
 	    try {
-	        for (float yaw = agent.yaw - 45; yaw < 180.0f; yaw += 22.5 + Math.random()) {
-	            for (boolean forward : new boolean[]{true, false}) {
-	                for (boolean right : new boolean[]{false, true}) {
-	                    createAirborneNodes(world, nextBlockNode, nodes, forward, right, yaw);
-	                }
-	            }
-	        }
+//	        for (float yaw = agent.yaw - 45; yaw < 180.0f; yaw += 22.5 + Math.random()) {
+//	            for (boolean forward : new boolean[]{true, false}) {
+//	                for (boolean right : new boolean[]{false, true}) {
+	                    createAirborneNodes(world, nextBlockNode, nodes, true, false, agent.yaw);
+//	                }
+//	            }
+//	        }
 	    } catch (ConcurrentModificationException e) {
-	        try {
-	            Thread.sleep(2);
-	        } catch (InterruptedException ignored) {}
+//	        try {
+//	            Thread.sleep(2);
+//	        } catch (InterruptedException ignored) {}
 	    }
 	}
 

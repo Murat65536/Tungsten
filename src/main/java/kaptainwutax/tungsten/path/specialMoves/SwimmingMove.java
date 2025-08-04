@@ -4,9 +4,11 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.helpers.AgentChecker;
+import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
@@ -29,8 +31,9 @@ public class SwimmingMove {
 	    Node newNode = new Node(parent, world, new PathInput(false, false, false, false, false, false, false, desiredPitch, desiredYaw),
 	    				new Color(0, 255, 150), parent.cost + 0.1);
 		int limit = 0;
+		double closestDistance = Double.MAX_VALUE;
         // Run forward to the node
-		while (distance > 0.2 && limit < 20 && newNode.agent.touchingWater) {
+		while (distance > 0.2 && limit < 30 && newNode.agent.touchingWater) {
 //        	RenderHelper.renderNode(newNode);
 //        	try {
 //				Thread.sleep(5);
@@ -40,13 +43,37 @@ public class SwimmingMove {
 //			}
         	limit++;
     		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
+    		
+			
     		desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
     		desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
-            newNode = new Node(newNode, world, new PathInput(true, false, false, true, true, false, true, desiredPitch, desiredYaw + 45),
-            		new Color(0, 255, 150), newNode.cost + cost);
+    		boolean isWaterAbove = BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(newNode.agent.getBlockPos().up()));
+    		if (isWaterAbove || (newNode.agent.getPos().y - (int) newNode.agent.getPos().y) < 0.44) {
+                newNode = new Node(newNode, world, new PathInput(true, false, false, true, true, false, true, desiredPitch, desiredYaw + 45),
+                		new Color(0, 255, 150), newNode.cost + cost);
+    		}
+
+    		if (newNode.agent.getPos().y < nextBlockNode.getPos(true).y && distance < 4) {
+    			while (newNode.agent.getPos().y < nextBlockNode.getPos(true).y) {
+                    newNode = new Node(newNode, world, new PathInput(false, false, false, true, true, false, false, desiredPitch, desiredYaw + 45),
+                    		new Color(0, 255, 150), newNode.cost + cost);
+    			}
+    		} 
+			if (closestDistance > distance) {
+        		closestDistance = distance;
+        	} else {
+        		break;
+        	}
             int i = 0;
             while (i < 28 && distance > 0.2 && !newNode.agent.horizontalCollision) {
         		distance = DistanceCalculator.getHorizontalEuclideanDistance(newNode.agent.getPos(), nextBlockNode.getPos(true));
+    			
+    			if (closestDistance > distance) {
+            		closestDistance = distance;
+            	} else {
+            		break;
+            	}
+    			
         		desiredPitch = (float) DirectionHelper.calcPitchFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
 //            	RenderHelper.renderNode(newNode);
 //            	try {
@@ -55,7 +82,7 @@ public class SwimmingMove {
 //    				// TODO Auto-generated catch block
 //    				e.printStackTrace();
 //    			}
-                newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, false, true, desiredPitch, desiredYaw + 45),
+                newNode = new Node(newNode, world, new PathInput(true, false, false, true, false, false, true, 0.25f, desiredYaw + 45),
                 		new Color(0, 255, 150), newNode.cost + cost);
                 i++;
 			}
