@@ -64,6 +64,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.HungerManager;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.registry.tag.EntityTypeTags;
 import net.minecraft.registry.tag.FluidTags;
@@ -1124,8 +1125,8 @@ public class Agent {
     }
 
     public int computeFallDamage(double fallDistance, float damageMultiplier) {
+    	if (TungstenMod.mc.player == null) return 0;
     	if (TungstenMod.mc.player.getType().isIn(EntityTypeTags.FALL_DAMAGE_IMMUNE)) {
-    		System.out.println("IMMUNE");
     		return 0;
     	}
         float f = this.jumpBoost < 0 ? 0.0F : (float)(this.jumpBoost + 1);
