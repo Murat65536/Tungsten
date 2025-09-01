@@ -188,6 +188,14 @@ public class BlockNode {
 				chachedWithOffsetPos = BlockPosShifter.shiftForStraightNeo(this, neoSide);
 				return chachedWithOffsetPos;
 			}
+			if (BlockStateChecker.isBottomSlab(world.getBlockState(this.getBlockPos()))) {
+				chachedWithOffsetPos = this.getPos().add(0, 0.5, 0);
+				return chachedWithOffsetPos;
+			}
+			if (BlockStateChecker.isBottomSlab(world.getBlockState(this.getBlockPos().down()))) {
+				chachedWithOffsetPos = this.getPos().subtract(0, 0.5, 0);
+				return chachedWithOffsetPos;
+			}
 			chachedWithOffsetPos = BlockPosShifter.getPosOnLadder(this, world);
 			return chachedWithOffsetPos;
 		}
@@ -465,13 +473,15 @@ public class BlockNode {
 			return true;
 
 		// Slab checks
-		if (BlockStateChecker.isBottomSlab(childState))
-			return true;
+//		if (BlockStateChecker.isBottomSlab(childState) != BlockStateChecker.isBottomSlab(currentBlockState))
+//			if (BlockStateChecker.isBottomSlab(childState) && this.getBlockPos().getY() != child.getBlockPos().getY())
+//				return true;
 //        if (isBottomSlab(childState) && !hasBiggerCollisionShapeThanAbove(world, child.getBlockPos())) return true;
 
 		boolean canStandOn = BlockShapeChecker.hasBiggerCollisionShapeThanAbove(world, child.getBlockPos().down());
 
 		// Collision shape and block exceptions
+		if (!BlockStateChecker.isBottomSlab(childState))
 		if (!canStandOn && (!(childBlock instanceof DaylightDetectorBlock) && !(childBlock instanceof CarpetBlock)
 				&& !(childBelowBlock instanceof SlabBlock) && !(childBelowBlock instanceof LanternBlock)
 				&& !(childBelowBlock == Blocks.SNOW))
@@ -498,8 +508,8 @@ public class BlockNode {
 			return true;
 		if (childBelowBlock instanceof CropBlock)
 			return true;
-		if (BlockStateChecker.isBottomSlab(childBelowState) && !(childBlock instanceof AirBlock))
-			return true;
+//		if (BlockStateChecker.isBottomSlab(childBelowState) && !(childBlock instanceof AirBlock))
+//			return true;
 
 		if (isJumpImpossible(world, child))
 			return true;
@@ -519,9 +529,9 @@ public class BlockNode {
 	 * @param to
 	 * @return positive is going up and negative is going down
 	 */
-	public int getJumpHeight(int from, int to) {
+	public double getJumpHeight(double from, double to) {
 		
-		int diff = to - from;
+		double diff = to - from;
 		
 		// if `to` is higher then `from` return value should be positive
 		if (to > from) {
@@ -531,7 +541,7 @@ public class BlockNode {
 	}
 
 	private boolean isJumpImpossible(WorldView world, BlockNode child) {
-		double heightDiff = getJumpHeight(this.y, child.y); // positive is going up and negative is going down
+		double heightDiff = getJumpHeight(this.getPos(true).y, child.getPos(true).y); // positive is going up and negative is going down
 		double distance = DistanceCalculator.getHorizontalEuclideanDistance(getPos(true, world), child.getPos(true, world));
 
 		BlockState childBlockState = world.getBlockState(child.getBlockPos().down());
@@ -539,6 +549,8 @@ public class BlockNode {
 		Block childBlock = childBlockState.getBlock();
         double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(child.getBlockPos().down(), world);
 		boolean isBlockBelowTall = closestBlockBelowHeight > 1.3;
+		
+		if (heightDiff > 1.4) return true;
 
 //    	if (world.getBlockState(child.getBlockPos().down()).getBlock() instanceof TrapdoorBlock) {
 //			System.out.println(!world.getBlockState(child.getBlockPos().down()).get(Properties.OPEN));
@@ -562,7 +574,7 @@ public class BlockNode {
 			if (distance >= 4) return true;
 		}
 		
-		if (BlockStateChecker.isBottomSlab(currentBlockState) && childBlockHeight == 1 && heightDiff > 0) {
+		if (BlockStateChecker.isBottomSlab(currentBlockState) && childBlockHeight == 1 && heightDiff > 0.5) {
 			return true;
 		}
 

@@ -834,12 +834,16 @@ public class MovementHelper {
 	    }
 	    
 	    public static boolean isObscured(WorldView world, BlockPos pos, boolean isJumpingUp, boolean isJumpingOneBlock) {
+	    	BlockState stateBelow = world.getBlockState(pos.down());
 	    	BlockState state = world.getBlockState(pos);
 		    BlockState aboveState = world.getBlockState(pos.up());
-		
+
+		    Block belowBlock = stateBelow.getBlock();
 		    Block block = state.getBlock();
 		    Block aboveBlock = aboveState.getBlock();
-		
+
+		    boolean isSlabBelow = belowBlock instanceof SlabBlock;
+		    
 		    boolean isFullCube = state.isFullCube(world, pos);
 		    boolean isSlab = block instanceof SlabBlock;
 		    boolean isLeaves = block instanceof LeavesBlock;
@@ -855,24 +859,25 @@ public class MovementHelper {
 		    boolean isAboveBlockConnected = BlockStateChecker.isConnected(pos.up(), world);
 		    
 		    boolean isAboveX2Leaves =  world.getBlockState(pos.up(2)).getBlock() instanceof LeavesBlock;
-
-	    	if (isJumpingUp && !world.getBlockState(pos.up(2)).isAir()) return true;
 	    	
+	    	if (isJumpingUp && !world.getBlockState(pos.up(2)).isAir()) return true;
+
+		    if (isJumpingUp && isJumpingOneBlock && BlockStateChecker.isBottomSlab(stateBelow) && state.isAir() && aboveState.isAir()) return false;
+		    
 		    if (isJumpingUp && isJumpingOneBlock && isStairs && aboveState.isAir() && !isAboveLeaves && !isAboveX2Leaves && world.getBlockState(pos.up(2)).isAir()) return false;
 		    if (isJumpingUp && isJumpingOneBlock && isFullCube && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
 		    
 		    
-		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
-		    		|| isStairs || isAboveStairs) return true;
+//		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
+//		    		|| isStairs || isAboveStairs) return true;
 		    
 		    // TODO: fix corner jump issue from slab to slab, removing the line below causes bot to think it can go through a wall made of slabs
-		    if (isSlab || isAboveSlab) return true;
+//		    if (isSlabBelow || isAboveSlab) return true;
 		    
 		    if (isBlockConnected || isAboveBlockConnected) return true;
 //		    if (!state.isAir() || !aboveState.isAir()) return true;
 		    if (isLeaves || isAboveLeaves) return true;
-//		    TungstenModRenderContainer.TEST.clear();
-////			TungstenModRenderContainer.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY()+1, pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
+//			TungstenModRenderContainer.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY()+1, pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 //			TungstenModRenderContainer.TEST.add(new Cuboid(new Vec3d(pos.getX(), pos.getY(), pos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
 //			try {
 //				Thread.sleep(50);
@@ -880,6 +885,7 @@ public class MovementHelper {
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
 //			}
+//		    TungstenModRenderContainer.TEST.clear();
 		    
 		    
 		    return false;

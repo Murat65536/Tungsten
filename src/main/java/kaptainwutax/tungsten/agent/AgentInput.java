@@ -55,6 +55,7 @@ public class AgentInput {
 		);
 		float f = getMovementMultiplier(this.playerInput.forward(), this.playerInput.backward());
 		float g = getMovementMultiplier(this.playerInput.left(), this.playerInput.right());
+		
 		this.movementVector = new Vec2f(g, f).normalize();
 	}
 

@@ -164,8 +164,6 @@ public class Agent {
     private List<String> extra = new ArrayList<>();
     private int scannedBlocks;
 
-    public Agent() { }
-    
     public Vec3d getPos() {
         return new Vec3d(this.posX, this.posY, this.posZ);
     }
@@ -1492,7 +1490,7 @@ public class Agent {
     }
     */
 
-    public void compare(ClientPlayerEntity player, boolean executor) {
+    public void compare(PlayerEntity player, PlayerInput playerInput, boolean executor) {
         List<String> values = new ArrayList<>();
         
         if(this.posX != player.getX() || this.posY != player.getY() || this.posZ != player.getZ()) {
@@ -1571,51 +1569,51 @@ public class Agent {
     	        	StringBuilder string = new StringBuilder();
     	
     	    		string.append("{\n");
-    	    		if (node.input.forward != player.input.playerInput.forward()) {
+    	    		if (node.input.forward != playerInput.forward()) {
     	        		string.append("forward: ");
-    	        		string.append(player.input.playerInput.forward());
+    	        		string.append(playerInput.forward());
     	        		string.append(" vs ");
     	        		string.append(node.input.forward);
     	        		string.append("\n");
     	    		}
-    	    		if (node.input.back != player.input.playerInput.backward()) {
+    	    		if (node.input.back != playerInput.backward()) {
     	        		string.append("back: ");
-    	        		string.append(player.input.playerInput.backward());
+    	        		string.append(playerInput.backward());
     	        		string.append(" vs ");
     	        		string.append(node.input.back);
     	        		string.append("\n");
     	    		}
-    	    		if (node.input.right != player.input.playerInput.right()) {
+    	    		if (node.input.right != playerInput.right()) {
     	        		string.append("right: ");
-    	        		string.append(player.input.playerInput.right());
+    	        		string.append(playerInput.right());
     	        		string.append(" vs ");
     	        		string.append(node.input.right);
     	        		string.append("\n");
     	    		}
-    	    		if (node.input.left != player.input.playerInput.left()) {
+    	    		if (node.input.left != playerInput.left()) {
     	        		string.append("left: ");
-    	        		string.append(player.input.playerInput.left());
+    	        		string.append(playerInput.left());
     	        		string.append(" vs ");
     	        		string.append(node.input.left);
     	        		string.append("\n");
     	    		}
-    	    		if (node.input.jump != player.input.playerInput.jump()) {
+    	    		if (node.input.jump != playerInput.jump()) {
     	        		string.append("jump: ");
-    	        		string.append(player.input.playerInput.jump());
+    	        		string.append(playerInput.jump());
     	        		string.append(" vs ");
     	        		string.append(node.input.jump);
     	        		string.append("\n");
     	    		}
-    	    		if (node.input.sneak != player.input.playerInput.sneak()) {
+    	    		if (node.input.sneak != playerInput.sneak()) {
     	        		string.append("sneak: ");
-    	        		string.append(player.input.playerInput.sneak());
+    	        		string.append(playerInput.sneak());
     	        		string.append(" vs ");
     	        		string.append(node.input.sneak);
     	        		string.append("\n");
     	    		}
-    	    		if (node.input.sprint != player.input.playerInput.sprint()) {
+    	    		if (node.input.sprint != playerInput.sprint()) {
     	        		string.append("sprint: ");
-    	        		string.append(player.input.playerInput.sprint());
+    	        		string.append(playerInput.sprint());
     	        		string.append(" vs ");
     	        		string.append(node.input.sprint);
     	        		string.append("\n");
@@ -1674,8 +1672,8 @@ public class Agent {
             values.add(String.format("Submerged in water mismatch %s vs %s", player.isSubmergedInWater(), this.isSubmergedInWater));
         }
 
-	    if(this.input.playerInput.sneak() != player.input.playerInput.sneak()) {
-		    values.add(String.format("Sneaking mismatch %s vs %s", player.input.playerInput.sneak(), this.input.playerInput.sneak()));
+	    if(this.input.playerInput.sneak() != playerInput.sneak()) {
+		    values.add(String.format("Sneaking mismatch %s vs %s", playerInput.sneak(), this.input.playerInput.sneak()));
 	    }
 
         if(this.swimming != player.isSwimming()) {

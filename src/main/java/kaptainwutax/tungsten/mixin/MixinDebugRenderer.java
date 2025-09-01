@@ -41,7 +41,7 @@ import net.minecraft.client.render.Tessellator;
 		@Inject(method = "render", at = @At("RETURN"))
 		public void render(MatrixStack matrices, Frustum frustum, VertexConsumerProvider.Immediate vertexConsumers,
 				double cameraX, double cameraY, double cameraZ, CallbackInfo ci) {
-			if (true) return;
+			
 			glDisable(GL_DEPTH_TEST);
 		    glDisable(GL_BLEND);
 		    

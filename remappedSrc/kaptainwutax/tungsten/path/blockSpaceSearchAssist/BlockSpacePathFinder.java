@@ -107,8 +107,6 @@ public class BlockSpacePathFinder {
 			if(isPathComplete(next, target, failing)) {
 				TungstenMod.RENDERERS.clear();
 				List<BlockNode> path = generatePath(next);
-
-				Debug.logMessage("FOUND IT");
 				
 				return Optional.of(path);
 			}
@@ -234,7 +232,6 @@ public class BlockSpacePathFinder {
 		BlockNode n = node;
 		List<BlockNode> path = new ArrayList<>();
 
-		Debug.logMessage("FOUND IT");
 		path.add(n);
 		while(n.previous != null) {
 		        BlockState state = TungstenMod.mc.world.getBlockState(n.getBlockPos());

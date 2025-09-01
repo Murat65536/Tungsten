@@ -9,7 +9,6 @@ import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.PlayerInput;
 
 public class PathExecutor {
@@ -114,6 +113,10 @@ public class PathExecutor {
 	    } else {
 		    Node node = this.path.get(this.tick);
 
+		    if(this.tick != 0) {
+			    this.path.get(this.tick - 1).agent.compare(player, player.getPlayerInput(), true);
+		    }
+		    
 		    if(node.input != null) {
 			    player.setYaw(node.input.yaw);
 			    player.setPitch(node.input.pitch);
@@ -125,10 +128,11 @@ public class PathExecutor {
 	    this.tick++;
     }
     
-    public void tick(PlayerEntity player, GameOptions options) {
+    public void tick(ClientPlayerEntity player, GameOptions options) {
     	player.getAbilities().allowFlying = false;
     	if(TungstenMod.pauseKeyBinding.isPressed() || stop) {
     		this.tick = this.path.size();
+    		player.input.playerInput = PlayerInput.DEFAULT;
 		    options.forwardKey.setPressed(false);
 		    options.backKey.setPressed(false);
 		    options.leftKey.setPressed(false);
@@ -171,15 +175,12 @@ public class PathExecutor {
 		    }
 	    } else {
 		    Node node = this.path.get(this.tick);
-		    if(this.tick != 0 && player instanceof ClientPlayerEntity) {
-			    this.path.get(this.tick - 1).agent.compare((ClientPlayerEntity) player, true);
-		    }
 
 		    if(node.input != null) {
 			    player.setYaw(node.input.yaw);
 			    player.setPitch(node.input.pitch);
 			    if (player.isCreative()) player.stopGliding();
-			    options.forwardKey.setPressed(node.input.forward);
+	    		options.forwardKey.setPressed(node.input.forward);
 			    options.backKey.setPressed(node.input.back);
 			    options.leftKey.setPressed(node.input.left);
 			    options.rightKey.setPressed(node.input.right);
@@ -187,14 +188,27 @@ public class PathExecutor {
 			    options.sneakKey.setPressed(node.input.sneak);
 			    options.sprintKey.setPressed(node.input.sprint);
 		    }
+//		    if(this.tick != 0 && options != null) {
+//			    this.path.get(this.tick - 1).agent.compare(player, optionsToPlayerInput(options), true);
+//		    }
+		    int idx = TungstenModRenderContainer.RUNNING_PATH_RENDERER.size()-1;
 		    if (!TungstenModRenderContainer.RUNNING_PATH_RENDERER.isEmpty() && this.tick != 0) {
-		    	TungstenModRenderContainer.RUNNING_PATH_RENDERER.remove(TungstenModRenderContainer.RUNNING_PATH_RENDERER.toArray()[TungstenModRenderContainer.RUNNING_PATH_RENDERER.size()-1]);
-		    	if (TungstenMod.renderPositonBoxes) {
-		    		TungstenModRenderContainer.RUNNING_PATH_RENDERER.remove(TungstenModRenderContainer.RUNNING_PATH_RENDERER.toArray()[TungstenModRenderContainer.RUNNING_PATH_RENDERER.size()-1]);
-		    	}
+		    	try {
+			    	TungstenModRenderContainer.RUNNING_PATH_RENDERER.remove(TungstenModRenderContainer.RUNNING_PATH_RENDERER.toArray()[idx]);
+			    	if (TungstenMod.renderPositonBoxes && TungstenModRenderContainer.RUNNING_PATH_RENDERER.size() > 1) {
+			    		TungstenModRenderContainer.RUNNING_PATH_RENDERER.remove(TungstenModRenderContainer.RUNNING_PATH_RENDERER.toArray()[idx-1]);
+			    	}
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
 		    }
 	    }
 	    this.tick++;
+    }
+    
+    
+    public static PlayerInput optionsToPlayerInput(GameOptions options) {
+    	return new PlayerInput(options.forwardKey.isPressed(), options.backKey.isPressed(), options.leftKey.isPressed(), options.rightKey.isPressed(), options.jumpKey.isPressed(), options.sneakKey.isPressed(), options.sprintKey.isPressed());
     }
 
 }

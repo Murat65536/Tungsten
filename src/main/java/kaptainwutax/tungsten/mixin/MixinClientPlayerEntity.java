@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.mojang.authlib.GameProfile;
+import net.minecraft.client.MinecraftClient;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
@@ -32,11 +33,11 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	@Inject(method = "tick", at = @At("HEAD"))
 	public void start(CallbackInfo ci) {
 		if(TungstenModDataContainer.EXECUTOR.isRunning()) {
-			TungstenModDataContainer.EXECUTOR.tick((PlayerEntity)(Object)this, TungstenMod.mc.options);
+			TungstenModDataContainer.EXECUTOR.tick((ClientPlayerEntity)(Object)this, MinecraftClient.getInstance().options);
 		}
 
 		if(!this.getAbilities().flying) {
-			Agent.INSTANCE = Agent.of((ClientPlayerEntity)(Object)this);
+			Agent.INSTANCE = Agent.of((ClientPlayerEntity)(Object)this, MinecraftClient.getInstance().options);
 			Agent.INSTANCE.tick(this.getWorld());
 		}
 
@@ -74,8 +75,8 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 
 	@Inject(method = "tick", at = @At(value = "RETURN"))
 	public void end(CallbackInfo ci) {
-		if(!this.getAbilities().flying && Agent.INSTANCE != null) {
-			Agent.INSTANCE.compare((ClientPlayerEntity)(Object)this, false);
+		if(!this.getAbilities().flying && Agent.INSTANCE != null && !TungstenModDataContainer.EXECUTOR.isRunning()) {
+			Agent.INSTANCE.compare((ClientPlayerEntity)(Object)this, ((ClientPlayerEntity)(Object)this).input.playerInput, false);
 		}
 	}
 

@@ -37,7 +37,12 @@ public class Debug {
     }
 
     public static void logWarning(String message) {
-        logInternal("WARNING: " + message);
+        if (TungstenModDataContainer.player != null) {
+            message = "\u00A72\u00A7l\u00A7oWARNING:\u00A7r" + message;
+            TungstenModDataContainer.player.sendMessage(Text.of(message), false);
+        } else {
+            logInternal("WARNING: " + message);
+        }
     }
 
     public static void logWarning(String format, Object... args) {

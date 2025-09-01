@@ -77,6 +77,7 @@ public class BlockSpacePathFinder {
 		
         TungstenModRenderContainer.RENDERERS.clear();
 		Debug.logMessage("Searchin...");
+		start = new BlockNode(start.getBlockPos(), goal, player, world);
 		
 		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
 		for (int i = 0; i < bestHeuristicSoFar.length; i++) {
@@ -109,7 +110,7 @@ public class BlockSpacePathFinder {
 				TungstenModRenderContainer.RENDERERS.clear();
 				List<BlockNode> path = generatePath(next, world);
 
-				Debug.logMessage("FOUND IT");
+				Debug.logMessage("Found rought path!");
 				
 				return Optional.of(path);
 			}
@@ -231,7 +232,6 @@ public class BlockSpacePathFinder {
 		BlockNode n = node;
 		List<BlockNode> path = new ArrayList<>();
 
-		Debug.logMessage("FOUND IT");
 		path.add(n);
 		while(n.previous != null) {
 		        BlockState state = world.getBlockState(n.getBlockPos());

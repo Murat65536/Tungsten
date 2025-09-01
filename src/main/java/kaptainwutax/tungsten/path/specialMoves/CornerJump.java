@@ -71,7 +71,7 @@ public class CornerJump {
         while (limit < 40 && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
             Box adjustedBox = newNode.agent.box.offset(offsetVec).expand(-0.001, 0, -0.001);
         	limit++;
-        	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
+        	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenModDataContainer.world, adjustedBox));
 //        	RenderHelper.renderNode(newNode, TungstenMod.TEST);
             if (blockCollisions.findAny().isEmpty()) {
 //                try {
