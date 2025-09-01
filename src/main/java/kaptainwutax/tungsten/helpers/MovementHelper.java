@@ -868,8 +868,8 @@ public class MovementHelper {
 		    if (isJumpingUp && isJumpingOneBlock && isFullCube && aboveState.isAir() && world.getBlockState(pos.up(2)).isAir()) return false;
 		    
 		    
-//		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
-//		    		|| isStairs || isAboveStairs) return true;
+		    if (isLava || isLeaves || isAboveLeaves || isFullCube || isAboveFullCube
+		    		|| isStairs || isAboveStairs) return true;
 		    
 		    // TODO: fix corner jump issue from slab to slab, removing the line below causes bot to think it can go through a wall made of slabs
 //		    if (isSlabBelow || isAboveSlab) return true;

@@ -168,8 +168,8 @@ public class PathFinder {
 				Debug.logMessage("Serching for inputs!");
 	        }
 	    }
-	    if (blockPath.isEmpty()) {
-	    	Debug.logWarning("Failed!");
+	    if (blockPath.isEmpty() || blockPath.get().size() < 1) {
+	    	Debug.logWarning("Failed! No block path");
 	    	return;
 	    }
 	
@@ -179,7 +179,7 @@ public class PathFinder {
 	    closed.clear();
 
 	    while (!openSet.isEmpty()) {
-		    if (blockPath.isEmpty()) {
+		    if (blockPath.isEmpty() || blockPath.get().size() < 1) {
 		    	return;
 		    }
 	        if (stop.get()) {
@@ -758,23 +758,23 @@ public class PathFinder {
 		    	if (Thread.currentThread().isInterrupted()) return null;
 				
 				// Check if this child is too close to any already accepted child
-//			    for (Node other : validChildren) {
-//			    	if (Thread.currentThread().isInterrupted()) return null;
-//			        double distance = other.agent.getPos().distanceTo(child.agent.getPos());
-//	
-//			        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
-//			        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
-//	
-//			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
-//			            return null; // too close to existing child
-//			        }
-//			    }
+			    for (Node other : validChildren) {
+			    	if (Thread.currentThread().isInterrupted()) return null;
+			        double distance = other.agent.getPos().distanceTo(child.agent.getPos());
+	
+			        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
+			        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
+	
+			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
+			            return null; // too close to existing child
+			        }
+			    }
 				
-//				boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
-//				
-//				if (skip || checkForFallDamage(child, world)) {
-//					return null;
-//				}
+				boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock, world);
+				
+				if (skip || checkForFallDamage(child, world)) {
+					return null;
+				}
 				
 				validChildren.add(child);
 				return null;
