@@ -38,6 +38,7 @@ import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.CarpetBlock;
 import net.minecraft.block.CobwebBlock;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.block.PaneBlock;
@@ -54,7 +55,6 @@ public class PathFinder {
 	ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	public AtomicBoolean active = new AtomicBoolean(false);
 	public AtomicBoolean stop = new AtomicBoolean(false);
-	public AtomicBoolean waitForPathExecutor = new AtomicBoolean(false);
 	public Thread thread = null;
 	private Set<Vec3d> closed = Collections.synchronizedSet(new HashSet<>());
 	private AtomicDoubleArray bestHeuristicSoFar;
@@ -63,8 +63,9 @@ public class PathFinder {
 	protected static final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<Node>(COEFFICIENTS.length);
 	private static final double minimumImprovement = -500;
 	private static Optional<List<BlockNode>> blockPath = Optional.empty();
-	protected static final double MIN_DIST_PATH = 5;
+	protected static final double MIN_DIST_PATH = 1.8;
 	protected static AtomicInteger NEXT_CLOSEST_BLOCKNODE_IDX = new AtomicInteger(1);
+	protected static AtomicInteger numNodesConsidered = new AtomicInteger(0);
 	
 	private long startTime;
 	private Node start;
@@ -77,6 +78,7 @@ public class PathFinder {
 		stop.set(false);
 		TARGET = target;
 		NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
+		numNodesConsidered.set(0);
 
 		thread = new Thread(() -> {
 			try {
@@ -151,7 +153,7 @@ public class PathFinder {
 	
 	    long startTime = System.currentTimeMillis();
 	    long primaryTimeoutTime = startTime + 1120L;
-	    int numNodesConsidered = 1;
+		numNodesConsidered.set(0);
 	    int timeCheckInterval = 1 << 3;
 	    double minVelocity = BlockStateChecker.isAnyWater(world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))) ? 0.2 :  0.07;
 	
@@ -197,12 +199,14 @@ public class PathFinder {
 	        }
 	
 	        Node next = openSet.removeLowest();
+	        
             // Search for a path without fall damage
             if (checkForFallDamage(next, world)) {
             	continue;
             }
 	
 	        if (shouldSkipNode(next, target, closed, blockPath, world)) {
+//	        	Debug.logMessage("Skipped");
 	            continue;
 	        }
 
@@ -215,7 +219,7 @@ public class PathFinder {
 	    			PathFinder.blockPath = Optional.empty();
 	                return;
 	            }
-	        } else if (blockPath.isPresent() && NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size()-1) && blockPath.get().getLast().getPos(true, world).distanceTo(target) > 5) {
+	        } else if ((numNodesConsidered.get() & (timeCheckInterval - 1)) == 0 && blockPath.isPresent() && NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size()-1) && blockPath.get().getLast().getPos(true, world).distanceTo(target) > 5) {
     			BlockNode lastBlockNode = blockPath.get().getLast();
 	        	if (setCurrentPath(TARGET, next, TungstenModDataContainer.player)) {
 	        		TungstenModRenderContainer.RENDERERS.clear();
@@ -237,30 +241,34 @@ public class PathFinder {
 							e.printStackTrace();
 						}
 					}
-	    			int attempt = 0;
-	    			while (attempt < 3) {
-	    				PathFinder.blockPath = findBlockPath(world, lastBlockNode, target, player);
-		    		    if (blockPath.isPresent()) {
-		    		    	NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
-		    	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
-		    	        	break;
-		    	        }
-		    		    attempt++;
-		    		    try {
-							Thread.sleep(250);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+
+	    		    primaryTimeoutTime = System.currentTimeMillis() + 1120L;
+	        		if (blockPath.get().getLast().getPos(true, world).distanceTo(player.getPos()) < 20) {
+		    			int attempt = 0;
+		    			while (attempt < 3) {
+		    				PathFinder.blockPath = findBlockPath(world, lastBlockNode, target, player);
+			    		    if (blockPath.isPresent()) {
+			    		    	NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
+			    	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
+			    	        	break;
+			    	        }
+			    		    attempt++;
+			    		    try {
+								Thread.sleep(250);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						}
-					}
-	    		    if (blockPath.isEmpty()) {
-	    	        	Debug.logMessage("Failed to find furhter path!");
-	    	        }
+		    		    if (blockPath.isEmpty()) {
+		    	        	Debug.logMessage("Failed to find furhter path!");
+		    		    }
+	        		}
 	    		    continue;
 	            }
 	        }
 	
-	        if (shouldResetSearch(numNodesConsidered, blockPath, next, target)) {
+	        if (shouldResetSearch(numNodesConsidered.get(), blockPath, next, target)) {
 	        	TungstenModDataContainer.EXECUTOR.cb = () -> {
 		        	blockPath = resetSearch(next, world, blockPath, target, player);
 	        	};
@@ -278,19 +286,23 @@ public class PathFinder {
 	            continue;
 	        }
 
-	        if ((numNodesConsidered & (timeCheckInterval - 1)) == 0) {
+	        if ((numNodesConsidered.get() & (timeCheckInterval - 1)) == 0) {
 	            if (handleTimeout(startTime, primaryTimeoutTime, next, target, start, player, closed)) {
+	            	primaryTimeoutTime = System.currentTimeMillis() + 1120L;
 	                continue;
 	            }
 	        }
 	        
-	        if (numNodesConsidered % 20 == 0) {
+	        if (numNodesConsidered.get() % 20 == 0) {
 	        	RenderHelper.renderPathSoFar(next);
 	        }
 	
 	        failing = processNodeChildren(world, next, target, blockPath, openSet, closed);
-	        numNodesConsidered++;
-	        updateNextClosestBlockNodeIDX(blockPath.get(), next, closed, world);
+
+	        numNodesConsidered.set(numNodesConsidered.get()+1);
+	        if (updateNextClosestBlockNodeIDX(blockPath.get(), next, closed, world)) {
+	        	primaryTimeoutTime = System.currentTimeMillis() + 1120L;
+	        }
 //        	if (numNodesConsidered % 5 == 0 && updateNextClosestBlockNodeIDX(blockPath.get(), next, closed)) {
 //        		List<Node> path = constructPath(next);
 //                TungstenModDataContainer.EXECUTOR.addPath(path);
@@ -345,7 +357,7 @@ public class PathFinder {
 //                }
 
                 Node n = bestSoFar.get(i);
-                if (!n.agent.onGround && !n.agent.touchingWater) continue;
+                if (!n.agent.onGround && !n.agent.touchingWater && !n.agent.isClimbing(TungstenModDataContainer.world)) continue;
                 List<Node> path = new ArrayList<>();
 				while(n.parent != null) {
 					path.add(n);
@@ -414,9 +426,9 @@ public class PathFinder {
 	        yScale = 100;
 	        zScale = 1000;
 	    } else {
-	        xScale = 100;
-	        yScale = 10;
-	        zScale = 100;
+	        xScale = 1000;
+	        yScale = 100;
+	        zScale = 1000;
 	    }
 
 	    // Compute scaled position with hashCode offset
@@ -454,7 +466,7 @@ public class PathFinder {
 	    double dz = (position.z - target.z)*xzMultiplier;
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz) * 2.8
 	    		 + (((blockPath.isPresent() ? blockPath.get().size() - NEXT_CLOSEST_BLOCKNODE_IDX.get() : 0)) * 40)
-	    		//+ (DistanceCalculator.getEuclideanDistance(position, realTarget) * 0.2)
+	    		+ (DistanceCalculator.getEuclideanDistance(position, realTarget) * 0.2)
 	    		);
 	}
 	
@@ -481,10 +493,10 @@ public class PathFinder {
 	    			 + (forwardSpeedScore );
 //	        collisionScore += (Math.abs(0.3 - child.agent.velZ) + Math.abs(0.3 - child.agent.velX)) * (child.agent.blockY <= blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()).getBlockPos().getY() ? 4 : 3);
 	    }
-	    if (child.agent.isClimbing(world)) {
-//	    	collisionScore *= 20000;
-	    	collisionScore += 12;
-	    }
+//	    if (child.agent.isClimbing(world)) {
+////	    	collisionScore *= 20000;
+//	    	collisionScore += 12;
+//	    }
 	    if (world.getBlockState(child.agent.getBlockPos()).getBlock() instanceof CobwebBlock) {
 	    	collisionScore += 20000;
 	    }
@@ -516,7 +528,10 @@ public class PathFinder {
         }
 
         int closestIDX = NEXT_CLOSEST_BLOCKNODE_IDX.get();
+        BlockNode currentNode = positions.get(closestIDX);
+        boolean isCurrentNodeLadder = currentNode.getBlockState(world).getBlock() instanceof LadderBlock;
         BlockNode closest = positions.get(closestIDX);
+        boolean isClosestNodeLadder = closest.getBlockState(world).getBlock() instanceof LadderBlock;
         double minDistance = current.getSquaredDistance(closest.getPos(true, world))/* + Math.abs(closest.y - current.getY()) * 160*/;
         int maxLoop = Math.min(closestIDX+10, positions.size());
         for (int i = closestIDX+1; i < maxLoop; i++) {
@@ -525,13 +540,13 @@ public class PathFinder {
 //        		continue;
 //        	}
             double distance = current.getSquaredDistance(position.getPos(true, world))/* + Math.abs(position.y - current.getY()) * 160*/;
-            if ( distance < 1 && closestIDX < i-1) continue;
-            if (distance < minDistance
-            		&& StreightMovementHelper.isPossible(world, position.getBlockPos(), current)
-            		) {
+            double heightDiff = closest.getJumpHeight(currentNode.getPos(true).y, closest.getPos(true).y);
+//            if ( distance < 1 && closestIDX < i-1) continue;
+            if (distance < minDistance && (heightDiff <= 0 || isCurrentNodeLadder || isClosestNodeLadder)) {
                 minDistance = distance;
                 closest = position;
                 closestIDX = i;
+                isClosestNodeLadder = closest.getBlockState(world).getBlock() instanceof LadderBlock;
             }
 		}
         return closestIDX;
@@ -541,13 +556,12 @@ public class PathFinder {
 		boolean failing = true;
 	    for (int i = 0; i < COEFFICIENTS.length; i++) {
 	        double heuristic = child.combinedCost / COEFFICIENTS[i];
-//	        Debug.logMessage("" + (bestHeuristicSoFar.get(i) - heuristic));
 	        if (bestHeuristicSoFar.get(i) - heuristic > minimumImprovement && bestHeuristicSoFar.get(i) != heuristic) {
 	            bestHeuristicSoFar.set(i, heuristic);
 	            bestSoFar.set(i, child);
-	            if (failing && getDistFromStartSq(child, target) > MIN_DIST_PATH * MIN_DIST_PATH) {
+//	            if (failing && getDistFromStartSq(child, target) > MIN_DIST_PATH * MIN_DIST_PATH) {
                     failing = false;
-                }
+//                }
 	        }
 	    }
 	    return failing;
@@ -561,14 +575,15 @@ public class PathFinder {
     }
 	
 	private Node initializeStartNode(Node node, Vec3d target) {
-        Node start = new Node(null, node.agent, new Color(0, 255, 0), 0);
+        Node start = new Node(null,  Agent.of(node.agent, node.agent.input.toPathInput()), new Color(255, 255, 255), 0);
+        start.agent.tick(TungstenModDataContainer.world);
         start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target, TARGET);
         return start;
     }
 
 	
 	private Node initializeStartNode(PlayerEntity player, Vec3d target) {
-        Node start = new Node(null, Agent.of(player), new Color(0, 255, 0), 0);
+        Node start = new Node(null, Agent.of(player), new Color(255, 255, 255), 0);
         start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target, TARGET);
         return start;
     }
@@ -678,7 +693,11 @@ public class PathFinder {
     private boolean handleTimeout(long startTime, long primaryTimeoutTime, Node next, Vec3d target, Node start, PlayerEntity player, Set<Vec3d> closed) {
         long now = System.currentTimeMillis();
         if (now < primaryTimeoutTime) return false;
-        
+        Optional<List<Node>> result = PathFinder.bestSoFar(true, 0, start, TungstenModDataContainer.PATHFINDER.TARGET);
+
+	      if (!result.isPresent() || result.get().size() < 46 || result.get().getLast().agent.isClimbing(TungstenModDataContainer.world) || result.get().getLast().agent.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 3.5) {
+	          return false;
+	      }
 //        if (player.getPos().distanceTo(result.get().getFirst().agent.getPos()) < 1 && next.agent.getPos().distanceTo(target) > 1) {
 	    if (setCurrentPath(target, start, player)) {
 	    	Debug.logMessage("Time ran out!");
@@ -691,7 +710,7 @@ public class PathFinder {
     private static boolean setCurrentPath(Vec3d target, Node start, PlayerEntity player) {
         Optional<List<Node>> result = PathFinder.bestSoFar(true, 0, start, TungstenModDataContainer.PATHFINDER.TARGET);
 
-        if (!result.isPresent() || result.get().size() < 46) {
+        if (!result.isPresent()) {
             return false;
         }
         Node newStart = null;
@@ -700,9 +719,9 @@ public class PathFinder {
         } else if (result.get().get(result.get().size()-2) != null) {
         	newStart = TungstenModDataContainer.PATHFINDER.initializeStartNode(result.get().get(result.get().size()-2), target);
         }
-        if (newStart == null) return false;
-        if (TungstenModDataContainer.EXECUTOR.isRunning() && TungstenModDataContainer.EXECUTOR.getPath().getLast().hashCode(1, false) == result.get().getLast().hashCode(1, false)) return false;
-        if (TungstenModDataContainer.EXECUTOR.isRunning() && TungstenModDataContainer.EXECUTOR.getPath().getFirst().hashCode(1, false) == result.get().getFirst().hashCode(1, false)) return false;
+        if (newStart == null || !newStart.agent.onGround && !newStart.agent.touchingWater && !newStart.agent.isClimbing(TungstenModDataContainer.world)) return false;
+//        if (TungstenModDataContainer.EXECUTOR.getPath() != null && TungstenModDataContainer.EXECUTOR.getPath().getLast().hashCode(1, true) == result.get().getLast().hashCode(1, true)) return false;
+//        if (TungstenModDataContainer.EXECUTOR.getPath() != null && TungstenModDataContainer.EXECUTOR.getPath().getFirst().hashCode(1, true) == result.get().getFirst().hashCode(1, true)) return false;
         TungstenModDataContainer.EXECUTOR.addPath(result.get());
 //        RenderHelper.renderPathCurrentlyExecuted();
         for (int i = 0; i < COEFFICIENTS.length; i++) {
@@ -714,6 +733,7 @@ public class PathFinder {
         TungstenModDataContainer.PATHFINDER.openSet = new BinaryHeapOpenSet();
         TungstenModDataContainer.PATHFINDER.openSet.insert(newStart);
         TungstenModDataContainer.PATHFINDER.start = newStart;
+        numNodesConsidered.set(0);
 //        try {
 //			Thread.sleep(150);
 //		} catch (InterruptedException e) {
@@ -737,20 +757,19 @@ public class PathFinder {
     private boolean filterChidren(Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock, WorldView world) {
     	boolean isLadder = nextBlockNode.getBlockState(world).getBlock() instanceof LadderBlock;
     	boolean isLadderBelow = world.getBlockState(nextBlockNode.getBlockPos().down()).getBlock() instanceof LadderBlock;
-    	if (isLadder || isLadderBelow) return false;
-    	double distB = DistanceCalculator.getHorizontalEuclideanDistance(lastBlockNode.getPos(true), nextBlockNode.getPos(true));
+    	if (isLadder || isLadderBelow) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 3.6);
+//    	double distB = DistanceCalculator.getHorizontalEuclideanDistance(lastBlockNode.getPos(true), nextBlockNode.getPos(true));
     	
-    	if (distB > 6 || child.agent.isClimbing(TungstenModDataContainer.world)) return  child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
+//    	if (distB > 6 || child.agent.isClimbing(TungstenModDataContainer.world)) return  child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
     	
     	if (nextBlockNode.isDoingNeo())
-    		return !child.agent.onGround && child.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY();
-    	
-    	if (nextBlockNode.isDoingLongJump(world)) return !child.agent.onGround;
-    	
-    	if (isSmallBlock) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY());
-    	
-    	
-    	return !BlockStateChecker.isBottomSlab(TungstenModDataContainer.world.getBlockState(nextBlockNode.getBlockPos().down())) && child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 2.5);
+    		return child.agent.getBlockPos().getY() != nextBlockNode.getBlockPos().getY();
+
+    	if (nextBlockNode.isDoingLongJump(world)) return child.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY()-1;
+
+    	if (isSmallBlock) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY()-1);
+
+    	return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 1.5);
 //    	return false;
     }
 
@@ -760,6 +779,19 @@ public class PathFinder {
 			if (blockPath.isEmpty()) return false;
 			List<Node> children = parent.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()));
 			if (children.isEmpty()) return false;
+			
+//			Debug.logMessage("All children");
+//			for (Node node : children) {
+//				if (stop.get()) return false;
+//		    	if (Thread.currentThread().isInterrupted()) return false;
+//		        RenderHelper.renderNode(node);
+//			}
+//			try {
+//				Thread.sleep(500);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 			
 			Queue<Node> validChildren = new ConcurrentLinkedQueue<>();
 
@@ -789,7 +821,7 @@ public class PathFinder {
 						        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
 						        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 				
-						        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
+						        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.294) || (isSmallBlock && distance < 0.2)) {
 						            return null; // too close to existing child
 						        }
 						    }
@@ -819,7 +851,7 @@ public class PathFinder {
 				        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
 				        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 		
-				        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
+				        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.294) || (isSmallBlock && distance < 0.2)) {
 				            return null; // too close to existing child
 				        }
 				    }
@@ -880,10 +912,10 @@ public class PathFinder {
 					                openSet.insert(child);
 					            }
 					        }
-		
+
 					        // Update best heuristic safely
 					        synchronized (bestHeuristicSoFar) {
-					            if (updateBestSoFar(child, target, bestHeuristicSoFar)) {
+					            if (!updateBestSoFar(child, target, bestHeuristicSoFar)) {
 					                failing.set(false);
 					            }
 					        }
@@ -910,13 +942,13 @@ public class PathFinder {
 	
 				        // Update best heuristic safely
 				        synchronized (bestHeuristicSoFar) {
-				            if (updateBestSoFar(child, target, bestHeuristicSoFar)) {
+				            if (!updateBestSoFar(child, target, bestHeuristicSoFar)) {
 				                failing.set(false);
 				            }
 				        }
 	
 				        // Optional: render node for debugging
-	//			         RenderHelper.renderNode(child);
+//				         RenderHelper.renderNode(child);
 	
 				        return null;
 				    })
@@ -965,37 +997,43 @@ public class PathFinder {
 //				// Optionally render or handle visual updates here
 //				// RenderHelper.renderNode(child);
 //			}
-			
+		    
+//		    RenderHelper.clearRenderers();
+//
+//			Debug.logMessage("Valid children");
+//			for (Node node : validChildren) {
+//				if (stop.get()) return false;
+//		    	if (Thread.currentThread().isInterrupted()) return false;
+//		        RenderHelper.renderNode(node);
+//			}
+//			try {
+//				Thread.sleep(20);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 			return failing.get();
 		}
     
     private boolean updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node, Set<Vec3d> closed, WorldView world) {
     	if (blockPath == null) return false;
 
+    	if (NEXT_CLOSEST_BLOCKNODE_IDX.get()+1 >= blockPath.size()) return false;
     	BlockNode lastClosestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()-1);
     	BlockNode closestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get());
-    	if (NEXT_CLOSEST_BLOCKNODE_IDX.get()+1 >= blockPath.size()) return false;
     	BlockNode nextNodePos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()+1);
     	
     	boolean isRunningLongDist = lastClosestPos.getPos(true).distanceTo(closestPos.getPos(true)) > 7;
-    	
+
     	Vec3d nodePos = node.agent.getPos();
-    	if (!node.agent.onGround && !node.agent.touchingWater) return false;
-    	
-    	if (closestPos.getPos(true).y - nodePos.y > 0.5 || !nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 5.40), (isRunningLongDist ? 1.20 : 1.20)))  {
-    		return false;
-    	}
-    	
-    	Node p = node.parent;
-    	for (int i = 0; i < 4; i++) {
-    		if (p != null && closestPos.getPos(true).y <= p.agent.getPos().y &&  !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 5.20), (isRunningLongDist ? 1.20 : 1.80))) return false;
-		}
+    	if (!node.agent.onGround && !node.agent.touchingWater && !node.agent.isClimbing(world)) return false;
     	
     	boolean isNextNodeAbove = nextNodePos.getBlockPos().getY() > closestPos.getBlockPos().getY() && (nextNodePos.getBlockPos().getY() - closestPos.getBlockPos().getY()) > 1.5 && node.agent.onGround;
     	boolean isNextNodeBelow = nextNodePos.getBlockPos().getY() < closestPos.getBlockPos().getY();
     	
     	BlockPos nodeBlockPos = new BlockPos(node.agent.blockX, node.agent.blockY, node.agent.blockZ);
     	int closestPosIDX = findClosestPositionIDX(world, nodeBlockPos, blockPath);
+    	BlockNode newClosestPos = blockPath.get(closestPosIDX);
         BlockState state = world.getBlockState(closestPos.getBlockPos());
         BlockState stateBelow = world.getBlockState(closestPos.getBlockPos().down());
         double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(closestPos.getBlockPos().down(), world);
@@ -1005,6 +1043,7 @@ public class PathFinder {
 
         boolean isWater = BlockStateChecker.isAnyWater(state);
         boolean isLadder = state.getBlock() instanceof LadderBlock;
+        boolean isCarpet = state.getBlock() instanceof CarpetBlock;
         boolean isVine = state.getBlock() instanceof VineBlock;
         boolean isConnected = BlockStateChecker.isConnected(nodeBlockPos, world);
         boolean isBelowLadder = stateBelow.getBlock() instanceof LadderBlock;
@@ -1013,24 +1052,33 @@ public class PathFinder {
         boolean isBelowGlassPane = (stateBelow.getBlock() instanceof PaneBlock) || (stateBelow.getBlock() instanceof StainedGlassPaneBlock);
         boolean isBlockBelowTall = closestBlockBelowHeight > 1.3;
         
+
+
+    	if (!isLadder && !isCarpet) {
+	    	if (closestPos.getPos(true).y - nodePos.y > 0.6 || !nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.40), (isRunningLongDist ? 1.20 : 1.20)))  {
+	    		return false;
+	    	}
+	    	
+	    	Node p = node.parent;
+	    	for (int i = 0; i < 4; i++) {
+	    		if (p != null && closestPos.getPos(true).y <= p.agent.getPos().y &&  !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.20), (isRunningLongDist ? 1.20 : 1.80))) return false;
+			}
+    	}
+        
         boolean validWaterProximity = isWater && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos, world), 0.9, 1.2);
         // Agent state conditions
-        boolean agentOnGroundOrClimbingOrOnTallBlock = node.agent.onGround || node.agent.isClimbing(world) || isBelowLadder || isBlockBelowTall;
+        boolean agentOnGroundOrClimbingOrOnTallBlock = node.agent.onGround || node.agent.isClimbing(world) || isBelowLadder || isLadder || isBlockBelowTall;
 
         // Ladder-specific conditions
-        boolean validLadderProximity = (isLadder || isBelowLadder || isVine) 
-    		&& (!isLadder && isBelowLadder || node.agent.isClimbing(world))
-            && (nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos, world), 0.4, 0.9) || 
-            		node.agent.isClimbing(world) &&
-            		(isNextNodeAbove && nodePos.getY() > closestPos.getBlockPos().getY() || !isNextNodeBelow && nodePos.getY() < closestPos.getBlockPos().getY()) 
-            		&& nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos, world), 0.7, 3.7));
-
+        boolean validLadderProximity = (isLadder || isBelowLadder || isVine) && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos, world), 1.95, 1.7);
+        
         // Tall block position conditions. Things like fences and walls
         boolean validTallBlockProximity = isBlockBelowTall 
-            && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.4, 0.58);
+            && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.8, 0.58);
 
         boolean validBottomSlabProximity = isBottomSlab && distanceToClosestPos < 0.99
                 && heightDiff < 2;
+        
         
         boolean validClosedTrapDoorProximity = isBelowClosedTrapDoor && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.88, 2.2);
         
@@ -1043,14 +1091,17 @@ public class PathFinder {
         	&&	distanceToClosestPos < (isRunningLongDist ? 1.80 : 0.85)
             || !isBlockAboveSolid
             && (
-            		distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.05)
+            		distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.25)
             && heightDiff < 1.8
             && heightDiff > 1
             || 
             node.agent.onGround
-            && heightDiff < 1
+            && heightDiff < 0.8
             && heightDiff >= 0
-            && distanceToClosestPos < (isRunningLongDist ? 1.80 : 5.05)
+            && distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.25)
+            || isCarpet && heightDiff < 1
+            && heightDiff >= -1
+            && distanceToClosestPos < 2
             ));
 
         // Glass pane conditions
@@ -1071,13 +1122,29 @@ public class PathFinder {
 //			}
 //		}
         
+        if (validLadderProximity) {
+        	if (setCurrentPath(TARGET, this.start, TungstenModDataContainer.player)) {
+				NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX+1);
+	        	RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
+				closed.clear();
+				return true;
+			}
+        } else if (closestPosIDX > NEXT_CLOSEST_BLOCKNODE_IDX.get()+1 && heightDiff <= 1) {
+
+//			if (setCurrentPath(TARGET, this.start, TungstenModDataContainer.player)) {
+				NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX+1);
+	        	RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
+				closed.clear();
+				return true;
+//			}
+        }
     	if (closestPosIDX+1 > NEXT_CLOSEST_BLOCKNODE_IDX.get() && closestPosIDX +1 < blockPath.size()
+    			&&  heightDiff <= 1
     			&& ( validWaterProximity || !isConnected
 //    			&& BlockNode.wasCleared(world, nodeBlockPos, blockPath.get(closestPosIDX+1).getBlockPos())
-    			&& agentOnGroundOrClimbingOrOnTallBlock
+				&& agentOnGroundOrClimbingOrOnTallBlock
     			&& (
-	    			validLadderProximity 
-		    		|| validTallBlockProximity
+	    			validTallBlockProximity
 		    		|| validStandardProximity
 		    		|| validGlassPaneProximity
 		    		|| validSmallBlockProximity
@@ -1087,17 +1154,19 @@ public class PathFinder {
 //			    && (child.agent.getBlockPos().getY() == blockPath.get(closestPosIDX).getBlockPos().getY())
     			)
     			) {
-    			setCurrentPath(TARGET, this.start, TungstenModDataContainer.player);
-	    		NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX+1);
+            
+//    			if (setCurrentPath(TARGET, this.start, TungstenModDataContainer.player)) {
+    				NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX+1);
+    	        	RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
+    				closed.clear();
+    				return true;
+//    			}
 //	    		try {
 //					Thread.sleep(150);
 //				} catch (InterruptedException e) {
 //					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}
-	        	RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
-				closed.clear();
-				return true;
     	}
     	return false;
     }

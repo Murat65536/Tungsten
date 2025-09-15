@@ -1,7 +1,11 @@
 package kaptainwutax.tungsten.helpers.blockPath;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.render.Color;
+import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.state.property.Properties;
@@ -27,10 +31,10 @@ public class BlockPosShifter {
 		
 		double insetAmount = 0.4;
 		
-		if (blockBelowState.getBlock() instanceof LadderBlock) {
+		if (blockBelowState.getBlock() instanceof LadderBlock && !(blockState.getBlock() instanceof LadderBlock)) {
 			Direction ladderFacingDir = blockBelowState.get(Properties.HORIZONTAL_FACING);
 			
-			currPos = currPos.offset(ladderFacingDir.getOpposite(), insetAmount).add(0, 0.6, 0);
+			currPos = currPos.offset(ladderFacingDir.getOpposite(), insetAmount).add(0, 0.3, 0);
 			
 			return currPos;
 		}

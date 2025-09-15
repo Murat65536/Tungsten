@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
@@ -16,10 +17,12 @@ import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.MathHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.path.specialMoves.ClimbALadderMove;
 import kaptainwutax.tungsten.path.specialMoves.CornerJump;
 import kaptainwutax.tungsten.path.specialMoves.DivingMove;
 import kaptainwutax.tungsten.path.specialMoves.EnterWaterAndSwimMove;
 import kaptainwutax.tungsten.path.specialMoves.ExitWaterMove;
+import kaptainwutax.tungsten.path.specialMoves.JumpToLadderMove;
 import kaptainwutax.tungsten.path.specialMoves.LongJump;
 import kaptainwutax.tungsten.path.specialMoves.RunToNode;
 import kaptainwutax.tungsten.path.specialMoves.SprintJumpMove;
@@ -110,17 +113,45 @@ public class Node {
 	    }
 
 	    List<Node> nodes = new ArrayList<>();
+
 	    
+//	    if (!agent.isClimbing(world) && nextBlockNode.getBlockState(world).getBlock() instanceof LadderBlock) {
+//	    	Node sprintJumpMove = JumpToLadderMove.generateMove(this, nextBlockNode);
+//	    	boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.55;
+//	    	if (isSprintJumpMoveClose) {
+//		    	nodes.add(sprintJumpMove);
+//	    		return nodes;
+//	    	}
+//	    }
+	    
+	    if (DistanceCalculator.getHorizontalManhattanDistance(agent.getPos(), nextBlockNode.getPos(true)) <= 0.5 && nextBlockNode.getBlockState(world).getBlock() instanceof LadderBlock) {
+	    	Node climbALadderMove = ClimbALadderMove.generateMove(this, nextBlockNode);
+	    	boolean isClimbALadderMoveClose = Math.abs(climbALadderMove.agent.getPos().y - nextBlockNode.getPos(true).y) < 0.4;
+	    	nodes.add(climbALadderMove);
+	    	if (isClimbALadderMoveClose) {
+	    		return nodes;
+	    	}
+	    }
+
+	    
+	    if (agent.onGround && this.agent.canSprint()) {
+	    	if (nextBlockNode.isDoingNeo()) {
+	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
+	    	}
+		    if (nextBlockNode.isDoingLongJump(world) || world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock || nextBlockNode.previous != null && world.getBlockState(nextBlockNode.previous.getBlockPos()).getBlock() instanceof IceBlock) {
+		    	nodes.add(LongJump.generateMove(this, nextBlockNode));
+		    }
+	    }
 	    if (!agent.touchingWater && BlockStateChecker.isAnyWater(nextBlockNode.getBlockState(world))) {
 	    	Node enterWaterAndSwimMove = EnterWaterAndSwimMove.generateMove(this, nextBlockNode);
-	    	boolean isEnterWaterAndSwimMoveClose = enterWaterAndSwimMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) > 1.5;
+//	    	boolean isEnterWaterAndSwimMoveClose = enterWaterAndSwimMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) > 1.5;
 	    	nodes.add(enterWaterAndSwimMove);
-	    	if (isEnterWaterAndSwimMoveClose) return nodes;
+//	    	if (isEnterWaterAndSwimMoveClose) return nodes;
 	    }
 
 	    if (!agent.touchingWater && this.agent.canSprint()) {
 	    	Node sprintJumpMove = SprintJumpMove.generateMove(this, nextBlockNode);
-	    	boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.55;
+	    	boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.85;
 	    	if (!sprintJumpMove.agent.onGround || !isSprintJumpMoveClose) {
 			    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
 			        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
@@ -131,7 +162,7 @@ public class Node {
 			    sortNodesByYaw(nodes, target);
 	    	}
 	    	nodes.add(sprintJumpMove);
-	    	if (isSprintJumpMoveClose) return nodes;
+//	    	if (isSprintJumpMoveClose) return nodes;
 	    } else {
 		    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
 		        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
@@ -158,9 +189,9 @@ public class Node {
 	    }
 	    if (agent.touchingWater && BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos(), world) == 0) {
 	    	Node exitWaterMove = ExitWaterMove.generateMove(this, nextBlockNode);
-	    	boolean isExitWaterMoveClose = exitWaterMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 1.5;
+//	    	boolean isExitWaterMoveClose = exitWaterMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 1.5;
 	    	nodes.add(exitWaterMove);
-	    	if (isExitWaterMoveClose) return nodes;
+//	    	if (isExitWaterMoveClose) return nodes;
 	    }
 	    
 	    if (!agent.touchingWater && !this.agent.canSprint()) {
@@ -169,15 +200,6 @@ public class Node {
 	    
 	    if (!agent.touchingWater && this.agent.canSprint() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 4) {
 	    	nodes.add(RunToNode.generateMove(this, nextBlockNode));
-	    }
-	    
-	    if (agent.onGround && this.agent.canSprint()) {
-	    	if (nextBlockNode.isDoingNeo()) {
-	    		nodes.add(NeoJump.generateMove(this, nextBlockNode));
-	    	}
-		    if (nextBlockNode.isDoingLongJump(world) || world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock || world.getBlockState(nextBlockNode.previous.getBlockPos()).getBlock() instanceof IceBlock) {
-		    	nodes.add(LongJump.generateMove(this, nextBlockNode));
-		    }
 	    }
     	if (!agent.isClimbing(world) && world.getBlockState(agent.getBlockPos().down()).getBlock() instanceof LadderBlock) {	
 	    	nodes.add(LongJump.generateMove(this, nextBlockNode));    		
@@ -203,6 +225,7 @@ public class Node {
 	private void generateGroundOrWaterNodes(WorldView world, Vec3d target, BlockNode nextBlockNode, List<Node> nodes) {
 	    boolean isDoingLongJump = nextBlockNode.isDoingLongJump(world) || nextBlockNode.isDoingNeo();
 	    boolean isCloseToBlockNode = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true)) < 1;
+//	    boolean needToJump = agent.blockY < nextBlockNode.y;
     	BlockState state = world.getBlockState(nextBlockNode.getBlockPos());
 	    
 	    if (agent.isClimbing(world) 
@@ -227,19 +250,20 @@ public class Node {
 	    for (boolean forward : new boolean[]{true, false}) {
 	        for (boolean right : new boolean[]{true, false}) {
 	            for (boolean left : new boolean[]{true, false}) {
-	                for (boolean sneak : new boolean[]{false, true}) {
+//	                for (boolean sneak : new boolean[]{false, true}) {
 	                    for (float yaw = fromYaw; yaw < toYaw; yaw += 22.5 + Math.random()) {
 	                        for (boolean sprint : new boolean[]{true, false}) {
 	                        	if (!this.agent.canSprint() && sprint) continue;
-	                            if ((sneak || ((right || left) && !forward)) && sprint) continue;
+	                            if (( ((right || left) && !forward)) && sprint) continue;
 
 	                            for (boolean jump : new boolean[]{true, false}) {
+//	                            	if (!needToJump && jump) continue;
 //	                            	if (isCloseToBlockNode && jump && nextBlockNode.getBlockPos().getY() == agent.blockY) continue;
-	                                createAndAddNode(world, nextBlockNode, nodes, forward, right, left, sneak, sprint, jump, yaw, isDoingLongJump, isCloseToBlockNode);
+	                                createAndAddNode(world, nextBlockNode, nodes, forward, right, left, false, sprint, jump, yaw, isDoingLongJump, isCloseToBlockNode);
 	                            }
 	                        }
 	                    }
-	                }
+//	                }
 	            }
 	        }
 	    }
@@ -273,7 +297,7 @@ public class Node {
 	            if (!sneak) {
 	            	boolean isBelowClosedTrapDoor = BlockStateChecker.isClosedBottomTrapdoor(world.getBlockState(nextBlockNode.getBlockPos().down()));
 	        	    boolean shouldAllowWalkingOnLowerBlock = !world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3;
-	        	    double minY = isBelowClosedTrapDoor ? nextBlockNode.getPos(true).y - 1 : nextBlockNode.getBlockPos().getY() - (shouldAllowWalkingOnLowerBlock ? 1.3 : 0.3);
+//	        	    double minY = isBelowClosedTrapDoor ? nextBlockNode.getPos(true).y - 1 : nextBlockNode.getBlockPos().getY() - (shouldAllowWalkingOnLowerBlock ? 1.3 : 0.3);
 		            for (int j = 0; j < ((!jump) && !newNode.agent.isClimbing(world) ? 1 : 10); j++) {
 //		                if (newNode.agent.getPos().y <= minY && !newNode.agent.isClimbing(world) || !isMoving) break;
 		                if (!isMoving) break;
@@ -303,10 +327,10 @@ public class Node {
 	    }
 
 	    if (sneak) {
-	        addNodeCost += 2;
+	        addNodeCost += 2000;
 	    }
 
-	    return addNodeCost;
+	    return addNodeCost + Math.abs(agent.yaw- this.agent.yaw) * 5;
 	}
 
 	private void generateAirborneNodes(WorldView world, BlockNode nextBlockNode, List<Node> nodes) {

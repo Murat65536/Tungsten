@@ -9,6 +9,7 @@ import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.PlayerInput;
 
 public class PathExecutor {
@@ -82,7 +83,7 @@ public class PathExecutor {
     }
 
 
-    public void tick(OurFakePlayer player) {
+    public void tick(ServerPlayerEntity player) {
     	player.getAbilities().allowFlying = false;
     	if(stop) {
     		this.tick = this.path.size();

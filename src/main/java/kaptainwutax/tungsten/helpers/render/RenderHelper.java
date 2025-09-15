@@ -27,11 +27,14 @@ public class RenderHelper {
 		BlockNode previous = null;
 		for (Iterator<BlockNode> iterator = nodes.iterator(); iterator.hasNext();) {
 			BlockNode node = iterator.next();
+			Vec3d currentPos = node.getPos(true);
 			
-			if (previous != null)
-				TungstenModRenderContainer.BLOCK_PATH_RENDERER.add(new Line(new Vec3d(previous.x + 0.5, previous.y + 0.1, previous.z + 0.5), new Vec3d(node.x + 0.5, node.y + 0.1, node.z + 0.5), Color.RED));
+			if (previous != null) {
+				Vec3d previousPos = previous.getPos(true);
+				TungstenModRenderContainer.BLOCK_PATH_RENDERER.add(new Line(new Vec3d(previousPos.x, previousPos.y + 0.1, previousPos.z), new Vec3d(currentPos.x, currentPos.y + 0.1, currentPos.z), Color.RED));
+			}
 			if (nodes.size() <= nextNodeIDX) nextNodeIDX = nodes.size()-1;
-			TungstenModRenderContainer.BLOCK_PATH_RENDERER.add(new Cuboid(node.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), 
+			TungstenModRenderContainer.BLOCK_PATH_RENDERER.add(new Cuboid(currentPos.subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), 
             		(nodes.get(nextNodeIDX).equals(node)) ? Color.WHITE : Color.BLUE
             		));
             previous = node;
@@ -71,9 +74,12 @@ public class RenderHelper {
 	
 	public static void renderPathSoFar(BlockNode n) {
 		TungstenModRenderContainer.RENDERERS.clear();
-		TungstenModRenderContainer.RENDERERS.add(new Cuboid(n.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), Color.RED));
+		Vec3d currentPos = n.getPos(true);
+		TungstenModRenderContainer.RENDERERS.add(new Cuboid(currentPos.subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), Color.RED));
 		while(n.previous != null) {
-			TungstenModRenderContainer.RENDERERS.add(new Line(new Vec3d(n.previous.x + 0.5, n.previous.y + 0.1, n.previous.z + 0.5), new Vec3d(n.x + 0.5, n.y + 0.1, n.z + 0.5), Color.WHITE));
+			currentPos = n.getPos(true);
+			Vec3d previousPos = n.previous.getPos(true);
+			TungstenModRenderContainer.RENDERERS.add(new Line(new Vec3d(previousPos.x, previousPos.y + 0.1, previousPos.z), new Vec3d(currentPos.x, currentPos.y + 0.1, currentPos.z), Color.WHITE));
 			n = n.previous;
 		}
 	}
@@ -103,6 +109,9 @@ public class RenderHelper {
 	}
 	
 	public static void renderNodeConnection(BlockNode child, BlockNode parent) {
+
+//		Vec3d childPos = child.getPos(true);
+//		Vec3d parentPos = parent.getPos(true);
 		TungstenModRenderContainer.RENDERERS.add(new Line(new Vec3d(parent.x + 0.5, parent.y + 0.1, parent.z + 0.5), new Vec3d(child.x + 0.5, child.y + 0.1, child.z + 0.5), Color.RED));
 		TungstenModRenderContainer.RENDERERS.add(new Cuboid(child.getPos(), new Vec3d(1.0D, 1.0D, 1.0D), Color.BLUE));
 	}

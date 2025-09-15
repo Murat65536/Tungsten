@@ -30,7 +30,7 @@ public class ServerSideTungstenMod implements DedicatedServerModInitializer {
                         return this.summonFakePlayer(context.getSource());
                     }));
 
-            dispatcher.register(CommandManager.literal("stop")
+            dispatcher.register(CommandManager.literal("stopTungsten")
                     .executes(context -> {
                     	
                     	if (TungstenModDataContainer.EXECUTOR.isRunning())
@@ -51,6 +51,8 @@ public class ServerSideTungstenMod implements DedicatedServerModInitializer {
                     	BlockPos targetBlock = context.getSource().getPlayer().getBlockPos();
                     	
                     	Vec3d targetPos = new Vec3d(targetBlock.getX() + 0.5, targetBlock.getY(), targetBlock.getZ() + 0.5);
+                    	
+                    	context.getSource().getPlayer().teleport(targetPos.x, targetPos.y, targetPos.z, true);
                     	
                     	TungstenModDataContainer.PATHFINDER.find(context.getSource().getWorld(), targetPos, player);
                 		context.getSource().sendFeedback(() -> Text.of("Going to " + targetPos.toString()), false);

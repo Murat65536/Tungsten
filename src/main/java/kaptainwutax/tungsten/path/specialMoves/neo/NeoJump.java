@@ -34,7 +34,7 @@ public class NeoJump {
 		float desiredYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
         double distance = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true));
 	    Node newNode = new Node(parent, world, new PathInput(false, false, false, false, false, false, false, agent.pitch, desiredYaw),
-	    				new Color(0, 255, 150), parent.cost + 5);
+	    				new Color(0, 255, 150), parent.cost + 0.25);
         
         // Go forward to edge and jump
         boolean jump = false;
@@ -55,7 +55,7 @@ public class NeoJump {
         		jump = true;
         	}
             newNode = new Node(newNode, world, new PathInput(true, false, false, false, jump, false, true, agent.pitch, desiredYaw),
-            		new Color(0, 255, 150), newNode.cost + 5);
+            		new Color(0, 255, 150), newNode.cost + 0.25);
             if (jump) break;
         }
         
@@ -77,7 +77,7 @@ public class NeoJump {
         				nudgeRotation(jumpTowardsRotation, distance < 2 ? -65 : -35)
             		
             		),
-            		new Color(0, 255, 150), newNode.cost + 5);
+            		new Color(0, 255, 150), newNode.cost + 0.25);
         }
             
         return newNode;

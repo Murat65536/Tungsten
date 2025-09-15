@@ -1,5 +1,6 @@
 package kaptainwutax.tungsten.agent;
 
+import kaptainwutax.tungsten.path.PathInput;
 import net.minecraft.util.PlayerInput;
 import net.minecraft.util.math.Vec2f;
 
@@ -57,6 +58,10 @@ public class AgentInput {
 		float g = getMovementMultiplier(this.playerInput.left(), this.playerInput.right());
 		
 		this.movementVector = new Vec2f(g, f).normalize();
+	}
+	
+	public PathInput toPathInput() {
+		return new PathInput(this.agent.keyForward, this.agent.keyBack, this.agent.keyRight, this.agent.keyLeft, this.agent.keyJump, this.agent.keySneak, this.agent.keySprint, this.agent.pitch, this.agent.yaw);
 	}
 
 }

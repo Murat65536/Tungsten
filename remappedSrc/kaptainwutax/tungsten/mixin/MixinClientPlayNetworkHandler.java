@@ -14,6 +14,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.commandsystem.Command;
 import kaptainwutax.tungsten.commandsystem.CommandExecutor;
 import net.minecraft.client.MinecraftClient;
@@ -72,7 +73,7 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
     @Inject(method = "onEntityTrackerUpdate", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/NetworkThreadUtils;forceMainThread(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/listener/PacketListener;Lnet/minecraft/util/thread/ThreadExecutor;)V",
         shift = At.Shift.AFTER), cancellable = true)
     public void onEntityTrackerUpdate(EntityTrackerUpdateS2CPacket packet, CallbackInfo ci) {
-        if(TungstenMod.EXECUTOR.isRunning()) {
+        if(TungstenModDataContainer.EXECUTOR.isRunning()) {
             ClientPlayerEntity player = TungstenMod.mc.player;
 
             if(player != null && packet.id() == player.getId()) {
@@ -84,7 +85,7 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
     @Inject(method = "onPlayerPositionLook", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/NetworkThreadUtils;forceMainThread(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/listener/PacketListener;Lnet/minecraft/util/thread/ThreadExecutor;)V",
         shift = At.Shift.AFTER), cancellable = true)
     public void onPlayerPositionLook(PlayerPositionLookS2CPacket packet, CallbackInfo ci) {
-        if(TungstenMod.EXECUTOR.isRunning()) {
+        if(TungstenModDataContainer.EXECUTOR.isRunning()) {
             ClientPlayerEntity player = TungstenMod.mc.player;
 
 //            if(player != null) {

@@ -27,6 +27,9 @@ public class BlockShapeChecker {
      */
 	public static double getBlockHeight(BlockPos pos, WorldView world) {
 		BlockState state = world.getBlockState(pos);
+		
+		if (state.isAir()) return 0;
+		
 		VoxelShape shape = state.getCollisionShape(world, pos);
 		double height = shape.getMax(Axis.Y);
 		

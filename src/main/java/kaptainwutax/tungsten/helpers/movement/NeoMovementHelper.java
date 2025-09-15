@@ -1,5 +1,6 @@
 package kaptainwutax.tungsten.helpers.movement;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
@@ -7,6 +8,7 @@ import kaptainwutax.tungsten.helpers.MovementHelper;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockPos.Mutable;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
@@ -178,7 +180,7 @@ public class NeoMovementHelper {
 			return true;
 		}
 
-		private void renderBlock(BlockPos.Mutable currPos, Color color, boolean shouldSlow) {
+		private static void renderBlock(BlockPos.Mutable currPos, Color color, boolean shouldSlow) {
 			TungstenModRenderContainer.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()),
 					new Vec3d(1.0D, 1.0D, 1.0D), color));
 			TungstenModRenderContainer.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()),

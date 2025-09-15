@@ -1504,12 +1504,14 @@ public class Agent {
             // I know this is probably a really stupid way to fix a mismatch but server doesnt seem to care so I'm doing it anyway!
             if (TungstenModDataContainer.EXECUTOR.isRunning()) {
             	player.setPosition(this.posX, this.posY, this.posZ);
-//            	TungstenMod.EXECUTOR.stop = true;
-//            	TungstenMod.PATHFINDER.stop.set(true);;
+//            	TungstenModDataContainer.EXECUTOR.stop = true;
+//            	TungstenModDataContainer.PATHFINDER.stop.set(true);
+            	
 
-            	Node node = TungstenModDataContainer.EXECUTOR.getCurrentNode();
-            	if (node != null) RenderHelper.renderNode(node, TungstenModRenderContainer.ERROR);
-            	TungstenModRenderContainer.ERROR.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
+            	if (TungstenModRenderContainer.ERROR.size() > 1000) TungstenModRenderContainer.ERROR.clear();
+//            	Node node = TungstenModDataContainer.EXECUTOR.getCurrentNode();
+//            	if (node != null) RenderHelper.renderNode(node, TungstenModRenderContainer.ERROR);
+//            	TungstenModRenderContainer.ERROR.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
             }
         }
         
@@ -1529,11 +1531,12 @@ public class Agent {
                         player.getVelocity().y - this.velY,
                         player.getVelocity().z - this.velZ));
 //            	System.out.println((float)player.getAttributeValue(EntityAttributes.SNEAKING_SPEED));
-//            	TungstenMod.EXECUTOR.stop = true;
-//            	TungstenMod.PATHFINDER.stop.set(true);;
+//            	TungstenModDataContainer.EXECUTOR.stop = true;
+//            	TungstenModDataContainer.PATHFINDER.stop.set(true);
 //            	player.setVelocity(0, 0, 0);
             	player.setVelocity(this.velX, this.velY, this.velZ);
             	Node node = TungstenModDataContainer.EXECUTOR.getCurrentNode();
+            	if (TungstenModRenderContainer.ERROR.size() > 1000) TungstenModRenderContainer.ERROR.clear();
             	if (node != null) RenderHelper.renderNode(node, TungstenModRenderContainer.ERROR);
             	TungstenModRenderContainer.ERROR.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
             }
@@ -2004,6 +2007,11 @@ public class Agent {
         agent.jumpingCooldown = other.jumpingCooldown;
         //TODO: frame.ticksToNextAutojump
         return agent;
+    }
+
+    public static Agent of(Agent other, AgentInput input) {
+    	PathInput pI = input.toPathInput();
+    	return of(other, pI);
     }
 
     public static Agent of(Agent agent, PathInput input) {
