@@ -1174,13 +1174,15 @@ public class PathFinder {
 //			    && (child.agent.getBlockPos().getY() == blockPath.get(closestPosIDX).getBlockPos().getY())
     			)
     			) {
-            
-//    			if (setCurrentPath(TARGET, this.start, TungstenModDataContainer.player)) {
+
+                boolean isNeo = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()).isDoingNeo();
+
+    			if (!isNeo || setCurrentPath(TARGET, this.start, TungstenModDataContainer.player)) {
     				NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX+1);
     	        	RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
     				closed.clear();
     				return true;
-//    			}
+    			}
 //	    		try {
 //					Thread.sleep(150);
 //				} catch (InterruptedException e) {
