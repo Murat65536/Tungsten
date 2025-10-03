@@ -1,10 +1,6 @@
 package kaptainwutax.tungsten.agent;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -16,6 +12,7 @@ import it.unimi.dsi.fastutil.floats.FloatSet;
 import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.TungstenModDataContainer;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
@@ -1531,14 +1528,29 @@ public class Agent {
                         player.getVelocity().y - this.velY,
                         player.getVelocity().z - this.velZ));
 //            	System.out.println((float)player.getAttributeValue(EntityAttributes.SNEAKING_SPEED));
-//            	TungstenModDataContainer.EXECUTOR.stop = true;
-//            	TungstenModDataContainer.PATHFINDER.stop.set(true);
-//            	player.setVelocity(0, 0, 0);
             	player.setVelocity(this.velX, this.velY, this.velZ);
             	Node node = TungstenModDataContainer.EXECUTOR.getCurrentNode();
             	if (TungstenModRenderContainer.ERROR.size() > 1000) TungstenModRenderContainer.ERROR.clear();
-            	if (node != null) RenderHelper.renderNode(node, TungstenModRenderContainer.ERROR);
-            	TungstenModRenderContainer.ERROR.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
+                if (node != null && node.agent.getPos().distanceTo(player.getPos()) > 0.78) {
+//                    TungstenModDataContainer.EXECUTOR.stop = true;
+////                    TungstenModDataContainer.PATHFINDER.stop.set(true);
+////                    player.setVelocity(0, 0, 0);
+//                    if (TungstenModDataContainer.EXECUTOR.blockPath != null) {
+//                        if (TungstenModDataContainer.PATHFINDER.active.get()) {
+//                            TungstenModDataContainer.PATHFINDER.stop.set(true);
+//                            while (TungstenModDataContainer.PATHFINDER.active.get()) {
+//                                try {
+//                                    Thread.sleep(250);
+//                                } catch (InterruptedException e) {
+//                                    throw new RuntimeException(e);
+//                                }
+//                            }
+//                        }
+//                        TungstenModDataContainer.PATHFINDER.find(TungstenModDataContainer.world, TungstenMod.TARGET, player, Optional.of(TungstenModDataContainer.EXECUTOR.blockPath));
+//                    }
+                    RenderHelper.renderNode(node, TungstenModRenderContainer.ERROR);
+                    TungstenModRenderContainer.ERROR.add(new Cuboid(player.getPos(), new Vec3d(0.1, 0.5, 0.1), Color.RED));
+                }
             }
         }
 

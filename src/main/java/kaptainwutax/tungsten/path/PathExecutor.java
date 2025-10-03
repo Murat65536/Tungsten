@@ -1,16 +1,16 @@
 package kaptainwutax.tungsten.path;
 
-import java.util.List;
-
-import io.github.hackerokuz.fakes.OurFakePlayer;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.TungstenModRenderContainer;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.option.GameOptions;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.PlayerInput;
+
+import java.util.List;
 
 public class PathExecutor {
 
@@ -20,6 +20,7 @@ public class PathExecutor {
     public boolean stop = false;
     public Runnable cb = null;
     public long startTime;
+    public List<BlockNode> blockPath = null;
     private boolean isClient;
 
     public PathExecutor(boolean isClient) {

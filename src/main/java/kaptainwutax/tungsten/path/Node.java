@@ -149,29 +149,35 @@ public class Node {
 //	    	if (isEnterWaterAndSwimMoveClose) return nodes;
 	    }
 
-	    if (!agent.touchingWater && this.agent.canSprint()) {
-	    	Node sprintJumpMove = SprintJumpMove.generateMove(this, nextBlockNode);
-	    	boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.85;
-	    	if (!sprintJumpMove.agent.onGround || !isSprintJumpMoveClose) {
-			    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
-			        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
-			    } else {
-			        generateAirborneNodes(world, nextBlockNode, nodes);
-			    }
-		    	
-			    sortNodesByYaw(nodes, target);
-	    	}
-	    	nodes.add(sprintJumpMove);
+        if (agent.touchingWater) {
+            if (BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos().up(), world) == 0) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
+            else  nodes.add(DivingMove.generateMove(this, nextBlockNode));
+            return nodes;
+        }
+
+            if (this.agent.canSprint()) {
+                Node sprintJumpMove = SprintJumpMove.generateMove(this, nextBlockNode);
+                boolean isSprintJumpMoveClose = sprintJumpMove.agent.getPos().distanceTo(nextBlockNode.getPos(true)) < 0.85;
+                if (!sprintJumpMove.agent.onGround || !isSprintJumpMoveClose) {
+                    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
+                        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
+                    } else {
+                        generateAirborneNodes(world, nextBlockNode, nodes);
+                    }
+
+                    sortNodesByYaw(nodes, target);
+                }
+                nodes.add(sprintJumpMove);
 //	    	if (isSprintJumpMoveClose) return nodes;
-	    } else {
-		    if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
-		        generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
-		    } else {
-		        generateAirborneNodes(world, nextBlockNode, nodes);
-		    }
-	    	
-		    sortNodesByYaw(nodes, target);
-	    }
+            } else {
+                if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
+                    generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
+                } else {
+                    generateAirborneNodes(world, nextBlockNode, nodes);
+                }
+
+                sortNodesByYaw(nodes, target);
+            }
 	    
 	    if (agent.onGround) {
 	    	if (!world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3) {
@@ -180,12 +186,6 @@ public class Node {
 	    		nodes.add(CornerJump.generateMove(this, nextBlockNode, false));		
 	    		nodes.add(CornerJump.generateMove(this, nextBlockNode, true));
 	    	}
-	    }
-
-	    if (agent.touchingWater && BlockStateChecker.isAnyWater(nextBlockNode.getBlockState(world))) {
-	    	if (BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos(), world) == 0) nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
-	    	else  nodes.add(DivingMove.generateMove(this, nextBlockNode));
-	    	return nodes;
 	    }
 	    if (agent.touchingWater && BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos(), world) == 0) {
 	    	Node exitWaterMove = ExitWaterMove.generateMove(this, nextBlockNode);
@@ -330,7 +330,12 @@ public class Node {
 	        addNodeCost += 2000;
 	    }
 
-	    return addNodeCost + Math.abs(agent.yaw- this.agent.yaw) * 5;
+//        if (agent.touchingWater) {
+//            addNodeCost += 200;
+//        }
+
+
+        return addNodeCost + Math.abs(agent.yaw- this.agent.yaw) * 5;
 	}
 
 	private void generateAirborneNodes(WorldView world, BlockNode nextBlockNode, List<Node> nodes) {

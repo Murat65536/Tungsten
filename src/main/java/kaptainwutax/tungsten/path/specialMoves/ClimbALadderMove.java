@@ -30,13 +30,13 @@ public class ClimbALadderMove {
         int limit = 0;
         while (limit < 8 && Math.abs(newNode.agent.getPos().y - nextBlockNode.getPos(true).y) > 0.2) {
         	limit++;
-        	RenderHelper.renderNode(newNode);
-        	try {
-				Thread.sleep(4);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+//        	RenderHelper.renderNode(newNode);
+//        	try {
+//				Thread.sleep(4);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 
             newNode = new Node(newNode, world, new PathInput(false, false, false, false, true, false, false, agent.pitch, agent.yaw),
             		new Color(0, 255, 150), newNode.cost + 0.002);
