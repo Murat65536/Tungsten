@@ -70,16 +70,16 @@ public class Node {
 //        	float[] yawValues = {-135.0f, -90.0f, -67.5f, -45.0f, -22.5f, 0.0f, 22.5f, 45.0f, 67.5f, 90.0f, 135.0f, 180.0f}; // Example yaw values
 
 			for (boolean forward : new boolean[]{true, false}) {
-//				for (boolean back : new boolean[]{true, false}) {
+				for (boolean back : new boolean[]{true, false}) {
 					for (boolean right : new boolean[]{true, false}) {
 						for (boolean left : new boolean[]{true, false}) {
 								for (boolean sneak : new boolean[]{true, false}) {
 										// for (float pitch : pitchValues) {
 //											for (float yaw : yawValues) {
-										for (float yaw = PathfindingConstants.YAW_MIN; yaw < PathfindingConstants.YAW_MAX; yaw += PathfindingConstants.YAW_INCREMENT) {
+										for (float yaw = PathfindingConstants.YAW_MIN; yaw <= PathfindingConstants.YAW_MAX; yaw += PathfindingConstants.YAW_INCREMENT) {
 											for (boolean sprint : new boolean[]{true, false}) {
 												for (boolean jump : new boolean[]{true, false}) {
-													Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + (jump ? sneak ? 4 :0.5 : sneak ? 4 : 2));
+													Node newNode = new Node(this, world, new PathInput(forward, back, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + (jump ? sneak ? 4 :0.5 : sneak ? 4 : 2));
 													nodes.add(newNode);
 //											}
 											}
@@ -89,7 +89,7 @@ public class Node {
 							}
 						}
 					}
-//				}
+				}
 			}
 
 			return nodes;
