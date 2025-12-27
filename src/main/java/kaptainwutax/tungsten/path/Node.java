@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.constants.PathfindingConstants;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
@@ -75,7 +76,7 @@ public class Node {
 								for (boolean sneak : new boolean[]{true, false}) {
 										// for (float pitch : pitchValues) {
 //											for (float yaw : yawValues) {
-										for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5) {
+										for (float yaw = PathfindingConstants.YAW_MIN; yaw < PathfindingConstants.YAW_MAX; yaw += PathfindingConstants.YAW_INCREMENT) {
 											for (boolean sprint : new boolean[]{true, false}) {
 												for (boolean jump : new boolean[]{true, false}) {
 													Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + (jump ? sneak ? 4 :0.5 : sneak ? 4 : 2));
@@ -110,7 +111,7 @@ public class Node {
 		} else {
 			List<Node> nodes = new ArrayList<Node>();
 			nodes.add(new Node(this, world, new PathInput(true, false, false, false, false,
-			false, true, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + 1));
+			false, true, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + PathfindingConstants.UNIFORM_COST_PER_STEP));
 			return nodes;
 		}
 	}

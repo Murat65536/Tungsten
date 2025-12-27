@@ -1,6 +1,7 @@
 package kaptainwutax.tungsten.agent;
 
 import com.google.common.collect.AbstractIterator;
+import kaptainwutax.tungsten.constants.CollisionConstants;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
@@ -37,12 +38,12 @@ public class AgentBlockCollisions extends AbstractIterator<VoxelShape> {
         this.world = world;
         this.box = box;
         this.forEntity = forEntity;
-        int i = MathHelper.floor(box.minX - 1.0E-7D) - 1;
-        int j = MathHelper.floor(box.maxX + 1.0E-7D) + 1;
-        int k = MathHelper.floor(box.minY - 1.0E-7D) - 1;
-        int l = MathHelper.floor(box.maxY + 1.0E-7D) + 1;
-        int m = MathHelper.floor(box.minZ - 1.0E-7D) - 1;
-        int n = MathHelper.floor(box.maxZ + 1.0E-7D) + 1;
+        int i = MathHelper.floor(box.minX - CollisionConstants.BOUNDING_BOX_EPSILON) - 1;
+        int j = MathHelper.floor(box.maxX + CollisionConstants.BOUNDING_BOX_EPSILON) + 1;
+        int k = MathHelper.floor(box.minY - CollisionConstants.BOUNDING_BOX_EPSILON) - 1;
+        int l = MathHelper.floor(box.maxY + CollisionConstants.BOUNDING_BOX_EPSILON) + 1;
+        int m = MathHelper.floor(box.minZ - CollisionConstants.BOUNDING_BOX_EPSILON) - 1;
+        int n = MathHelper.floor(box.maxZ + CollisionConstants.BOUNDING_BOX_EPSILON) + 1;
         this.blockIterator = new CuboidBlockIterator(i, k, m, j, l, n);
     }
 
@@ -70,7 +71,7 @@ public class AgentBlockCollisions extends AbstractIterator<VoxelShape> {
                 int k = this.blockIterator.getZ();
                 int l = this.blockIterator.getEdgeCoordinatesCount();
 
-                if(l == 3) {
+                if(l == CollisionConstants.COLLISION_TYPE_OTHER) {
                     continue;
                 }
 
@@ -87,15 +88,15 @@ public class AgentBlockCollisions extends AbstractIterator<VoxelShape> {
                 BlockState blockState = blockView.getBlockState(this.pos);
                 this.scannedBlocks++;
 
-                if(this.forEntity && !blockState.shouldSuffocate(blockView, this.pos) || l == 1 && !blockState.exceedsCube()
-                    || l == 2 && !blockState.isOf(Blocks.MOVING_PISTON)) {
+                if(this.forEntity && !blockState.shouldSuffocate(blockView, this.pos) || l == CollisionConstants.COLLISION_TYPE_MOVEMENT && !blockState.exceedsCube()
+                    || l == CollisionConstants.COLLISION_TYPE_STEP && !blockState.isOf(Blocks.MOVING_PISTON)) {
                     continue;
                 }
 
                 VoxelShape voxelShape = blockState.getCollisionShape(this.world, this.pos, this.context);
 
                 if(voxelShape == VoxelShapes.fullCube()) {
-                    if(!this.box.intersects(i, j, k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) {
+                    if(!this.box.intersects(i, j, k, (double)i + CollisionConstants.COLLISION_BOX_FULL_BLOCK, (double)j + CollisionConstants.COLLISION_BOX_FULL_BLOCK, (double)k + CollisionConstants.COLLISION_BOX_FULL_BLOCK)) {
                         continue;
                     }
 

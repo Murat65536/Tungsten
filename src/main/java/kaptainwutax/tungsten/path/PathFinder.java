@@ -9,6 +9,7 @@ import java.util.Set;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.constants.PathfindingConstants;
 import kaptainwutax.tungsten.path.calculators.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
@@ -23,10 +24,10 @@ public class PathFinder {
 
 	public static boolean active = false;
 	public static Thread thread = null;
-	protected static final double[] COEFFICIENTS = {1.5, 2, 2.5, 3, 4, 5, 10};
+	protected static final double[] COEFFICIENTS = PathfindingConstants.HEURISTIC_COEFFICIENTS;
 	protected static final Node[] bestSoFar = new Node[COEFFICIENTS.length];
-	private static final double minimumImprovement = 0.21;
-	protected static final double MIN_DIST_PATH = 5;
+	private static final double minimumImprovement = PathfindingConstants.MINIMUM_IMPROVEMENT;
+	protected static final double MIN_DIST_PATH = PathfindingConstants.MIN_DISTANCE_PATH;
 	
 	
 	public static void find(WorldView world, Vec3d target) {
@@ -73,8 +74,8 @@ public class PathFinder {
 
 			
 			if(MinecraftClient.getInstance().options.socialInteractionsKey.isPressed()) break;
-			double minVel = 0.2;
-			if(next.agent.getPos().squaredDistanceTo(target) <= 0.4D && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
+			double minVel = PathfindingConstants.MIN_VELOCITY;
+			if(next.agent.getPos().squaredDistanceTo(target) <= PathfindingConstants.TARGET_REACHED_DISTANCE_SQUARED && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
 				TungstenMod.RENDERERS.clear();
 				Node n = next;
 				List<Node> path = new ArrayList<>();
@@ -82,7 +83,7 @@ public class PathFinder {
 				while(n.parent != null) {
 					path.add(n);
 					TungstenMod.RENDERERS.add(new Line(n.agent.getPos(), n.parent.agent.getPos(), n.color));
-					TungstenMod.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
+					TungstenMod.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(PathfindingConstants.RENDER_CUBE_SIZE_SMALL, PathfindingConstants.RENDER_CUBE_SIZE_SMALL, PathfindingConstants.RENDER_CUBE_SIZE_SMALL), new Vec3d(PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT, PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT, PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT), n.color));
 					n = n.parent;
 				}
 
@@ -93,12 +94,12 @@ public class PathFinder {
 					break;
 				}
 			} /* else if (previous != null && next.agent.getPos().squaredDistanceTo(target) > previous.agent.getPos().squaredDistanceTo(target)) continue; */
-			if(TungstenMod.RENDERERS.size() > 9000) {
+			if(TungstenMod.RENDERERS.size() > PathfindingConstants.MAX_RENDERERS) {
 				TungstenMod.RENDERERS.clear();
 			}
 			 renderPathSoFar(next);
 
-			 TungstenMod.RENDERERS.add(new Cuboid(next.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.RED));
+			 TungstenMod.RENDERERS.add(new Cuboid(next.agent.getPos().subtract(PathfindingConstants.RENDER_CUBE_SIZE_SMALL, PathfindingConstants.RENDER_CUBE_SIZE_SMALL, PathfindingConstants.RENDER_CUBE_SIZE_SMALL), new Vec3d(PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT, PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT, PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT), Color.RED));
 			 
 //			 try {
 //                 Thread.sleep(600);
@@ -138,7 +139,7 @@ public class PathFinder {
 //				open.add(child);
 
 //				TungstenMod.RENDERERS.add(new Line(child.agent.getPos(), child.parent.agent.getPos(), child.color));
-				TungstenMod.RENDERERS.add(new Cuboid(child.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), child.color));
+				TungstenMod.RENDERERS.add(new Cuboid(child.agent.getPos().subtract(PathfindingConstants.RENDER_CUBE_SIZE_SMALL, PathfindingConstants.RENDER_CUBE_SIZE_SMALL, PathfindingConstants.RENDER_CUBE_SIZE_SMALL), new Vec3d(PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT, PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT, PathfindingConstants.RENDER_CUBE_SIZE_DEFAULT), child.color));
 			}
 		}
 	}
@@ -148,11 +149,11 @@ public class PathFinder {
 	}
 	
 	private static boolean shouldNodeBeSkiped(Node n, Vec3d target, Set<Vec3d> closed, boolean addToClosed) {
-		if (n.agent.getPos().distanceTo(target) < 2.0) {
-			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*1000), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)))) return true;
-			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*1000), Math.round(n.agent.getPos().y * 1000), Math.round(n.agent.getPos().z*1000)));
-		} else if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*10), Math.round(n.agent.getPos().y * 10), Math.round(n.agent.getPos().z*10)))) return true;
-		if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*10), Math.round(n.agent.getPos().y * 10), Math.round(n.agent.getPos().z*10)));
+		if (n.agent.getPos().distanceTo(target) < PathfindingConstants.CLOSE_DISTANCE_THRESHOLD) {
+			if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*PathfindingConstants.POSITION_ROUNDING_FACTOR), Math.round(n.agent.getPos().y * PathfindingConstants.POSITION_ROUNDING_FACTOR), Math.round(n.agent.getPos().z*PathfindingConstants.POSITION_ROUNDING_FACTOR)))) return true;
+			if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*PathfindingConstants.POSITION_ROUNDING_FACTOR), Math.round(n.agent.getPos().y * PathfindingConstants.POSITION_ROUNDING_FACTOR), Math.round(n.agent.getPos().z*PathfindingConstants.POSITION_ROUNDING_FACTOR)));
+		} else if(closed.contains(new Vec3d(Math.round(n.agent.getPos().x*PathfindingConstants.POSITION_COARSE_ROUNDING), Math.round(n.agent.getPos().y * PathfindingConstants.POSITION_COARSE_ROUNDING), Math.round(n.agent.getPos().z*PathfindingConstants.POSITION_COARSE_ROUNDING)))) return true;
+		if (addToClosed) closed.add(new Vec3d(Math.round(n.agent.getPos().x*PathfindingConstants.POSITION_COARSE_ROUNDING), Math.round(n.agent.getPos().y * PathfindingConstants.POSITION_COARSE_ROUNDING), Math.round(n.agent.getPos().z*PathfindingConstants.POSITION_COARSE_ROUNDING)));
 		
 		return false;
 	}
@@ -163,7 +164,7 @@ public class PathFinder {
 //	    if (onGround || dy < 1.6 && dy > -1.6) dy = 0;
 	    
 	    double dz = position.z - target.z;
-	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) * 33.563;
+	    return (Math.sqrt(dx * dx + dy * dy + dz * dz)) * PathfindingConstants.HEURISTIC_MULTIPLIER;
 	}
 	
 	private static void updateNode(Node current, Node child, Vec3d target) {

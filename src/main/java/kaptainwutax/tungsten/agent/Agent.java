@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import kaptainwutax.tungsten.constants.CollisionConstants;
+import kaptainwutax.tungsten.constants.PhysicsConstants;
 import kaptainwutax.tungsten.mixin.AccessorEntity;
 import kaptainwutax.tungsten.mixin.AccessorLivingEntity;
 import kaptainwutax.tungsten.path.PathInput;
@@ -32,18 +34,24 @@ public class Agent {
 
     public static Agent INSTANCE;
 
-    public static final EntityDimensions STANDING_DIMENSIONS = EntityDimensions.changing(0.6f, 1.8f);
-    public static final EntityDimensions SLEEPING_DIMENSIONS = EntityDimensions.fixed(0.2f, 0.2f);
+    public static final EntityDimensions STANDING_DIMENSIONS = EntityDimensions.changing(0.6F, 1.8F);
+    public static final EntityDimensions SLEEPING_DIMENSIONS = EntityDimensions.fixed(0.2F, 0.2F);
+
+    // Eye height constants for different poses
+    public static final float EYE_HEIGHT_STANDING = 1.62F;
+    public static final float EYE_HEIGHT_CROUCHING = 1.27F;
+    public static final float EYE_HEIGHT_SWIMMING = 0.4F;
+    public static final float EYE_HEIGHT_SLEEPING = 0.2F;
 
     public static final Map<EntityPose, EntityDimensions> POSE_DIMENSIONS =
         ImmutableMap.<EntityPose, EntityDimensions>builder()
         .put(EntityPose.STANDING, STANDING_DIMENSIONS)
         .put(EntityPose.SLEEPING, SLEEPING_DIMENSIONS)
-        .put(EntityPose.FALL_FLYING, EntityDimensions.changing(0.6f, 0.6f))
-        .put(EntityPose.SWIMMING, EntityDimensions.changing(0.6f, 0.6f))
-        .put(EntityPose.SPIN_ATTACK, EntityDimensions.changing(0.6f, 0.6f))
-        .put(EntityPose.CROUCHING, EntityDimensions.changing(0.6f, 1.5f))
-        .put(EntityPose.DYING, EntityDimensions.fixed(0.2f, 0.2f)).build();
+        .put(EntityPose.FALL_FLYING, EntityDimensions.changing(0.6F, 0.6F))
+        .put(EntityPose.SWIMMING, EntityDimensions.changing(0.6F, 0.6F))
+        .put(EntityPose.SPIN_ATTACK, EntityDimensions.changing(0.6F, 0.6F))
+        .put(EntityPose.CROUCHING, EntityDimensions.changing(0.6F, 1.5F))
+        .put(EntityPose.DYING, EntityDimensions.fixed(0.2F, 0.2F)).build();
 
     public boolean keyForward;
     public boolean keyBack;
@@ -83,7 +91,7 @@ public class Agent {
     public boolean sprinting; //flag 3
     public boolean swimming; //flag 4
     public boolean fallFlying; //flag 7
-    public float stepHeight = 0.6F;
+    public float stepHeight = PhysicsConstants.STEP_HEIGHT_DEFAULT;
     public float fallDistance;
     public boolean touchingWater;
     public boolean isSubmergedInWater;
@@ -163,7 +171,7 @@ public class Agent {
         this.updateSwimming(world);
 
         if(this.isInLava()) {
-            this.fallDistance *= 0.5F;
+            this.fallDistance *= PhysicsConstants.FALL_DISTANCE_LAVA_MULTIPLIER;
         }
 
         this.firstUpdate = false;
@@ -176,7 +184,7 @@ public class Agent {
     public boolean updateWaterState(WorldView world) {
         this.fluidHeight.clear();
         this.checkWaterState(world);
-        double d = world.getDimension().ultrawarm() ? 0.007D : 0.0023333333333333335D;
+        double d = world.getDimension().ultrawarm() ? PhysicsConstants.FLUID_VELOCITY_MULTIPLIER : PhysicsConstants.FLUID_VELOCITY_LAVA_MULTIPLIER;
         boolean bl = this.updateMovementInFluid(world, FluidTags.LAVA, d);
         return this.touchingWater || bl;
     }
@@ -184,7 +192,7 @@ public class Agent {
     private void updateSubmergedInWaterState(WorldView world) {
         this.isSubmergedInWater = this.isSubmergedIn(FluidTags.WATER);
         this.submergedFluids.clear();
-        double d = this.getEyeY() - 0.1111111119389534D;
+        double d = this.getEyeY() - PhysicsConstants.EYE_HEIGHT_FLUID_OFFSET;
 
         BlockPos blockPos = new BlockPos(this.posX, d, this.posZ);
         FluidState fluidState = world.getFluidState(blockPos);
@@ -274,10 +282,10 @@ public class Agent {
 
     public final float getEyeHeight(EntityPose pose, EntityDimensions dimensions) {
          return switch(pose) {
-            case SWIMMING, FALL_FLYING, SPIN_ATTACK -> 0.4F;
-            case CROUCHING -> 1.27F;
-            case SLEEPING -> 0.2F;
-            default -> 1.62F;
+            case SWIMMING, FALL_FLYING, SPIN_ATTACK -> EYE_HEIGHT_SWIMMING;
+            case CROUCHING -> EYE_HEIGHT_CROUCHING;
+            case SLEEPING -> EYE_HEIGHT_SLEEPING;
+            default -> EYE_HEIGHT_STANDING;
         };
     }
 
@@ -287,11 +295,11 @@ public class Agent {
 
         this.inSneakingPose = !this.swimming && this.wouldPoseNotCollide(world, EntityPose.CROUCHING)
             && (this.input.sneaking || !this.sleeping && !this.wouldPoseNotCollide(world, EntityPose.STANDING));
-        this.input.tick(this.inSneakingPose || (this.pose == EntityPose.SWIMMING && !this.touchingWater), 0.3F);
+        this.input.tick(this.inSneakingPose || (this.pose == EntityPose.SWIMMING && !this.touchingWater), PhysicsConstants.MOVEMENT_INPUT_MULTIPLIER);
 
         if(this.usingItem) {
-            this.input.movementSideways *= 0.2F;
-            this.input.movementForward *= 0.2F;
+            this.input.movementSideways *= PhysicsConstants.MOVEMENT_USING_ITEM_MULTIPLIER;
+            this.input.movementForward *= PhysicsConstants.MOVEMENT_USING_ITEM_MULTIPLIER;
         }
 
         if(this.ticksToNextAutojump > 0) {
@@ -300,12 +308,12 @@ public class Agent {
         }
 
         double width = this.dimensions.width;
-        this.pushOutOfBlocks(world, this.posX - width * 0.35D, this.posZ + width * 0.35D);
-        this.pushOutOfBlocks(world, this.posX - width * 0.35D, this.posZ - width * 0.35D);
-        this.pushOutOfBlocks(world, this.posX + width * 0.35D, this.posZ - width * 0.35D);
-        this.pushOutOfBlocks(world, this.posX + width * 0.35D, this.posZ + width * 0.35D);
+        this.pushOutOfBlocks(world, this.posX - width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER, this.posZ + width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER);
+        this.pushOutOfBlocks(world, this.posX - width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER, this.posZ - width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER);
+        this.pushOutOfBlocks(world, this.posX + width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER, this.posZ - width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER);
+        this.pushOutOfBlocks(world, this.posX + width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER, this.posZ + width * PhysicsConstants.PUSH_OUT_BLOCKS_MULTIPLIER);
 
-        boolean canSprint = (float)this.hunger.getFoodLevel() > 6.0f;
+        boolean canSprint = (float)this.hunger.getFoodLevel() > PhysicsConstants.HUNGER_SPRINT_THRESHOLD;
 
         if((this.onGround || this.isSubmergedInWater) && !prevSneaking && !wasWalking && this.isWalking()
             && !this.sprinting && canSprint && !this.usingItem && this.blindness < 0) {
@@ -333,7 +341,7 @@ public class Agent {
         }
 
         if(this.touchingWater && this.input.sneaking) {
-            this.velY -= 0.04F;
+            this.velY -= PhysicsConstants.WATER_DESCENT_SPEED_SNEAKING;
         }
 
         this.tickMovementPlayer(world);
@@ -342,10 +350,10 @@ public class Agent {
     public void tickMovementPlayer(WorldView world) {
         this.tickMovementLiving(world);
 
-        this.airStrafingSpeed = 0.02F;
+        this.airStrafingSpeed = PhysicsConstants.AIR_STRAFING_SPEED_BASE;
 
         if(this.sprinting) {
-            this.airStrafingSpeed += 0.006F;
+            this.airStrafingSpeed += PhysicsConstants.AIR_STRAFING_SPEED_SLOW;
         }
     }
 
@@ -354,9 +362,9 @@ public class Agent {
             --this.jumpingCooldown;
         }
 
-        if(Math.abs(this.velX) < 0.003) this.velX = 0.0;
-        if(Math.abs(this.velY) < 0.003) this.velY = 0.0;
-        if(Math.abs(this.velZ) < 0.003) this.velZ = 0.0;
+        if(Math.abs(this.velX) < PhysicsConstants.VELOCITY_EPSILON) this.velX = 0.0;
+        if(Math.abs(this.velY) < PhysicsConstants.VELOCITY_EPSILON) this.velY = 0.0;
+        if(Math.abs(this.velZ) < PhysicsConstants.VELOCITY_EPSILON) this.velZ = 0.0;
 
         this.sidewaysSpeed = this.input.movementSideways;
         this.forwardSpeed = this.input.movementForward;
@@ -365,24 +373,24 @@ public class Agent {
         if(this.jumping) {
             double k = this.isInLava() ? this.getFluidHeight(FluidTags.LAVA) : this.getFluidHeight(FluidTags.WATER);
             boolean bl = this.touchingWater && k > 0.0;
-            double l = (double)this.standingEyeHeight < 0.4D ? 0.0D : 0.4D;
+            double l = (double)this.standingEyeHeight < PhysicsConstants.JUMP_VERTICAL_INERTIA ? 0.0D : PhysicsConstants.JUMP_VERTICAL_INERTIA;
 
             if(bl && (!this.onGround || k > l)) {
-                this.velY += 0.04F;
+                this.velY += PhysicsConstants.JUMP_HORIZONTAL_INERTIA;
             } else if(!this.isInLava() || this.onGround && !(k > l)) {
                 if((this.onGround || bl) && this.jumpingCooldown == 0) {
                     this.jump(world);
                     this.jumpingCooldown = 10;
                 }
             } else {
-                this.velY += 0.04F;
+                this.velY += PhysicsConstants.JUMP_HORIZONTAL_INERTIA;
             }
         } else {
             this.jumpingCooldown = 0;
         }
 
-        this.sidewaysSpeed *= 0.98F;
-        this.forwardSpeed *= 0.98F;
+        this.sidewaysSpeed *= PhysicsConstants.MOVEMENT_DECAY;
+        this.forwardSpeed *= PhysicsConstants.MOVEMENT_DECAY;
 
         this.travelPlayer(world);
 
@@ -398,25 +406,25 @@ public class Agent {
         float newY = this.getJumpVelocity(world);
 
         if(this.jumpBoost >= 0) {
-            newY += 0.1F * (float)(this.jumpBoost + 1);
+            newY += PhysicsConstants.JUMP_BOOST_MULTIPLIER * (float)(this.jumpBoost + 1);
         }
 
         this.velY = newY;
 
         if(this.sprinting) {
-            float g = this.yaw * ((float)Math.PI / 180);
-            this.velX += -MathHelper.sin(g) * 0.2F;
-            this.velZ +=  MathHelper.cos(g) * 0.2F;
+            float g = this.yaw * PhysicsConstants.DEGREES_TO_RADIANS;
+            this.velX += -MathHelper.sin(g) * PhysicsConstants.JUMP_HORIZONTAL_BOOST_SPRINTING;
+            this.velZ +=  MathHelper.cos(g) * PhysicsConstants.JUMP_HORIZONTAL_BOOST_SPRINTING;
         }
     }
 
     public float getJumpVelocity(WorldView world) {
-        return 0.42F * this.getJumpVelocityMultiplier(world);
+        return PhysicsConstants.JUMP_VELOCITY_BASE * this.getJumpVelocityMultiplier(world);
     }
 
     public float getJumpVelocityMultiplier(WorldView world) {
         BlockPos pos1 = new BlockPos(this.blockX, this.blockY, this.blockZ);
-        BlockPos pos2 = new BlockPos(this.blockX, this.box.minY - 0.5000001D, this.blockZ);
+        BlockPos pos2 = new BlockPos(this.blockX, this.box.minY - PhysicsConstants.JUMP_HEIGHT_OFFSET, this.blockZ);
         float f = world.getBlockState(pos1).getBlock().getJumpVelocityMultiplier();
         float g = world.getBlockState(pos2).getBlock().getJumpVelocityMultiplier();
         return (double)f == 1.0D ? g : f;
@@ -427,19 +435,19 @@ public class Agent {
                                 + (double)this.upwardSpeed * (double)this.upwardSpeed
                                 + (double)this.forwardSpeed * (double)this.forwardSpeed;
 
-        if (squaredMagnitude < 1.0E-7) return;
+        if (squaredMagnitude < PhysicsConstants.VELOCITY_MIN_SQUARED) return;
 
         double sideways = this.sidewaysSpeed, upward = this.upwardSpeed, forward = this.forwardSpeed;
 
         if(squaredMagnitude > 1.0D) {
             double magnitude = Math.sqrt(squaredMagnitude);
-            if (magnitude < 1.0E-4) { return; }
+            if (magnitude < PhysicsConstants.VELOCITY_SMALL_THRESHOLD_1) { return; }
             else { sideways /= magnitude; upward /= magnitude; forward /= magnitude; }
         }
 
         sideways *= speed; upward *= speed; forward *= speed;
-        float f = MathHelper.sin(this.yaw * 0.017453292F);
-        float g = MathHelper.cos(this.yaw * 0.017453292F);
+        float f = MathHelper.sin(this.yaw * PhysicsConstants.DEGREES_TO_RADIANS);
+        float g = MathHelper.cos(this.yaw * PhysicsConstants.DEGREES_TO_RADIANS);
 
         this.velX += sideways * (double)g - forward * (double)f;
         this.velY += upward;
@@ -448,10 +456,10 @@ public class Agent {
 
     public void travelPlayer(WorldView world) {
         if(this.swimming) {
-            float g = -MathHelper.sin(this.pitch * ((float)Math.PI / 180));
-            double h = g < -0.2 ? 0.085 : 0.06;
+            float g = -MathHelper.sin(this.pitch * PhysicsConstants.DEGREES_TO_RADIANS);
+            double h = g < -0.2 ? PhysicsConstants.SWIMMING_SPEED_UNDERWATER : PhysicsConstants.SWIMMING_SPEED_SURFACE;
 
-            BlockPos pos = new BlockPos(this.blockX, MathHelper.floor(this.posY + 1.0D - 0.1D), this.blockZ);
+            BlockPos pos = new BlockPos(this.blockX, MathHelper.floor(this.posY + 1.0D - PhysicsConstants.SWIMMING_SPEED_SURFACE_UNDER), this.blockZ);
 
             if(g <= 0.0D || this.jumping || !world.getBlockState(pos).getFluidState().isEmpty()) {
                 this.velY += (g - this.velY) * h;
@@ -463,17 +471,17 @@ public class Agent {
 
     public void travelLiving(WorldView world) {
         boolean falling = this.velY <= 0.0D;
-        double fallSpeed = 0.08D;
+        double fallSpeed = PhysicsConstants.GRAVITY_DEFAULT;
 
         if(falling && this.slowFalling >= 0) {
-            fallSpeed = 0.01D;
+            fallSpeed = PhysicsConstants.GRAVITY_SLOW_FALLING;
             this.fallDistance = 0.0F;
         }
 
         if(this.touchingWater) {
             double startY = this.posY;
-            float swimSpeed = this.sprinting ? 0.9F : 0.8F;
-            float speed = 0.02F;
+            float swimSpeed = this.sprinting ? 0.9F : (float)PhysicsConstants.WATER_PUSH_UP_SPEED;
+            float speed = (float)PhysicsConstants.SWIMMING_SPEED_MULTIPLIER;
 
             float h = this.depthStrider;
             if(h > 3.0F) h = 3.0F;
@@ -491,46 +499,46 @@ public class Agent {
             this.updateVelocity(speed);
             this.move(world, MovementType.SELF, this.velX, this.velY, this.velZ);
 
-            if(this.horizontalCollision && this.isClimbing(world)) { this.velY = 0.2D; }
-            this.velX *= swimSpeed; this.velY *= 0.8F; this.velZ *= swimSpeed;
+            if(this.horizontalCollision && this.isClimbing(world)) { this.velY = PhysicsConstants.CLIMBING_SPEED_BASE; }
+            this.velX *= swimSpeed; this.velY *= (float)PhysicsConstants.WATER_PUSH_UP_SPEED; this.velZ *= swimSpeed;
 
             this.method_26317(fallSpeed, falling);
 
-            boolean moveNoCollisions = this.doesNotCollide(world, this.velX, this.velY + (double)0.6F - this.posY + startY, this.velZ);
+            boolean moveNoCollisions = this.doesNotCollide(world, this.velX, this.velY + PhysicsConstants.SLIPPERINESS_MULTIPLIER - this.posY + startY, this.velZ);
 
             if(this.horizontalCollision && moveNoCollisions) {
-                this.velY = 0.3F;
+                this.velY = PhysicsConstants.COLLISION_VERTICAL_VELOCITY;
             }
         } else if(this.isInLava()) {
             double startY = this.posY;
-            this.updateVelocity(0.02F);
+            this.updateVelocity((float)PhysicsConstants.SWIMMING_SPEED_MULTIPLIER);
 
             this.move(world, MovementType.SELF, this.velX, this.velY, this.velZ);
 
-            if(this.getFluidHeight(FluidTags.LAVA) <= ((double)this.standingEyeHeight < 0.4D ? 0.0D : 0.4D)) {
-                this.velX *= 0.5D; this.velY *= 0.8F; this.velZ *= 0.5D;
+            if(this.getFluidHeight(FluidTags.LAVA) <= ((double)this.standingEyeHeight < PhysicsConstants.JUMP_VERTICAL_INERTIA ? 0.0D : PhysicsConstants.JUMP_VERTICAL_INERTIA)) {
+                this.velX *= PhysicsConstants.LAVA_VELOCITY_MULTIPLIER_XZ; this.velY *= (float)PhysicsConstants.WATER_PUSH_UP_SPEED; this.velZ *= PhysicsConstants.LAVA_VELOCITY_MULTIPLIER_XZ;
                 this.method_26317(fallSpeed, falling);
             } else {
-                this.velX *= 0.5D; this.velY *= 0.5D; this.velZ *= 0.5D;
+                this.velX *= PhysicsConstants.LAVA_VELOCITY_MULTIPLIER_XZ; this.velY *= PhysicsConstants.LAVA_VELOCITY_MULTIPLIER_Y; this.velZ *= PhysicsConstants.LAVA_VELOCITY_MULTIPLIER_XZ;
             }
 
             this.velY -= fallSpeed / 4.0D;
 
-            boolean moveNoCollisions = this.doesNotCollide(world, this.velX, this.velY + (double)0.6F - this.posY + startY, this.velZ);
+            boolean moveNoCollisions = this.doesNotCollide(world, this.velX, this.velY + PhysicsConstants.SLIPPERINESS_MULTIPLIER - this.posY + startY, this.velZ);
 
             if(this.horizontalCollision && moveNoCollisions) {
-                this.velY = 0.3F;
+                this.velY = PhysicsConstants.COLLISION_VERTICAL_VELOCITY;
             }
         } else if(this.fallFlying) {
             //No elytra controls
-            if(this.velY > -0.5D) {
+            if(this.velY > PhysicsConstants.ELYTRA_PITCH_MIN) {
                 this.fallDistance = 1.0F;
             }
 
-            float cYaw = MathHelper.cos(-this.yaw * 0.017453292F);
-            float sYaw = MathHelper.sin(-this.yaw * 0.017453292F);
-            float cPitch = MathHelper.cos(this.pitch * 0.017453292F);
-            float sPitch = MathHelper.sin(this.pitch * 0.017453292F);
+            float cYaw = MathHelper.cos(-this.yaw * PhysicsConstants.DEGREES_TO_RADIANS);
+            float sYaw = MathHelper.sin(-this.yaw * PhysicsConstants.DEGREES_TO_RADIANS);
+            float cPitch = MathHelper.cos(this.pitch * PhysicsConstants.DEGREES_TO_RADIANS);
+            float sPitch = MathHelper.sin(this.pitch * PhysicsConstants.DEGREES_TO_RADIANS);
             double facingX = sYaw * cPitch;
             double facingY = -sPitch;
             double facingZ = cYaw * cPitch;
@@ -560,9 +568,9 @@ public class Agent {
                 this.velZ += (facingZ / facingHM * velHM - this.velZ) * 0.1D;
             }
 
-            this.velX *= 0.9900000095367432D;
-            this.velY *= 0.9800000190734863D;
-            this.velZ *= 0.9900000095367432D;
+            this.velX *= PhysicsConstants.ELYTRA_DRAG_X;
+            this.velY *= PhysicsConstants.ELYTRA_DRAG_Y;
+            this.velZ *= PhysicsConstants.ELYTRA_DRAG_Z;
             this.move(world, MovementType.SELF, this.velX, this.velY, this.velZ);
 
             //Mojang why? WHYYYYYYYYYYYYYYY???
@@ -570,20 +578,20 @@ public class Agent {
                 this.fallFlying = false;
             }
         } else {
-            BlockPos pos = new BlockPos(this.posX, this.box.minY - 0.5000001D, this.posZ);
+            BlockPos pos = new BlockPos(this.posX, this.box.minY - PhysicsConstants.BLOCK_SLIPPERINESS_OFFSET, this.posZ);
             float slipperiness = world.getBlockState(pos).getBlock().getSlipperiness();
-            float xzDrag = this.onGround ? slipperiness * 0.91F : 0.91F;
+            float xzDrag = this.onGround ? slipperiness * PhysicsConstants.GROUND_DRAG_DEFAULT : PhysicsConstants.GROUND_DRAG_DEFAULT;
             double ajuVelY = this.applyMovementInput(world, slipperiness);
 
             if (this.levitation >= 0) {
-                ajuVelY += (0.05D * (double)(this.levitation + 1) - ajuVelY) * 0.2D;
+                ajuVelY += (PhysicsConstants.LEVITATION_SPEED * (double)(this.levitation + 1) - ajuVelY) * PhysicsConstants.CLIMBING_SPEED_BASE;
                 this.fallDistance = 0.0F;
             } else {
                 ajuVelY -= fallSpeed;
             }
 
             this.velX *= xzDrag;
-            this.velY = ajuVelY * (double)0.98F;
+            this.velY = ajuVelY * PhysicsConstants.GROUND_DRAG_AIR;
             this.velZ *= xzDrag;
         }
     }
@@ -595,7 +603,7 @@ public class Agent {
         this.move(world, MovementType.SELF, this.velX, this.velY, this.velZ);
 
         if((this.horizontalCollision || this.jumping) && this.isClimbing(world)) {
-            return 0.2D;
+            return PhysicsConstants.CLIMBING_SPEED_BASE;
         }
 
         return this.velY;
@@ -603,7 +611,7 @@ public class Agent {
 
     private float getMovementSpeed(float slipperiness) {
         if(this.onGround) {
-            return this.movementSpeed * (0.21600002F / (slipperiness * slipperiness * slipperiness));
+            return this.movementSpeed * ((float)PhysicsConstants.MOVEMENT_SPEED_COEFFICIENT / (slipperiness * slipperiness * slipperiness));
         }
 
         return this.airStrafingSpeed;
@@ -612,9 +620,9 @@ public class Agent {
     private void applyClimbingSpeed(WorldView world) {
         if(this.isClimbing(world)) {
             this.fallDistance = 0.0f;
-            this.velX = MathHelper.clamp(this.velX, -0.15000000596046448D, 0.15000000596046448D);
-            this.velY = Math.max(this.velY, -0.15000000596046448D);
-            this.velZ = MathHelper.clamp(this.velZ, -0.15000000596046448D, 0.15000000596046448D);
+            this.velX = MathHelper.clamp(this.velX, -PhysicsConstants.CLIMBING_SPEED_MAX, PhysicsConstants.CLIMBING_SPEED_MAX);
+            this.velY = Math.max(this.velY, -PhysicsConstants.CLIMBING_SPEED_MAX);
+            this.velZ = MathHelper.clamp(this.velZ, -PhysicsConstants.CLIMBING_SPEED_MAX, PhysicsConstants.CLIMBING_SPEED_MAX);
 
             BlockState state = world.getBlockState(new BlockPos(this.blockX, this.blockY, this.blockZ));
 
@@ -645,8 +653,8 @@ public class Agent {
 
     public void method_26317(double fallSpeed, boolean falling) {
         if(!this.sprinting) {
-            boolean b = falling && Math.abs(this.velY - 0.005D) >= 0.003D && Math.abs(this.velY - fallSpeed / 16.0D) < 0.003D;
-            this.velY = b ? -0.003D : this.velY - fallSpeed / 16.0D;
+            boolean b = falling && Math.abs(this.velY - PhysicsConstants.VELOCITY_COLLISION_THRESHOLD) >= PhysicsConstants.VELOCITY_EPSILON && Math.abs(this.velY - fallSpeed / 16.0D) < PhysicsConstants.VELOCITY_EPSILON;
+            this.velY = b ? -PhysicsConstants.VELOCITY_EPSILON : this.velY - fallSpeed / 16.0D;
         }
     }
 
@@ -706,9 +714,9 @@ public class Agent {
 
         if(movY != ajuY) {
             if(block instanceof SlimeBlock && !this.input.sneaking) {
-                if(this.velY < 0.0D) this.velY *= -1;
+                if(this.velY < 0.0D) this.velY *= PhysicsConstants.BOUNCE_VELOCITY_INVERT;
             } else if(block instanceof BedBlock) {
-                if(this.velY < 0.0D) this.velY *= -1 * (double)0.66F;
+                if(this.velY < 0.0D) this.velY *= PhysicsConstants.BOUNCE_VELOCITY_INVERT * PhysicsConstants.BOUNCE_VELOCITY_MULTIPLIER_BED;
             } else {
                 this.velY = 0;
             }
@@ -720,9 +728,9 @@ public class Agent {
             } else if(block instanceof SlimeBlock) {
                 double d = Math.abs(this.velY);
 
-                if(d < 0.1D) {
-                    this.velX *= 0.4D + d * 0.2D;
-                    this.velZ *= 0.4D + d * 0.2D;
+                if(d < PhysicsConstants.SLIME_VELOCITY_CLAMP_MIN) {
+                    this.velX *= PhysicsConstants.SLIME_VELOCITY_BOOST + d * PhysicsConstants.SLIME_HORIZONTAL_MULTIPLIER;
+                    this.velZ *= PhysicsConstants.SLIME_VELOCITY_BOOST + d * PhysicsConstants.SLIME_HORIZONTAL_MULTIPLIER;
                 }
             } else if(block instanceof TurtleEggBlock) {
                 //eggs can break (1/100)
@@ -742,7 +750,7 @@ public class Agent {
     }
 
     private boolean hasCollidedSoftly(double ajuX, double ajuY, double ajuZ) {
-        float f = this.yaw * ((float)Math.PI / 180);
+        float f = this.yaw * PhysicsConstants.DEGREES_TO_RADIANS;
         double d = MathHelper.sin(f);
         double e = MathHelper.cos(f);
         double g = (double)this.sidewaysSpeed * e - (double)this.forwardSpeed * d;
@@ -750,13 +758,13 @@ public class Agent {
         double i = MathHelper.square(g) + MathHelper.square(h);
         double j = MathHelper.square(ajuX) + MathHelper.square(ajuZ);
 
-        if(i < (double)1.0E-5F || j < (double)1.0E-5F) {
+        if(i < PhysicsConstants.VELOCITY_SMALL_THRESHOLD_2 || j < PhysicsConstants.VELOCITY_SMALL_THRESHOLD_2) {
             return false;
         }
 
         double k = g * ajuX + h * ajuZ;
         double l = Math.acos(k / Math.sqrt(i * j));
-        return l < 0.13962633907794952D;
+        return l < PhysicsConstants.ELYTRA_PITCH_FACTOR;
     }
 
     public Vec3d adjustMovementForSneaking(WorldView world, MovementType type, Vec3d movement) {
@@ -767,22 +775,22 @@ public class Agent {
             double e = movement.z;
 
             while(d != 0.0 && this.isSpaceEmpty(world, this.box.offset(d, -this.stepHeight, 0.0))) {
-                if(d < 0.05 && d >= -0.05) { d = 0.0; continue; }
-                if(d > 0.0) { d -= 0.05; continue; }
-                d += 0.05;
+                if(d < PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT && d >= -PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT) { d = 0.0; continue; }
+                if(d > 0.0) { d -= PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT; continue; }
+                d += PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT;
             }
 
             while(e != 0.0 && this.isSpaceEmpty(world, this.box.offset(0.0, -this.stepHeight, e))) {
-                if(e < 0.05 && e >= -0.05) { e = 0.0; continue; }
-                if(e > 0.0) { e -= 0.05; continue; }
-                e += 0.05;
+                if(e < PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT && e >= -PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT) { e = 0.0; continue; }
+                if(e > 0.0) { e -= PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT; continue; }
+                e += PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT;
             }
 
             while(d != 0.0 && e != 0.0 && this.isSpaceEmpty(world, this.box.offset(d, -this.stepHeight, e))) {
                 d = d < 0.05 && d >= -0.05 ? 0.0 : (d > 0.0 ? (d -= 0.05) : (d += 0.05));
-                if(e < 0.05 && e >= -0.05) { e = 0.0; continue; }
-                if(e > 0.0) { e -= 0.05; continue; }
-                e += 0.05;
+                if(e < PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT && e >= -PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT) { e = 0.0; continue; }
+                if(e > 0.0) { e -= PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT; continue; }
+                e += PhysicsConstants.SNEAK_EDGE_CHECK_INCREMENT;
             }
 
             movement = new Vec3d(d, movement.y, e);
@@ -880,7 +888,7 @@ public class Agent {
     }
 
     void checkWaterState(WorldView world) {
-        if(this.updateMovementInFluid(world, FluidTags.WATER, 0.014D)) {
+        if(this.updateMovementInFluid(world, FluidTags.WATER, PhysicsConstants.FLUID_FLOW_SCALE)) {
             this.fallDistance = 0.0F;
             this.touchingWater = true;
         } else {
@@ -890,7 +898,7 @@ public class Agent {
 
     public boolean updateMovementInFluid(WorldView world, TagKey<Fluid> tag, double d) {
         int n;
-        Box box = this.box.contract(0.001D);
+        Box box = this.box.contract(CollisionConstants.COLLISION_BOX_CONTRACT);
         int i = MathHelper.floor(box.minX);
         int j = MathHelper.ceil(box.maxX);
         int k = MathHelper.floor(box.minY);
@@ -937,8 +945,8 @@ public class Agent {
             Vec3d vec3d3 = new Vec3d(this.velX, this.velY, this.velZ);
             vec3d = vec3d.multiply(d);
 
-            if(Math.abs(vec3d3.x) < 0.003 && Math.abs(vec3d3.z) < 0.003 && vec3d.length() < 0.0045000000000000005) {
-                vec3d = vec3d.normalize().multiply(0.0045000000000000005);
+            if(Math.abs(vec3d3.x) < PhysicsConstants.VELOCITY_EPSILON && Math.abs(vec3d3.z) < PhysicsConstants.VELOCITY_EPSILON && vec3d.length() < PhysicsConstants.FLUID_FLOW_MIN) {
+                vec3d = vec3d.normalize().multiply(PhysicsConstants.FLUID_FLOW_MIN);
             }
 
             this.velX += vec3d.x;
@@ -1000,8 +1008,8 @@ public class Agent {
     }
 
     public void checkBlockCollision(WorldView world) {
-        BlockPos blockPos = new BlockPos(this.box.minX + 0.001, this.box.minY + 0.001, this.box.minZ + 0.001);
-        BlockPos blockPos2 = new BlockPos(this.box.maxX - 0.001, this.box.maxY - 0.001, this.box.maxZ - 0.001);
+        BlockPos blockPos = new BlockPos(this.box.minX + CollisionConstants.COLLISION_BOX_PADDING, this.box.minY + CollisionConstants.COLLISION_BOX_PADDING, this.box.minZ + CollisionConstants.COLLISION_BOX_PADDING);
+        BlockPos blockPos2 = new BlockPos(this.box.maxX - CollisionConstants.COLLISION_BOX_PADDING, this.box.maxY - CollisionConstants.COLLISION_BOX_PADDING, this.box.maxZ - CollisionConstants.COLLISION_BOX_PADDING);
         BlockPos.Mutable pos = new BlockPos.Mutable();
 
         if(world.isRegionLoaded(blockPos, blockPos2)) {
@@ -1020,9 +1028,9 @@ public class Agent {
                             boolean drag = surface.contains(BubbleColumnBlock.DRAG) && surface.get(BubbleColumnBlock.DRAG);
 
                             if(surface.isAir()) {
-                                this.velY = drag ? Math.max(-0.9D, this.velY - 0.03D) : Math.min(1.8D, this.velY + 0.1D);
+                                this.velY = drag ? Math.max(-0.9D, this.velY - PhysicsConstants.BUBBLE_COLUMN_SURFACE_DRAG) : Math.min(1.8D, this.velY + PhysicsConstants.BUBBLE_COLUMN_UP_SPEED);
                             } else {
-                                this.velY = drag ? Math.max(-0.3D, this.velY - 0.03D) : Math.min(0.7D, this.velY + 0.06D);
+                                this.velY = drag ? Math.max(-0.3D, this.velY - PhysicsConstants.BUBBLE_COLUMN_DOWN_SPEED) : Math.min(0.7D, this.velY + 0.06D);
                                 this.fallDistance = 0.0F;
                             }
                         } else if(state.getBlock() instanceof CactusBlock) {
@@ -1035,16 +1043,16 @@ public class Agent {
                             //extinguish the entity
                         } else if(state.getBlock() instanceof CobwebBlock) {
                             this.fallDistance = 0.0F;
-                            this.mulX = 0.25D; this.mulY = 0.05F; this.mulZ = 0.25D;
+                            this.mulX = PhysicsConstants.COBWEB_VELOCITY_MULTIPLIER; this.mulY = PhysicsConstants.COBWEB_FALL_SPEED_MULTIPLIER; this.mulZ = PhysicsConstants.COBWEB_VELOCITY_MULTIPLIER;
                         } else if(state.getBlock() instanceof EndPortalBlock) {
                             //fuck
                         } else if(state.getBlock() instanceof HoneyBlock) {
                             if(this.isSliding(pos)) {
-                                if(this.velY < -0.13D) {
-                                    double m = -0.05D / this.velY;
-                                    this.velX *= m; this.velY = -0.05D; this.velZ *= m;
+                                if(this.velY < -PhysicsConstants.HONEY_SLIDE_SPEED) {
+                                    double m = -PhysicsConstants.HONEY_SLIDE_DOWN_SPEED / this.velY;
+                                    this.velX *= m; this.velY = -PhysicsConstants.HONEY_SLIDE_DOWN_SPEED; this.velZ *= m;
                                 } else {
-                                    this.velY = -0.05D;
+                                    this.velY = -PhysicsConstants.HONEY_SLIDE_DOWN_SPEED;
                                 }
 
                                 this.fallDistance = 0.0F;
@@ -1052,7 +1060,7 @@ public class Agent {
                         } else if(state.getBlock() instanceof NetherPortalBlock) {
                             //eh?
                         } else if(state.getBlock() instanceof SweetBerryBushBlock) {
-                            this.mulX = 0.8f; this.mulY = 0.75D; this.mulZ = 0.8F;
+                            this.mulX = PhysicsConstants.SWEET_BERRY_MOVEMENT_MULTIPLIER; this.mulY = PhysicsConstants.SWEET_BERRY_VELOCITY_MULTIPLIER; this.mulZ = PhysicsConstants.SWEET_BERRY_MOVEMENT_MULTIPLIER;
                             //damage the entity
                         } else if(state.getBlock() instanceof TripwireBlock) {
                             //change block state
@@ -1067,13 +1075,13 @@ public class Agent {
 
     private boolean isSliding(BlockPos pos) {
         if(this.onGround) return false;
-        if(this.posY > (double)pos.getY() + 0.9375D - 1.0E-07D) return false;
-        if(this.velY >= -0.08D) return false;
+        if(this.posY > (double)pos.getY() + 0.9375D - CollisionConstants.BOUNDING_BOX_EPSILON) return false;
+        if(this.velY >= -PhysicsConstants.HONEY_SLIDE_DOWN_SPEED) return false;
 
         double d = Math.abs((double)pos.getX() + 0.5D - this.posX);
         double e = Math.abs((double)pos.getZ() + 0.5D - this.posZ);
         double f = 0.4375D + (double)(this.dimensions.width / 2.0F);
-        return d + 1.0E-7D > f || e + 1.0E-7D > f;
+        return d + CollisionConstants.BOUNDING_BOX_EPSILON > f || e + CollisionConstants.BOUNDING_BOX_EPSILON > f;
     }
 
     public float getVelocityMultiplier(WorldView world) {
@@ -1084,12 +1092,12 @@ public class Agent {
 
         if(block == Blocks.WATER || block == Blocks.BUBBLE_COLUMN) return blockMult;
 
-        BlockPos pos = new BlockPos(this.blockX, MathHelper.floor(this.posY - 0.5000001D), this.blockZ);
+        BlockPos pos = new BlockPos(this.blockX, MathHelper.floor(this.posY - PhysicsConstants.BLOCK_SLIPPERINESS_OFFSET), this.blockZ);
         return (double)blockMult == 1.0D ? world.getBlockState(pos).getBlock().getVelocityMultiplier() : blockMult;
     }
 
     public BlockPos getLandingPos(WorldView world) {
-        BlockPos pos = new BlockPos(this.blockX, MathHelper.floor(this.posY - (double)0.2F), this.blockZ);
+        BlockPos pos = new BlockPos(this.blockX, MathHelper.floor(this.posY - PhysicsConstants.LANDING_POSITION_OFFSET), this.blockZ);
 
         if(!world.getBlockState(pos).isAir()) {
             return pos;
@@ -1105,7 +1113,7 @@ public class Agent {
     }
 
     private boolean isWalking() {
-        return this.isSubmergedInWater ? this.input.hasForwardMovement() : (double)this.input.movementForward >= 0.8D;
+        return this.isSubmergedInWater ? this.input.hasForwardMovement() : (double)this.input.movementForward >= PhysicsConstants.WALKING_THRESHOLD;
     }
 
     public Box calculateBoundsForPose(EntityPose pose) {
@@ -1117,7 +1125,7 @@ public class Agent {
     }
 
     public boolean wouldPoseNotCollide(WorldView world, EntityPose pose) {
-        return this.isSpaceEmpty(world, this.calculateBoundsForPose(pose).contract(1.0E-7));
+        return this.isSpaceEmpty(world, this.calculateBoundsForPose(pose).contract(CollisionConstants.BOUNDING_BOX_EPSILON));
     }
 
     private void pushOutOfBlocks(WorldView world, double x, double d) {
@@ -1142,9 +1150,9 @@ public class Agent {
 
         if(direction != null) {
             if(direction.getAxis() == Direction.Axis.X) {
-                this.velX = 0.1D * (double)direction.getOffsetX();
+                this.velX = PhysicsConstants.PUSH_VELOCITY * (double)direction.getOffsetX();
             } else {
-                this.velZ = 0.1D * (double)direction.getOffsetZ();
+                this.velZ = PhysicsConstants.PUSH_VELOCITY * (double)direction.getOffsetZ();
             }
         }
     }
@@ -1152,17 +1160,12 @@ public class Agent {
     public boolean canCollide(WorldView world, Box box) {
         AgentBlockCollisions collisions = new AgentBlockCollisions(world, this, box, true);
 
-        if(!collisions.hasNext()) {
-            this.scannedBlocks += collisions.scannedBlocks;
-            return false;
-        }
-
-        while(collisions.next().isEmpty()) {
-            if(!collisions.hasNext()) {
+        do {
+            if (!collisions.hasNext()) {
                 this.scannedBlocks += collisions.scannedBlocks;
                 return false;
             }
-        }
+        } while (collisions.next().isEmpty());
 
         this.scannedBlocks += collisions.scannedBlocks;
         return true;
@@ -1170,20 +1173,20 @@ public class Agent {
 
     private boolean wouldCollideAt(WorldView world, BlockPos pos) {
         Box box2 = new Box(pos.getX(), this.box.minY, pos.getZ(),
-            (double)pos.getX() + 1.0D, this.box.maxY, (double)pos.getZ() + 1.0D).contract(1.0E-7);
+            (double)pos.getX() + CollisionConstants.COLLISION_BOX_FULL_BLOCK, this.box.maxY, (double)pos.getZ() + CollisionConstants.COLLISION_BOX_FULL_BLOCK).contract(CollisionConstants.BOUNDING_BOX_EPSILON);
         return this.canCollide(world, box2);
     }
 
     public void setSprinting(boolean sprinting) {
         this.sprinting = sprinting;
-        this.movementSpeed = 0.1F;
+        this.movementSpeed = PhysicsConstants.MOVEMENT_SPEED_BASE;
 
         if(sprinting) {
-            this.movementSpeed *= (1.0D + (double)0.3F);
+            this.movementSpeed *= (1.0D + PhysicsConstants.SPRINT_SPEED_MULTIPLIER);
         }
 
         if(this.speed >= 0) {
-            double amplifier = 0.20000000298023224D * (double)(this.speed + 1);
+            double amplifier = PhysicsConstants.SPEED_EFFECT_AMPLIFIER * (double)(this.speed + 1);
             this.movementSpeed *= (1.0D + amplifier);
         }
     }

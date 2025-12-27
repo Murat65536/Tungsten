@@ -2,6 +2,7 @@ package kaptainwutax.tungsten.path.calculators;
 
 import java.util.Arrays;
 
+import kaptainwutax.tungsten.constants.PathfindingConstants;
 import kaptainwutax.tungsten.path.Node;
 
 /**
@@ -14,7 +15,7 @@ public final class BinaryHeapOpenSet implements IOpenSet {
     /**
      * The initial capacity of the heap (2^10)
      */
-    private static final int INITIAL_CAPACITY = 1024;
+    private static final int INITIAL_CAPACITY = PathfindingConstants.INITIAL_HEAP_CAPACITY;
 
     /**
      * The array backing the heap

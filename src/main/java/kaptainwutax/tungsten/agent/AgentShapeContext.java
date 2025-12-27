@@ -1,5 +1,6 @@
 package kaptainwutax.tungsten.agent;
 
+import kaptainwutax.tungsten.constants.CollisionConstants;
 import net.minecraft.block.EntityShapeContext;
 import net.minecraft.block.ShapeContext;
 
@@ -14,7 +15,7 @@ import java.util.function.Predicate;
 
 public class AgentShapeContext implements ShapeContext {
 
-    protected static final ShapeContext ABSENT = new EntityShapeContext(false, -1.7976931348623157E308, ItemStack.EMPTY, fluidState -> false, null) {
+    protected static final ShapeContext ABSENT = new EntityShapeContext(false, Double.MIN_VALUE, ItemStack.EMPTY, fluidState -> false, null) {
         @Override
         public boolean isAbove(VoxelShape shape, BlockPos pos, boolean defaultValue) {
             return defaultValue;
@@ -54,7 +55,7 @@ public class AgentShapeContext implements ShapeContext {
 
     @Override
     public boolean isAbove(VoxelShape shape, BlockPos pos, boolean defaultValue) {
-        return this.minY > (double)pos.getY() + shape.getMax(Direction.Axis.Y) - (double)1.0E-5f;
+        return this.minY > (double)pos.getY() + shape.getMax(Direction.Axis.Y) - CollisionConstants.SHAPE_COLLISION_EPSILON;
     }
 
 }
