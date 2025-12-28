@@ -75,13 +75,13 @@ public class Node {
 	 public int hashCode(int round, boolean shouldAddYaw) {
 		 long result = 3241;
 		 if (this.input != null) {
-		 	result = 2 * Boolean.hashCode(this.input.forward);
-		    result = result + 3 * Boolean.hashCode(this.input.back);
-		    result = result + 5 * Boolean.hashCode(this.input.right);
-		    result = result + 11 * Boolean.hashCode(this.input.left);
-		    result = result + 13 * Boolean.hashCode(this.input.jump);
-		    result = result + 17 * Boolean.hashCode(this.input.sneak);
-		    result = result + 19 * Boolean.hashCode(this.input.sprint);
+		 	result = 2L * Boolean.hashCode(this.input.forward);
+		    result = result + 3L * Boolean.hashCode(this.input.back);
+		    result = result + 5L * Boolean.hashCode(this.input.right);
+		    result = result + 11L * Boolean.hashCode(this.input.left);
+		    result = result + 13L * Boolean.hashCode(this.input.jump);
+		    result = result + 17L * Boolean.hashCode(this.input.sneak);
+		    result = result + 19L * Boolean.hashCode(this.input.sprint);
 //		    result = result + (Math.round(this.input.pitch));
 		    if (shouldAddYaw) result = result + (Math.round(this.input.yaw));
 		    result = result + (Math.round(this.agent.velX*10));
