@@ -31,12 +31,6 @@ public final class PathfindingConstants {
 
         /** Enable work-stealing for better load distribution */
         public static final boolean WORK_STEALING_ENABLED = true;
-
-        /** Maximum number of tasks to batch together for cache locality */
-        public static final int MAX_BATCH_SIZE = 32;
-
-        /** Whether to use shared thread pool (performance optimization) */
-        public static final boolean USE_SHARED_POOL = true;
     }
 
     /**
@@ -67,48 +61,15 @@ public final class PathfindingConstants {
 
     /**
      * Scaling factors for a closed set in different movement types.
+     * Unified scaling approach: All movement types use BASE_SCALE for complete consistency.
      */
     public static final class ClosedSetScale {
         private ClosedSetScale() {}
 
-        /** Precise movement scaling */
-        public static final class Precise {
-            private Precise() {}
-            public static final double X = 1000.0;
-            public static final double Y = 1000.0;
-            public static final double Z = 1000.0;
-        }
+        /** Base scaling factor used uniformly across the entire system */
+        public static final double BASE_SCALE = 100.0;
 
-        /** Standard movement scaling */
-        public static final class Standard {
-            private Standard() {}
-            public static final double X = 100.0;
-            public static final double Y = 10.0;
-            public static final double Z = 100.0;
-        }
-
-        /** Long jump movement scaling */
-        public static final class LongJump {
-            private LongJump() {}
-            public static final double X = 10.0;
-            public static final double Y = 100.0;
-            public static final double Z = 10.0;
-        }
-
-        /** Climbing movement scaling */
-        public static final class Climbing {
-            private Climbing() {}
-            public static final double X = 1.0;
-            public static final double Y = 10000.0;
-            public static final double Z = 1.0;
-        }
-
-        /** Water movement scaling */
-        public static final class Water {
-            private Water() {}
-            public static final double X = 1000.0;
-            public static final double Y = 100.0;
-            public static final double Z = 1000.0;
-        }
+        /** Velocity scaling factor (consistent with position scaling) */
+        public static final double VELOCITY_SCALE = BASE_SCALE;
     }
 }

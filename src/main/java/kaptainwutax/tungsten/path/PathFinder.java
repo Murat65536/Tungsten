@@ -348,34 +348,12 @@ public class PathFinder {
 
 		int hashCode = n.hashCode(1, shouldAddYaw);
 	    Vec3d agentPos = n.agent.getPos();
-	    double distanceToTarget = agentPos.distanceTo(target);
 
-	    // Determine scaling factors based on conditions
-	    double xScale, yScale, zScale;
-	    if (distanceToTarget < 1.0 /* || n.agent.isSubmergedInWater || n.agent.isClimbing(MinecraftClient.getInstance().world) */) {
-	        xScale = PathfindingConstants.ClosedSetScale.Precise.X;
-	        yScale = PathfindingConstants.ClosedSetScale.Precise.Y;
-	        zScale = PathfindingConstants.ClosedSetScale.Precise.Z;
-	    } else if (isDoingLongJump) {
-	        xScale = PathfindingConstants.ClosedSetScale.LongJump.X;
-	        yScale = PathfindingConstants.ClosedSetScale.LongJump.Y;
-	        zScale = PathfindingConstants.ClosedSetScale.LongJump.Z;
-	    } else if (n.agent.isClimbing(TungstenMod.mc.world)) {
-	        xScale = PathfindingConstants.ClosedSetScale.Climbing.X;
-	        yScale = PathfindingConstants.ClosedSetScale.Climbing.Y;
-	        zScale = PathfindingConstants.ClosedSetScale.Climbing.Z;
-	    } else if (n.agent.touchingWater) {
-	        xScale = PathfindingConstants.ClosedSetScale.Water.X;
-	        yScale = PathfindingConstants.ClosedSetScale.Water.Y;
-	        zScale = PathfindingConstants.ClosedSetScale.Water.Z;
-	    } else {
-	        xScale = PathfindingConstants.ClosedSetScale.Standard.X;
-	        yScale = PathfindingConstants.ClosedSetScale.Standard.Y;
-	        zScale = PathfindingConstants.ClosedSetScale.Standard.Z;
-	    }
+	    // Use unified BASE_SCALE for all movement types
+	    double scale = PathfindingConstants.ClosedSetScale.BASE_SCALE;
 
 	    // Compute scaled position with hashCode offset
-	    Vec3d scaledPos = computeScaledPosition(agentPos, hashCode, xScale, yScale, zScale);
+	    Vec3d scaledPos = computeScaledPosition(agentPos, hashCode, scale, scale, scale);
 
 	    // Check if the position is in the closed set
 	    if (closed.contains(scaledPos)) {
@@ -397,7 +375,7 @@ public class PathFinder {
 	        Math.round(pos.z * zScale)
 	    );
 	}
-	
+
 	private static double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
 		double xzMultiplier = CostConstants.Heuristics.XZ_HEURISTIC_MULTIPLIER;
 	    double dx = (position.x - target.x)*xzMultiplier;

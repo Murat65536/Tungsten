@@ -12,6 +12,7 @@ import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.constants.physics.PlayerConstants;
+import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
 import kaptainwutax.tungsten.path.common.HeapNode;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
@@ -101,8 +102,8 @@ public class Node implements HeapNode {
             result = result + 19L * Boolean.hashCode(this.input.sprint());
 //		    result = result + (Math.round(this.input.pitch));
             if (shouldAddYaw) result = result + (Math.round(this.input.yaw()));
-            result = result + (Math.round(this.agent.velX * 10));
-            result = result + (Math.round(this.agent.velZ * 10));
+            result = result + (Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_SCALE));
+            result = result + (Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_SCALE));
         }
 //	    if (round > 1) {
 //		    result = 34L * result + Double.hashCode(roundToPrecision(this.agent.getPos().x, round));
