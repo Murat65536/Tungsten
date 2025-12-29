@@ -94,8 +94,7 @@ public final class BetterBlockPos extends net.minecraft.util.math.BlockPos {
         if (o == null) {
             return false;
         }
-        if (o instanceof BetterBlockPos) {
-            BetterBlockPos oth = (BetterBlockPos) o;
+        if (o instanceof BetterBlockPos oth) {
             return oth.x == x && oth.y == y && oth.z == z;
         }
         // during path execution, like "if (whereShouldIBe.equals(whereAmI)) {"
@@ -203,9 +202,9 @@ public final class BetterBlockPos extends net.minecraft.util.math.BlockPos {
     public String toString() {
         return String.format(
                 "BetterBlockPos{x=%s,y=%s,z=%s}",
-                Integer.toString(x),
-                Integer.toString(y),
-                Integer.toString(z)
+                x,
+                y,
+                z
         );
     }
 

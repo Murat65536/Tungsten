@@ -4,9 +4,9 @@ package kaptainwutax.tungsten.helpers;
  * Helper class to process strings.
  */
 public class StringProcessorHelper {
-	public static int findClosestCharIndex(String str, char target, int index) {
+    public static int findClosestCharIndex(String str, char target, int index) {
         // Edge case: If the string is empty, return -1
-        if (str == null || str.length() == 0) {
+        if (str == null || str.isEmpty()) {
             return -1;
         }
 
@@ -41,5 +41,5 @@ public class StringProcessorHelper {
             // Return the closest index
             return (Math.abs(index - leftIndex) <= Math.abs(index - rightIndex)) ? leftIndex : rightIndex;
         }
-	}
+    }
 }

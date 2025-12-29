@@ -1,9 +1,6 @@
 package kaptainwutax.tungsten.helpers;
 
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
-import kaptainwutax.tungsten.render.Color;
-import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -64,7 +61,7 @@ public class DistanceCalculator {
 	/**
      * Calculates the distance to the edge of the block the player is standing on in the direction they're looking.
      * 
-     * @param player the player entity
+     * @param agent The simulated player
      * @return distance to the edge of the block in the look direction
      */
     public static double getDistanceToEdge(Agent agent) {
@@ -76,14 +73,14 @@ public class DistanceCalculator {
 		float i = MathHelper.sin(g);
 		float j = MathHelper.cos(f);
 		float k = MathHelper.sin(f);
-		Vec3d lookDirection =  new Vec3d((double)(i * j), (double)(-k), (double)(h * j)); // Direction player is looking
+		Vec3d lookDirection =  new Vec3d(i * j, -k, h * j); // Direction player is looking
 
         // Determine block bounds relative to the player's position
         double deltaX = position.x - blockPos.getX();
         double deltaZ = position.z - blockPos.getZ();
 
         // Calculate edge distance based on facing direction
-        double distance = 0;
+        double distance;
         if (Math.abs(lookDirection.x) > Math.abs(lookDirection.z)) {
             // Looking more along the X axis
             if (lookDirection.x > 0) {

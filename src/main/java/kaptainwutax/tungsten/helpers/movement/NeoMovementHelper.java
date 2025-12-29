@@ -42,7 +42,8 @@ public class NeoMovementHelper {
 	 * Checks if neo is possible.
 	 * 
 	 * @param world
-	 * @param movementDir       Neo direction. Only X or Z are allowed
+	 * @param isMovingOnXAxis
+	 * @param isMovingOnZAxis
 	 * @param startPos
 	 * @param endPos
 	 * @param isJumpingOneBlock
@@ -121,72 +122,64 @@ public class NeoMovementHelper {
 	}
 
 	// Encapsulates the path traversal state
-	private static class PathState {
-		private final boolean isJumpingUp, isJumpingOneBlock, shouldRender, shouldSlow;
-
-		public PathState(boolean isJumpingUp, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
-			this.isJumpingUp = isJumpingUp;
-			this.isJumpingOneBlock = isJumpingOneBlock;
-			this.shouldRender = shouldRender;
-			this.shouldSlow = shouldSlow;
-		}
+		private record PathState(boolean isJumpingUp, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
 
 		private boolean isClear(WorldView world, int start, int end, int fixed, boolean isXAxis, int y) {
-			int count = 0;
-			int increment = start < end ? 1 : -1;
-			int curr = start;
-			BlockPos.Mutable currPos = new BlockPos.Mutable();
+				int count = 0;
+				int increment = start < end ? 1 : -1;
+				int curr = start;
+				BlockPos.Mutable currPos = new BlockPos.Mutable();
 
-			while (curr != end) {
-				if (TungstenMod.PATHFINDER.stop.get())
-					return false;
-				if (count > 5)
-					return false;
-				count++;
+				while (curr != end) {
+					if (TungstenMod.PATHFINDER.stop.get())
+						return false;
+					if (count > 5)
+						return false;
+					count++;
 
-				if (isXAxis) {
-					currPos.set(curr, y - 1, fixed);
-				} else {
-					currPos.set(fixed, y - 1, curr);
-				}
-
-				if (!world.getBlockState(currPos).isAir()) {
-					return false;
-				}
-
-				if (isXAxis) {
-					currPos.set(curr, y, fixed);
-				} else {
-					currPos.set(fixed, y, curr);
-				}
-
-				if (MovementHelper.isObscured(world, currPos, isJumpingUp, isJumpingOneBlock)) {
-					if (shouldRender) {
-						renderBlock(currPos, Color.RED, shouldSlow);
+					if (isXAxis) {
+						currPos.set(curr, y - 1, fixed);
+					} else {
+						currPos.set(fixed, y - 1, curr);
 					}
-					return false;
-				} else {
-					if (shouldRender) {
-						renderBlock(currPos, Color.WHITE, shouldSlow);
+
+					if (!world.getBlockState(currPos).isAir()) {
+						return false;
+					}
+
+					if (isXAxis) {
+						currPos.set(curr, y, fixed);
+					} else {
+						currPos.set(fixed, y, curr);
+					}
+
+					if (MovementHelper.isObscured(world, currPos, isJumpingUp, isJumpingOneBlock)) {
+						if (shouldRender) {
+							renderBlock(currPos, Color.RED, shouldSlow);
+						}
+						return false;
+					} else {
+						if (shouldRender) {
+							renderBlock(currPos, Color.WHITE, shouldSlow);
+						}
+					}
+
+					curr += increment;
+				}
+				return true;
+			}
+
+			private void renderBlock(BlockPos.Mutable currPos, Color color, boolean shouldSlow) {
+				TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()),
+						new Vec3d(1.0D, 1.0D, 1.0D), color));
+				TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()),
+						new Vec3d(1.0D, 1.0D, 1.0D), color));
+				if (shouldSlow) {
+					try {
+						Thread.sleep(450);
+					} catch (InterruptedException ignored) {
 					}
 				}
-
-				curr += increment;
-			}
-			return true;
-		}
-
-		private void renderBlock(BlockPos.Mutable currPos, Color color, boolean shouldSlow) {
-			TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()),
-					new Vec3d(1.0D, 1.0D, 1.0D), color));
-			TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()),
-					new Vec3d(1.0D, 1.0D, 1.0D), color));
-			if (shouldSlow) {
-				try {
-					Thread.sleep(450);
-				} catch (InterruptedException ignored) {
-				}
 			}
 		}
-	}
 }

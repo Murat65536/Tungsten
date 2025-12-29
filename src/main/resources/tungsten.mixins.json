@@ -15,8 +15,8 @@
     "MixinWorldChunk",
     "MixinMinecraftClient",
     "MixinClientCommandSource",
-    "AccessorChatInputSuggestor",
-    "MixinChatInputSuggestor",
+    "AccessorChatInputSuggester",
+    "MixinChatInputSuggester",
     "MixinCommandSource",
     "MixinSuggestionWindow"
   ],

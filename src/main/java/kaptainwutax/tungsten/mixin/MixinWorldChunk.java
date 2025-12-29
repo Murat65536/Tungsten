@@ -43,8 +43,7 @@ public abstract class MixinWorldChunk extends Chunk {
 	@Inject(method = "loadFromPacket", at = @At("RETURN"))
 	private void loadFromPacket(PacketByteBuf buf, Map<BlockPos, NbtCompound> blockEntityTagMap, Consumer<ChunkData.BlockEntityVisitor> consumer, CallbackInfo ci) {
 		if(TungstenMod.WORLD == null || this.getWorld() != TungstenMod.WORLD.parent) {
-			return;
-		}
+        }
 
 		/*
 		int minX = this.getPos().x << 4;

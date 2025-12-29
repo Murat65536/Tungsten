@@ -2,30 +2,14 @@ package kaptainwutax.tungsten.path.blockSpaceSearchAssist;
 
 import net.minecraft.util.math.BlockPos;
 
-public class Goal {
-	/**
-     * The X block position of this goal
-     */
-    public final int x;
-
-    /**
-     * The Y block position of this goal
-     */
-    public final int y;
-
-    /**
-     * The Z block position of this goal
-     */
-    public final int z;
-
+/**
+ * @param x The X block position of this goal
+ * @param y The Y block position of this goal
+ * @param z The Z block position of this goal
+ */
+public record Goal(int x, int y, int z) {
     public Goal(BlockPos pos) {
         this(pos.getX(), pos.getY(), pos.getZ());
-    }
-
-    public Goal(int x, int y, int z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
     }
 
 
@@ -45,9 +29,9 @@ public class Goal {
     public String toString() {
         return String.format(
                 "GoalBlock{x=%s,y=%s,z=%s}",
-                Integer.toString(x),
-                Integer.toString(y),
-                Integer.toString(z)
+                x,
+                y,
+                z
         );
     }
 
@@ -59,7 +43,7 @@ public class Goal {
     }
 
     public static double calculate(double xDiff, int yDiff, double zDiff) {
-	    
-	    return (Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff));
+
+        return (Math.sqrt(xDiff * xDiff + yDiff * yDiff + zDiff * zDiff));
     }
 }

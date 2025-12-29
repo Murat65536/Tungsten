@@ -6,11 +6,9 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(LivingEntity.class)
 public interface AccessorLivingEntity {
-
 	@Accessor
 	boolean getJumping();
 
 	@Accessor
 	int getJumpingCooldown();
-
 }

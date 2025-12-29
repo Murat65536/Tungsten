@@ -7,7 +7,6 @@ import com.google.common.collect.Streams;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
-import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.Node;
 import kaptainwutax.tungsten.path.PathInput;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
@@ -42,7 +41,7 @@ public class CornerJump {
         boolean jump = false;
         int limit = 0;
         desiredYaw += reverse ? -90f : 90f;
-        while (limit < 18 && jump == false && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-2) {
+        while (limit < 18 && !jump && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-2) {
             Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.04, 0, -0.04);
         	limit++;
         	Stream<VoxelShape> blockCollisions = Streams.stream(newNode.agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));

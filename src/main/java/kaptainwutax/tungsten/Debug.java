@@ -79,7 +79,7 @@ public class Debug {
         StringBuilder stacktrace = new StringBuilder();
         for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
             if (toSkip-- <= 0) {
-                stacktrace.append(ste.toString()).append("\n");
+                stacktrace.append(ste).append("\n");
             }
         }
         return stacktrace.toString();

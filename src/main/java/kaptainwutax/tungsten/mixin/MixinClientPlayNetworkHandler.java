@@ -58,9 +58,7 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
                 	TungstenMod.getCommandExecutor().executeRecursive(commands.toArray(new Command[commands.size()]), message.split("|"), 0, () -> {
                     }, ex -> Debug.logWarning(ex.getMessage()));
             	} else CommandExecutor.dispatch(message.substring(prefix.length()));
-            } catch (CommandSyntaxException e) {
-                Debug.logWarning(e.getMessage());
-            } catch (IllegalArgumentException e) {
+            } catch (CommandSyntaxException | IllegalArgumentException e) {
                 Debug.logWarning(e.getMessage());
             }
 

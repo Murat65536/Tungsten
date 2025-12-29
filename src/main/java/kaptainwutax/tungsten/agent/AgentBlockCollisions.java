@@ -2,13 +2,9 @@ package kaptainwutax.tungsten.agent;
 
 import com.google.common.collect.AbstractIterator;
 
-import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.render.Cube;
-import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ShapeContext;
-import net.minecraft.entity.boss.BossBar.Color;
 import net.minecraft.util.CuboidBlockIterator;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.math.*;
@@ -133,11 +129,11 @@ public class AgentBlockCollisions extends AbstractIterator<VoxelShape> {
 						&& (l != 2 || blockState.isOf(Blocks.MOVING_PISTON))) {
 						VoxelShape voxelShape = blockState.getCollisionShape(this.world, this.pos, this.context);
 						if (voxelShape == VoxelShapes.fullCube()) {
-							if (this.box.intersects((double)i, (double)j, (double)k, (double)i + 1.0, (double)j + 1.0, (double)k + 1.0)) {
-								return voxelShape.offset((double)i, (double)j, (double)k);
+							if (this.box.intersects(i, j, k, (double)i + 1.0, (double)j + 1.0, (double)k + 1.0)) {
+								return voxelShape.offset(i, j, k);
 							}
 						} else {
-							VoxelShape voxelShape2 = voxelShape.offset((double)i, (double)j, (double)k);
+							VoxelShape voxelShape2 = voxelShape.offset(i, j, k);
 							if (!voxelShape2.isEmpty() && VoxelShapes.matchesAnywhere(voxelShape2, this.boxShape, BooleanBiFunction.AND)) {
 								return voxelShape2;
 							}

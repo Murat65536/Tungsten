@@ -9,13 +9,15 @@ import java.util.Optional;
 import java.util.Set;
 
 import kaptainwutax.tungsten.Debug;
+import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
+import kaptainwutax.tungsten.path.common.BinaryHeapOpenSet;
+import kaptainwutax.tungsten.path.common.IOpenSet;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
-import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
+import kaptainwutax.tungsten.helpers.movement.StraightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
-import kaptainwutax.tungsten.path.calculators.ActionCosts;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.util.math.BlockPos;
@@ -82,7 +84,7 @@ public class BlockSpacePathFinder {
             bestSoFar[i] = start;
         }
 
-		BinaryHeapOpenSet openSet = new BinaryHeapOpenSet();
+		IOpenSet<BlockNode> openSet = new BinaryHeapOpenSet<>();
 		Set<BlockNode> closed = new HashSet<>();
 		openSet.insert(start);
 		target = target.subtract(0.5, 0, 0.5);
@@ -186,7 +188,7 @@ public class BlockSpacePathFinder {
 	
 	private static void updateNode(BlockNode current, BlockNode child, Vec3d target) {
 	    Vec3d childPos = child.getPos();
-	    double tentativeCost = child.cost + ActionCosts.WALK_ONE_BLOCK_COST; // Assuming uniform cost for each step
+	    double tentativeCost = child.cost + CostConstants.BaseCosts.WALK_ONE_BLOCK_COST; // Assuming uniform cost for each step
 //	    tentativeCost += BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos())) ? 50 : 0; // Assuming uniform cost for each step
 
 	    double estimatedCostToGoal = computeHeuristic(childPos, target) + DistanceCalculator.getHorizontalEuclideanDistance(current.getPos(true), child.getPos(true)) * 4;
@@ -233,7 +235,7 @@ public class BlockSpacePathFinder {
 		        BlockState state = TungstenMod.mc.world.getBlockState(n.getBlockPos());
 		        boolean isWater = BlockStateChecker.isAnyWater(state);
 		        BlockNode lastN = path.getLast();
-		        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenMod.mc.world, lastN.getBlockPos(), n.getBlockPos());
+		        boolean canGetFromLastNToCurrent = StraightMovementHelper.isPossible(TungstenMod.mc.world, lastN.getBlockPos(), n.getBlockPos());
 		        double heightDiff = DistanceCalculator.getJumpHeight(lastN.getPos(true).getY(), n.getPos(true).getY());
 				if (heightDiff != 0) {
 					if (isWater && n.previous.previous != null)
@@ -263,7 +265,7 @@ public class BlockSpacePathFinder {
 		for (int i = 1; i < path.size(); i++) {
 			BlockNode blockNode = path.get(i);
 			BlockNode lastBlockNode = path.get(i-1);
-	        boolean canGetFromLastNToCurrent = StreightMovementHelper.isPossible(TungstenMod.mc.world, lastBlockNode.getBlockPos(), blockNode.getBlockPos());
+	        boolean canGetFromLastNToCurrent = StraightMovementHelper.isPossible(TungstenMod.mc.world, lastBlockNode.getBlockPos(), blockNode.getBlockPos());
 	        if (!canGetFromLastNToCurrent || BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(lastBlockNode.getBlockPos()))) {
 	        	if (!path2.contains(lastBlockNode)) path2.add(lastBlockNode);
 	        	path2.add(blockNode);

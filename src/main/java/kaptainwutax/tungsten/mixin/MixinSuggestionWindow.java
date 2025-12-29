@@ -29,7 +29,7 @@ public class MixinSuggestionWindow {
     
     @Inject(method = "complete", at = @At("HEAD"), cancellable = true)
     private void overwriteComplete(CallbackInfo ci) {
-    	AccessorChatInputSuggestor inputSuggestor = (AccessorChatInputSuggestor) this.field_21615;
+    	AccessorChatInputSuggester inputSuggestor = (AccessorChatInputSuggester) this.field_21615;
         if (inputSuggestor == null) return;
         TextFieldWidget textFieldWidget = inputSuggestor.getTextField();
         Suggestion suggestion = this.suggestions.get(this.selection);

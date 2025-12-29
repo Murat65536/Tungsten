@@ -10,6 +10,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import kaptainwutax.tungsten.TungstenMod;
+import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
+import kaptainwutax.tungsten.constants.physics.MovementConstants;
+import kaptainwutax.tungsten.constants.physics.GravityConstants;
+import kaptainwutax.tungsten.path.common.HeapNode;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
@@ -17,8 +21,7 @@ import kaptainwutax.tungsten.helpers.MovementHelper;
 import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.helpers.movement.CornerJumpMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.NeoMovementHelper;
-import kaptainwutax.tungsten.helpers.movement.StreightMovementHelper;
-import kaptainwutax.tungsten.path.calculators.ActionCosts;
+import kaptainwutax.tungsten.helpers.movement.StraightMovementHelper;
 import kaptainwutax.tungsten.render.Color;
 import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.world.BetterBlockPos;
@@ -48,7 +51,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.WorldView;
 
-public class BlockNode {
+public class BlockNode implements HeapNode {
 
 	/**
 	 * The position of this node
@@ -79,8 +82,8 @@ public class BlockNode {
 	 */
 	public BlockNode previous;
 
-	private boolean wasOnSlime;
-	private boolean wasOnLadder;
+	private final boolean wasOnSlime;
+	private final boolean wasOnLadder;
 	private boolean isDoingNeo = false;
 	private Direction neoSide;
 	private boolean isDoingCornerJump = false;
@@ -93,7 +96,7 @@ public class BlockNode {
 
 	public BlockNode(BlockPos pos, Goal goal) {
 		this.previous = null;
-		this.cost = ActionCosts.COST_INF;
+		this.cost = CostConstants.BaseCosts.COST_INFINITY;
 		this.estimatedCostToGoal = goal.heuristic(pos.getX(), pos.getY(), pos.getZ());
 		if (Double.isNaN(estimatedCostToGoal)) {
 			throw new IllegalStateException(goal + " calculated implausible heuristic");
@@ -108,7 +111,7 @@ public class BlockNode {
 
 	public BlockNode(int x, int y, int z, Goal goal) {
 		this.previous = null;
-		this.cost = ActionCosts.COST_INF;
+		this.cost = CostConstants.BaseCosts.COST_INFINITY;
 		this.estimatedCostToGoal = goal.heuristic(x, y, z);
 		if (Double.isNaN(estimatedCostToGoal)) {
 			throw new IllegalStateException(goal + " calculated implausible heuristic");
@@ -127,7 +130,7 @@ public class BlockNode {
 		this.wasOnSlime = TungstenMod.mc.world.getBlockState(new BlockPos(x, y - 1, z))
 				.getBlock() instanceof SlimeBlock;
 		this.wasOnLadder = TungstenMod.mc.world.getBlockState(new BlockPos(x, y, z)).getBlock() instanceof LadderBlock;
-		this.cost = parent != null ? 0 : ActionCosts.COST_INF;
+		this.cost = parent != null ? 0 : CostConstants.BaseCosts.COST_INFINITY;
 		this.estimatedCostToGoal = goal.heuristic(x, y, z);
 		if (Double.isNaN(estimatedCostToGoal)) {
 			throw new IllegalStateException(goal + " calculated implausible heuristic");
@@ -140,6 +143,22 @@ public class BlockNode {
 
 	public boolean isOpen() {
 		return heapPosition != -1;
+	}
+
+	// HeapNode interface implementation
+	@Override
+	public int getHeapPosition() {
+		return heapPosition;
+	}
+
+	@Override
+	public void setHeapPosition(int position) {
+		this.heapPosition = position;
+	}
+
+	@Override
+	public double getCombinedCost() {
+		return combinedCost;
 	}
 
 	/**
@@ -169,9 +188,7 @@ public class BlockNode {
 	public boolean isDoingLongJump() {
 		if (this.previous != null) {
 			double distance = DistanceCalculator.getHorizontalEuclideanDistance(this.previous.getPos(), this.getPos());
-			if (distance >= 4 && distance < 6) {
-				return true;
-			}
+            return distance >= 4 && distance < 6;
 		}
 		return false;
 	}
@@ -229,13 +246,13 @@ public class BlockNode {
 		boolean shouldSlow = false;
 		
 
-		boolean isStreightPossible = StreightMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+		boolean isStreightPossible = StraightMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
 		
 		if (isStreightPossible) return true;
 		if (endNode == null) return false;
 		
 		// When running bot in normal environment instead of parkour you need to turn on Neo and Corner jump checks to avoid cases where it can get stuck
-		boolean shouldCheckNeo = start.isWithinDistance(end, 4.2) && true;
+		boolean shouldCheckNeo = start.isWithinDistance(end, MovementConstants.Special.NEO_MOVEMENT_CHECK_DISTANCE);
 		if (shouldCheckNeo) {
 			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
 			if (neoDirection != null) {
@@ -257,9 +274,6 @@ public class BlockNode {
 
 	private List<BlockNode> getNodesIn3DCircule(int d, BlockNode parent, Goal goal, boolean generateDeep) {
 		ConcurrentLinkedQueue<BlockNode> nodes = new ConcurrentLinkedQueue<>();
-
-	    double g = 32.656;
-	    double v_sprint = 5.8;
 
 	    double yMax = (parent.wasOnSlime && parent.previous != null && parent.previous.y - parent.y < 0)
 	        ? MovementHelper.getSlimeBounceHeight(parent.previous.y - parent.y) - 0.5
@@ -286,15 +300,15 @@ public class BlockNode {
 	            IntStream.range(generateDeep ? -64 : -4, finalYMax).parallel().forEach(py -> {
 	                int localD;
 
-	                if (py < 0 && py < -5) {
-	                    double t = Math.sqrt((2 * py * -1) / g);
-	                    localD = (int) Math.ceil(v_sprint * t);
+	                if (py < -5) {
+	                    double t = Math.sqrt((2 * py * -1) / GravityConstants.Gravity.GRAVITY_ACCELERATION);
+	                    localD = (int) Math.ceil(MovementConstants.Speed.SPRINT_VELOCITY * t);
 	                } else {
 	                    localD = distanceWanted + 1;
 	                }
 
 	                // Center node
-	                nodes.add(new BlockNode(this.x, this.y + py, this.z, goal, this, ActionCosts.WALK_ONE_BLOCK_COST));
+	                nodes.add(new BlockNode(this.x, this.y + py, this.z, goal, this, CostConstants.BaseCosts.WALK_ONE_BLOCK_COST));
 
 	                for (int id = 1; id <= localD; id++) {
 	                    int px = id, pz = 0;
@@ -312,7 +326,7 @@ public class BlockNode {
 	                        pz += dz;
 
 	                        BlockNode newNode = new BlockNode(this.x + px, this.y + py, this.z + pz, goal, this,
-	                                ActionCosts.WALK_ONE_BLOCK_COST);
+			                        CostConstants.BaseCosts.WALK_ONE_BLOCK_COST);
 	                        nodes.add(newNode);
 	                    }
 	                }
@@ -361,9 +375,8 @@ public class BlockNode {
 		}
 		if (BlockStateChecker.isAnyWater(childState)) {
 			if (distance > 1 || heightDiff > 1) return true;
-			if (!wasCleared(world, getBlockPos(), child.getBlockPos())) return true;
-			return false;
-		}
+            return !wasCleared(world, getBlockPos(), child.getBlockPos());
+        }
 		if (BlockStateChecker.isAnyWater(childState) && !childAboveState.isAir()) return true;
 		
 		if (BlockStateChecker.isDoubleSlab(world, getBlockPos()) || childBelowBlock instanceof SnowBlock)
@@ -387,11 +400,11 @@ public class BlockNode {
 
 		// Vine checks
 		if ((childBelowBlock instanceof VineBlock || childBlock instanceof VineBlock)
-				&& wasCleared(world, getBlockPos(), child.getBlockPos()) && distance < 6.3 && heightDiff >= -1) {
+				&& wasCleared(world, getBlockPos(), child.getBlockPos()) && distance < MovementConstants.Climbing.MAX_LADDER_DISTANCE && heightDiff >= -1) {
 			return false;
 		}
 		if ((childBelowBlock instanceof VineBlock || childBlock instanceof VineBlock)
-				&& distance < 2.3 && heightDiff == 0) {
+				&& distance < MovementConstants.Climbing.LADDER_HORIZONTAL_LIMIT && heightDiff == 0) {
 			return false;
 		}
 
@@ -402,10 +415,10 @@ public class BlockNode {
 		if (BlockStateChecker.isBottomSlab(currentBlockBelowState) && (childBlock instanceof LadderBlock || childBelowBlock instanceof LadderBlock) && heightDiff > 0) {
 			return true;
 		}
-		if ((currentBlock instanceof LadderBlock) && distance > 2.3) {
+		if ((currentBlock instanceof LadderBlock) && distance > MovementConstants.Climbing.LADDER_HORIZONTAL_LIMIT) {
 			return true;
 		}
-		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock) && distance > 6.3) {
+		if ((childBelowBlock instanceof LadderBlock || childBlock instanceof LadderBlock) && distance > MovementConstants.Climbing.MAX_LADDER_DISTANCE) {
 			return true;
 		}
 		if ((childBelowBlock instanceof LadderBlock && !(childState.isAir() || childBlock instanceof LadderBlock))) {
@@ -465,12 +478,8 @@ public class BlockNode {
 			return true;
 
 		// TODO: Fix bottom slab under fence thing
-		if (!wasCleared(world, getBlockPos(), child.getBlockPos(), this, child)) {
-			return true;
-		}
-
-		return false;
-	}
+        return !wasCleared(world, getBlockPos(), child.getBlockPos(), this, child);
+    }
 	
 	/**
 	 * Returns jump height.
@@ -519,9 +528,8 @@ public class BlockNode {
 		}
 
 		if (BlockStateChecker.isAnyWater(currentBlockState)) {
-			if (distance >= 2) return true;
-			return false;
-		}
+            return distance >= 2;
+        }
 		if (childBlockHeight == 1.5 && currentBlockHeight == 1.5 && heightDiff <= 1) {
 			if (distance <= 4) return false;
 		}
@@ -612,11 +620,7 @@ public class BlockNode {
 			return true;
 
 		// Bottom slab checks
-		if (currentBlockHeight <= 0.5 && heightDiff > 0 && childBlockHeight > 0.5) {
-			return true;
-		}
-
-		return false;
-	}
+        return currentBlockHeight <= 0.5 && heightDiff > 0 && childBlockHeight > 0.5;
+    }
 
 }

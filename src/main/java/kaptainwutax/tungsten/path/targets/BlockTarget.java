@@ -154,7 +154,6 @@ public class BlockTarget implements ArgumentType<BlockTarget> {
 	}
 	default -> throw INVALID_NUM_OF_COORD_ARGS.create(numbers.size());
 	}
-	;
-	return new BlockTarget(x, y, z, dimension, coordType);
+        return new BlockTarget(x, y, z, dimension, coordType);
     }
 }

@@ -8,14 +8,12 @@ import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
-import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.Node;
 import kaptainwutax.tungsten.path.PathInput;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.WorldView;
 
@@ -44,7 +42,7 @@ public class NeoJump {
 	      if (neoRotation == 270 || neoRotation == 90)
 	    	  desiredYaw = nudgeRotation(neoRotation, 35);
 
-        while (limit < 40 && jump == false && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
+        while (limit < 40 && !jump && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
             Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.04, 0, -0.04);
         	limit++;
         	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));

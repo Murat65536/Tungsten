@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -19,8 +20,11 @@ import net.minecraft.command.CommandSource;
 
 @Mixin(ClientCommandSource.class)
 public class MixinClientCommandSource {
-	private String currentInput;
-	private static final char[] SPECIAL_CUTOFF_CHARS = new char[]{'[', '=', ','};
+	@Unique
+    private String currentInput;
+
+	@Unique
+    private static final char[] SPECIAL_CUTOFF_CHARS = new char[]{'[', '=', ','};
 
 	/**
 	 * In order to fetch all possible suggestions the last argument needs to be empty.
