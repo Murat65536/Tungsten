@@ -11,6 +11,7 @@ import com.google.common.collect.Streams;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.constants.physics.PlayerConstants;
 import kaptainwutax.tungsten.path.common.HeapNode;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
@@ -36,7 +37,6 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.WorldView;
 
 public class Node implements HeapNode {
-
     public Node parent;
     public Agent agent;
     public PathInput input;
@@ -199,23 +199,8 @@ public class Node implements HeapNode {
             }
         }
 
-        for (boolean forward : new boolean[]{true, false}) {
-            for (boolean right : new boolean[]{true, false}) {
-                for (boolean left : new boolean[]{true, false}) {
-                    for (boolean sneak : new boolean[]{false, true}) {
-                        for (float yaw = -180.0f; yaw < 180.0f; yaw += 22.5 + Math.random()) {
-                            for (boolean sprint : new boolean[]{true, false}) {
-                                if ((sneak || ((right || left) && !forward)) && sprint) continue;
-
-                                for (boolean jump : new boolean[]{true, false}) {
-//	                            	if (isCloseToBlockNode && jump && nextBlockNode.getBlockPos().getY() == agent.blockY) continue;
-                                    createAndAddNode(world, nextBlockNode, nodes, forward, right, left, sneak, sprint, jump, yaw, isDoingLongJump, isCloseToBlockNode);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        for (PathInput input : PlayerConstants.Inputs.ALL_INPUTS) {
+            createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), input.yaw(), isDoingLongJump, isCloseToBlockNode);
         }
     }
 

@@ -132,15 +132,18 @@ public class PathFinder {
 	private void search(WorldView world, Vec3d target) {
 		search(world, null, target);
 	}
-	
+
 	private void search(WorldView world, Node start, Vec3d target) {
 	    boolean failing = true;
 	    TungstenMod.RENDERERS.clear();
 	    NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
-	
+
+	    // Performance profiling variables
 	    long startTime = System.currentTimeMillis();
 	    long primaryTimeoutTime = startTime + PathfindingConstants.Timeouts.PRIMARY_TIMEOUT_MS;
 	    int numNodesConsidered = 1;
+	    int totalNodesEvaluated = 0;
+	    long nodeGenerationTime = 0;
 	    int timeCheckInterval = PathfindingConstants.NodeEvaluation.TIME_CHECK_INTERVAL;
 	    double minVelocity = BlockStateChecker.isAnyWater(world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))) ? CollisionConstants.VelocityThresholds.MIN_VELOCITY_WATER : CollisionConstants.VelocityThresholds.MIN_VELOCITY_STATIONARY;
 	
@@ -227,8 +230,12 @@ public class PathFinder {
 	        	RenderHelper.renderPathSoFar(next);
 	        }
 	
+	        // Profile node generation
+	        long nodeGenStart = System.currentTimeMillis();
 	        failing = processNodeChildren(world, next, target, blockPath, openSet, closed);
+	        nodeGenerationTime += (System.currentTimeMillis() - nodeGenStart);
 	        numNodesConsidered++;
+	        totalNodesEvaluated++;
 //	        try {
 //				Thread.sleep(250);
 //			} catch (InterruptedException e) {
@@ -237,6 +244,16 @@ public class PathFinder {
 //			}
 	    }
 	
+	    // Print performance metrics
+	    long totalTime = System.currentTimeMillis() - startTime;
+	    Debug.logMessage("=== PathFinder Performance Metrics ===");
+	    Debug.logMessage("Total pathfinding time: " + totalTime + "ms");
+	    Debug.logMessage("Total nodes evaluated: " + totalNodesEvaluated);
+	    Debug.logMessage("Nodes per second: " + (totalNodesEvaluated * 1000 / Math.max(1, totalTime)));
+	    Debug.logMessage("Average node generation time: " + (nodeGenerationTime / Math.max(1, totalNodesEvaluated)) + "ms");
+	    Debug.logMessage("Node generation total time: " + nodeGenerationTime + "ms");
+	    Debug.logMessage("====================================");
+
 	    if (stop.get()) {
 	        stop.set(false);
 	    } else if (openSet.isEmpty()) {
@@ -626,7 +643,9 @@ public class PathFinder {
             IOpenSet<Node> openSet, Set<Vec3d> closed) {
 			AtomicBoolean failing = new AtomicBoolean(true);
 			List<Node> children = parent.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()));
-			
+
+			Debug.logMessage("Generated " + children.size() + " children");
+
 			Queue<Node> validChildren = new ConcurrentLinkedQueue<>();
 
 			BlockNode lastBlockNode = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()-1);
