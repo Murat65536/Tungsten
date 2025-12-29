@@ -50,8 +50,7 @@ public final class PlayerConstants {
                                                 if (!(left && right)) {
                                                     for (boolean jump : new boolean[] {false, true}) {
                                                         for (float yaw = -180f; yaw < 180f; yaw += 360f / (1 << YAW_DIRECTION_MAGNITUDE)) {
-                                                            ALL_INPUTS[index] = new PathInput(forward, back, right, left, jump, sneak, sprint, 0, yaw);
-                                                            index++;
+                                                            ALL_INPUTS[index++] = new PathInput(forward, back, right, left, jump, sneak, sprint, 0, yaw);
                                                         }
                                                     }
                                                 }

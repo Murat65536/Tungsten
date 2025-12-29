@@ -5,6 +5,7 @@ import net.minecraft.text.Text;
 public class Debug {
 
     public static TungstenMod jankModInstance;
+    private static boolean debugEnabled = true; // Enable debug by default, can be configured
 
     public static void logInternal(String message) {
         System.out.println("Tungsten: " + message);
@@ -83,6 +84,14 @@ public class Debug {
             }
         }
         return stacktrace.toString();
+    }
+
+    public static boolean isDebugEnabled() {
+        return debugEnabled;
+    }
+
+    public static void setDebugEnabled(boolean enabled) {
+        debugEnabled = enabled;
     }
 }
 

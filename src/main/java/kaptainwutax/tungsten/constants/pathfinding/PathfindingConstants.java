@@ -15,6 +15,28 @@ public final class PathfindingConstants {
 
         /** Primary pathfinding timeout in milliseconds */
         public static final long PRIMARY_TIMEOUT_MS = 250L;
+
+        /** Timeout for node filtering operations in milliseconds */
+        public static final long NODE_FILTER_TIMEOUT_MS = 100L;
+
+        /** Timeout for node update operations in milliseconds */
+        public static final long NODE_UPDATE_TIMEOUT_MS = 200L;
+    }
+
+    /**
+     * Thread pool configuration for pathfinding operations.
+     */
+    public static final class ThreadPool {
+        private ThreadPool() {}
+
+        /** Enable work-stealing for better load distribution */
+        public static final boolean WORK_STEALING_ENABLED = true;
+
+        /** Maximum number of tasks to batch together for cache locality */
+        public static final int MAX_BATCH_SIZE = 32;
+
+        /** Whether to use shared thread pool (performance optimization) */
+        public static final boolean USE_SHARED_POOL = true;
     }
 
     /**

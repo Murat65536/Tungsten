@@ -11,13 +11,13 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.stream.Collectors;
+
+import kaptainwutax.tungsten.concurrent.PathfindingExecutor;
+import kaptainwutax.tungsten.concurrent.TaskManager;
 
 import com.google.common.util.concurrent.AtomicDoubleArray;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
@@ -63,6 +63,9 @@ public class PathFinder {
 	private static Optional<List<BlockNode>> blockPath = Optional.empty();
 	protected static final double MIN_DIST_PATH = 5.0;
 	protected static AtomicInteger NEXT_CLOSEST_BLOCKNODE_IDX = new AtomicInteger(1);
+
+	// Task manager for handling parallel node processing
+	private TaskManager taskManager;
 	
 	
 	synchronized public void find(WorldView world, Vec3d target) {
@@ -83,6 +86,12 @@ public class PathFinder {
 			closed.clear();
 			blockPath = Optional.empty();
 			NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
+
+			// Clean up task manager
+			if (taskManager != null) {
+				taskManager.cancelAll();
+				taskManager = null;
+			}
 			
 		});
 		thread.setName("PathFinder");
@@ -138,6 +147,9 @@ public class PathFinder {
 	    boolean failing = true;
 	    TungstenMod.RENDERERS.clear();
 	    NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
+
+	    // Initialize task manager for this pathfinding session
+	    taskManager = new TaskManager();
 
 	    // Performance profiling variables
 	    long startTime = System.currentTimeMillis();
@@ -260,6 +272,16 @@ public class PathFinder {
 	    } else if (openSet.isEmpty()) {
 	        Debug.logMessage("Ran out of nodes!");
 	    }
+
+	    // Clean up task manager before exiting
+	    if (taskManager != null) {
+	        taskManager.cancelAll();
+	        // Log final metrics if debug is enabled
+	        if (Debug.isDebugEnabled()) {
+	            Debug.logMessage("Task Manager Metrics: " + taskManager.getMetrics());
+	        }
+	    }
+
 	    RenderHelper.clearRenderers();
 		closed.clear();
 		PathFinder.blockPath = Optional.empty();
@@ -645,33 +667,18 @@ public class PathFinder {
 			AtomicBoolean failing = new AtomicBoolean(true);
 			List<Node> children = parent.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()));
 
-			Debug.logMessage("Generated " + children.size() + " children");
-
 			Queue<Node> validChildren = new ConcurrentLinkedQueue<>();
 
 			BlockNode lastBlockNode = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()-1);
 			BlockNode nextBlockNode = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get());
 	        double closestBlockVolume = BlockShapeChecker.getShapeVolume(nextBlockNode.getBlockPos().down());
 	        boolean isSmallBlock = closestBlockVolume > 0 && closestBlockVolume < 1;
-			
-			ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-			
-			List<Callable<Void>> tasks = children.stream().map(child -> (Callable<Void>) () -> {
+
+			// Use TaskManager instead of creating a new ExecutorService
+			// First pass: filter based on individual node criteria (no race condition)
+			List<Callable<Node>> filteringTasks = children.stream().map(child -> (Callable<Node>) () -> {
 				if (stop.get()) return null;
 		    	if (Thread.currentThread().isInterrupted()) return null;
-
-				// Check if this child is too close to any already accepted child
-			    for (Node other : validChildren) {
-			    	if (Thread.currentThread().isInterrupted()) return null;
-			        double distance = other.agent.getPos().distanceTo(child.agent.getPos());
-
-			        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
-			        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
-
-			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
-			            return null; // too close to existing child
-			        }
-			    }
 
 				boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock);
 
@@ -679,23 +686,36 @@ public class PathFinder {
 					return null;
 				}
 
-				validChildren.add(child);
-				return null;
+				return child; // Return the valid child for distance checking
 			}).collect(Collectors.toList());
 
-			// Actually execute tasks in parallel using the executor service
-			try {
-				executor.invokeAll(tasks, 100, TimeUnit.MILLISECONDS);
-				executor.shutdown();
-				if (!executor.awaitTermination(50, TimeUnit.MILLISECONDS)) {
-					executor.shutdownNow();
+			// Process filtering tasks using TaskManager with proper timeout handling
+			List<Node> preliminaryChildren = new ArrayList<>();
+			taskManager.processNodeFilteringBatch(
+				filteringTasks,
+				preliminaryChildren,
+				stop,
+				PathfindingConstants.Timeouts.NODE_FILTER_TIMEOUT_MS
+			);
+
+			// Second pass: filter by distance (single-threaded to avoid race condition)
+			for (Node child : preliminaryChildren) {
+				if (child == null) continue;
+
+				boolean tooClose = false;
+				for (Node other : validChildren) {
+					double distance = other.agent.getPos().distanceTo(child.agent.getPos());
+					boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
+					boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
+
+					if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
+						tooClose = true;
+						break;
+					}
 				}
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				Debug.logWarning("Child filtering interrupted: " + e.getMessage());
-			} finally {
-				if (!executor.isShutdown()) {
-					executor.shutdownNow();
+
+				if (!tooClose) {
+					validChildren.add(child);
 				}
 			}
 			
@@ -711,14 +731,15 @@ public class PathFinder {
 //				executor.shutdown();
 //			}
 			
-			
-			executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+			// Use TaskManager for node updates - no need for new executor
 			Object openSetLock = new Object();  // if openSet is not thread-safe
 
-			List<Callable<Void>> processingTasks = validChildren.stream()
-			    .map(child -> (Callable<Void>) () -> {
-					if (stop.get()) return null;
-			    	if (Thread.currentThread().isInterrupted()) return null;
+			List<Runnable> processingTasks = validChildren.stream()
+			    .filter(Objects::nonNull)  // Filter out null children
+			    .map(child -> (Runnable) () -> {
+					if (stop.get()) return;
+			    	if (Thread.currentThread().isInterrupted()) return;
 			        updateNode(world, parent, child, target, blockPath.get(), closed);
 
 			        synchronized (openSetLock) {
@@ -735,26 +756,14 @@ public class PathFinder {
 			                failing.set(false);
 			            }
 			        }
-
-			        return null;
 			    })
 			    .collect(Collectors.toList());
 
-			// Execute node processing tasks in parallel
-			try {
-			    executor.invokeAll(processingTasks, 200, TimeUnit.MILLISECONDS);
-		    	executor.shutdown();
-				if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
-					executor.shutdownNow();
-		        }
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			    Debug.logWarning("Node processing interrupted: " + e.getMessage());
-			} finally {
-				if (!executor.isShutdown()) {
-			    	executor.shutdownNow();
-				}
-			}
+			// Process node updates using TaskManager with proper timeout handling
+			taskManager.processNodeUpdates(
+				processingTasks,
+				PathfindingConstants.Timeouts.NODE_UPDATE_TIMEOUT_MS
+			);
 			
 //			try {
 //			    executor.invokeAll(processingTasks);
