@@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -658,37 +659,43 @@ public class PathFinder {
 			List<Callable<Void>> tasks = children.stream().map(child -> (Callable<Void>) () -> {
 				if (stop.get()) return null;
 		    	if (Thread.currentThread().isInterrupted()) return null;
-				
+
 				// Check if this child is too close to any already accepted child
 			    for (Node other : validChildren) {
 			    	if (Thread.currentThread().isInterrupted()) return null;
 			        double distance = other.agent.getPos().distanceTo(child.agent.getPos());
-	
+
 			        boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
 			        boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
-	
+
 			        if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
 			            return null; // too close to existing child
 			        }
 			    }
-				
+
 				boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock);
-				
+
 				if (skip || checkForFallDamage(child)) {
 					return null;
 				}
-				
+
 				validChildren.add(child);
 				return null;
 			}).collect(Collectors.toList());
-			
-			for (Iterator iterator = tasks.iterator(); iterator.hasNext();) {
-				Callable<Void> callable = (Callable<Void>) iterator.next();
-				try {
-					callable.call();
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+
+			// Actually execute tasks in parallel using the executor service
+			try {
+				executor.invokeAll(tasks, 100, TimeUnit.MILLISECONDS);
+				executor.shutdown();
+				if (!executor.awaitTermination(50, TimeUnit.MILLISECONDS)) {
+					executor.shutdownNow();
+				}
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				Debug.logWarning("Child filtering interrupted: " + e.getMessage());
+			} finally {
+				if (!executor.isShutdown()) {
+					executor.shutdownNow();
 				}
 			}
 			
@@ -707,7 +714,7 @@ public class PathFinder {
 			
 			executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 			Object openSetLock = new Object();  // if openSet is not thread-safe
-		
+
 			List<Callable<Void>> processingTasks = validChildren.stream()
 			    .map(child -> (Callable<Void>) () -> {
 					if (stop.get()) return null;
@@ -729,22 +736,23 @@ public class PathFinder {
 			            }
 			        }
 
-			        // Optional: render node if you're using thread-safe rendering
-			        // RenderHelper.renderNode(child);
-
 			        return null;
 			    })
 			    .collect(Collectors.toList());
 
-			
-
-			for (Iterator iterator = processingTasks.iterator(); iterator.hasNext();) {
-				Callable<Void> callable = (Callable<Void>) iterator.next();
-				try {
-					callable.call();
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			// Execute node processing tasks in parallel
+			try {
+			    executor.invokeAll(processingTasks, 200, TimeUnit.MILLISECONDS);
+		    	executor.shutdown();
+				if (!executor.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+					executor.shutdownNow();
+		        }
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			    Debug.logWarning("Node processing interrupted: " + e.getMessage());
+			} finally {
+				if (!executor.isShutdown()) {
+			    	executor.shutdownNow();
 				}
 			}
 			
