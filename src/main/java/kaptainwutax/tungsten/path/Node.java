@@ -211,14 +211,6 @@ public class Node implements HeapNode {
             if (jump && sneak) return;
             Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
                     new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
-            double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, isCloseToBlockNode, isDoingLongJump, newNode.agent);
-            if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
-            double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
-            double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
-
-            if (newNodeDistanceToBlockNode >= parentNodeDistanceToBlockNode) return;
-
-            boolean isMoving = (forward || right || left);
             if (newNode.agent.isClimbing(world))
                 jump = this.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY();
 
@@ -232,6 +224,14 @@ public class Node implements HeapNode {
                 return;
             if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY())
                 return;
+            double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, isCloseToBlockNode, isDoingLongJump, newNode.agent);
+            if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
+            double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
+            double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
+
+            if (newNodeDistanceToBlockNode >= parentNodeDistanceToBlockNode) return;
+
+            boolean isMoving = (forward || right || left);
             if (!sneak) {
                 boolean isBelowClosedTrapDoor = BlockStateChecker.isClosedBottomTrapdoor(world.getBlockState(nextBlockNode.getBlockPos().down()));
                 boolean shouldAllowWalkingOnLowerBlock = !world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3;
