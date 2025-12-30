@@ -138,11 +138,4 @@ public class TaskManager {
         }
         activeTasks.clear();
     }
-
-    /**
-     * Get metrics from the underlying executor
-     */
-    public PathfindingExecutor.PathfindingMetrics getMetrics() {
-        return executor.getMetrics();
-    }
 }

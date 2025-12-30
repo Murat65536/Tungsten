@@ -200,8 +200,12 @@ public class Node implements HeapNode {
             }
         }
 
-        for (PathInput input : PlayerConstants.Inputs.ALL_INPUTS) {
-            createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), input.yaw(), isDoingLongJump, isCloseToBlockNode);
+        for (KeyboardInput input : PlayerConstants.Inputs.ALL_INPUTS) {
+            float increment = PlayerConstants.Inputs.YAW_RANGE * 2 / (PlayerConstants.Inputs.YAW_PRECISION - 1);
+            float directYaw = (float) Math.round(DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true)) / increment) * increment;
+            for (float yaw = directYaw - PlayerConstants.Inputs.YAW_RANGE; yaw <= directYaw + PlayerConstants.Inputs.YAW_RANGE; yaw += increment) {
+                createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), yaw, isDoingLongJump, isCloseToBlockNode);
+            }
         }
     }
 

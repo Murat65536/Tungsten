@@ -1,6 +1,6 @@
 package kaptainwutax.tungsten.constants.physics;
 
-import kaptainwutax.tungsten.path.PathInput;
+import kaptainwutax.tungsten.path.KeyboardInput;
 
 /**
  * Constants related to player dimensions, eye heights, and physical attributes.
@@ -30,11 +30,14 @@ public final class PlayerConstants {
     public static final class Inputs {
         private Inputs() {}
 
-        /** Number of yaw directions to consider. Higher values are more accurate but slower. Each increment doubles the number of considered values. */
-        public static final int YAW_DIRECTION_MAGNITUDE = 4;
+        /** The range of yaw values to consider at an offset from the direct yaw */
+        public static final float YAW_RANGE = 22.5f;
+
+        /** Number of yaw values to consider. */
+        public static final int YAW_PRECISION = 3;
 
         /** Every valid movement input */
-        public static final PathInput[] ALL_INPUTS = new PathInput[42 << YAW_DIRECTION_MAGNITUDE]; // Pre-computed capacity
+        public static final KeyboardInput[] ALL_INPUTS = new KeyboardInput[42]; // Pre-computed capacity
 
         static {
             int index = 0;
@@ -49,9 +52,7 @@ public final class PlayerConstants {
                                             for (boolean right : new boolean[] {false, true}) {
                                                 if (!(left && right)) {
                                                     for (boolean jump : new boolean[] {false, true}) {
-                                                        for (float yaw = -180f; yaw < 180f; yaw += 360f / (1 << YAW_DIRECTION_MAGNITUDE)) {
-                                                            ALL_INPUTS[index++] = new PathInput(forward, back, right, left, jump, sneak, sprint, 0, yaw);
-                                                        }
+                                                        ALL_INPUTS[index++] = new KeyboardInput(forward, back, right, left, jump, sneak, sprint);
                                                     }
                                                 }
                                             }

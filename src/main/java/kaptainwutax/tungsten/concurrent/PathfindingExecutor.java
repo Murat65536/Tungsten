@@ -24,11 +24,6 @@ public class PathfindingExecutor {
 
     private static volatile PathfindingExecutor instance;
     private final ForkJoinPool executor;
-    // Metrics tracking
-    private final AtomicLong tasksSubmitted = new AtomicLong(0);
-    private final AtomicLong tasksCompleted = new AtomicLong(0);
-    private final AtomicLong tasksTimedOut = new AtomicLong(0);
-    private final AtomicLong tasksFailed = new AtomicLong(0);
 
     /**
      * Private constructor for a singleton pattern
@@ -74,27 +69,17 @@ public class PathfindingExecutor {
      * @return Future representing the task result
      */
     public <T> Future<T> submitTask(Callable<T> task, long timeoutMs) {
-        tasksSubmitted.incrementAndGet();
-
         CompletableFuture<T> future = CompletableFuture.supplyAsync(() -> {
             try {
-                T result = task.call();
-                tasksCompleted.incrementAndGet();
-                return result;
+                return task.call();
             } catch (Exception e) {
-                tasksFailed.incrementAndGet();
                 throw new CompletionException(e);
             }
         }, executor);
 
         // Apply timeout
         return future.orTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-                .exceptionally(ex -> {
-                    if (ex instanceof TimeoutException) {
-                        tasksTimedOut.incrementAndGet();
-                    }
-                    return null;
-                });
+                .exceptionally(ex -> null);
     }
 
     /**
@@ -109,7 +94,6 @@ public class PathfindingExecutor {
             return new ArrayList<>();
         }
 
-        tasksSubmitted.addAndGet(tasks.size());
         List<Future<T>> futures = new ArrayList<>(tasks.size());
 
         for (Callable<T> task : tasks) {
@@ -118,38 +102,4 @@ public class PathfindingExecutor {
 
         return futures;
     }
-
-    /**
-     * Get current metrics
-     */
-    public PathfindingMetrics getMetrics() {
-        return new PathfindingMetrics(
-                tasksSubmitted.get(),
-                tasksCompleted.get(),
-                tasksTimedOut.get(),
-                tasksFailed.get(),
-                executor.getPoolSize(),
-                executor.getActiveThreadCount(),
-                executor.getQueuedTaskCount(),
-                executor.getStealCount()
-        );
-    }
-
-    /**
-         * Metrics data class
-         */
-        public record PathfindingMetrics(long tasksSubmitted, long tasksCompleted, long tasksTimedOut, long tasksFailed,
-                                         int poolSize, int actualActiveThreads, long queuedTasks,
-                                         long stealCount) {
-
-        @Override
-            public @NotNull String toString() {
-                return String.format(
-                        "PathfindingMetrics{submitted=%d, completed=%d, timedOut=%d, failed=%d, " +
-                                "active=%d/%d, queued=%d, steals=%d}",
-                        tasksSubmitted, tasksCompleted, tasksTimedOut, tasksFailed,
-                        actualActiveThreads, poolSize, queuedTasks, stealCount
-                );
-            }
-        }
 }

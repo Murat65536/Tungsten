@@ -249,12 +249,6 @@ public class PathFinder {
 	        nodeGenerationTime += (System.currentTimeMillis() - nodeGenStart);
 	        numNodesConsidered++;
 	        totalNodesEvaluated++;
-//	        try {
-//				Thread.sleep(250);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
 	    }
 	
 	    // Print performance metrics
@@ -262,7 +256,7 @@ public class PathFinder {
 	    Debug.logMessage("=== PathFinder Performance Metrics ===");
 	    Debug.logMessage("Total pathfinding time: " + totalTime + "ms");
 	    Debug.logMessage("Total nodes evaluated: " + totalNodesEvaluated);
-	    Debug.logMessage("Nodes per second: " + (totalNodesEvaluated * 1000 / Math.max(1, totalTime)));
+	    Debug.logMessage("Nodes per second: " + (totalNodesEvaluated * 1000L / Math.max(1, totalTime)));
 	    Debug.logMessage("Average node generation time: " + (nodeGenerationTime / Math.max(1, totalNodesEvaluated)) + "ms");
 	    Debug.logMessage("Node generation total time: " + nodeGenerationTime + "ms");
 	    Debug.logMessage("====================================");
@@ -276,10 +270,6 @@ public class PathFinder {
 	    // Clean up task manager before exiting
 	    if (taskManager != null) {
 	        taskManager.cancelAll();
-	        // Log final metrics if debug is enabled
-	        if (Debug.isDebugEnabled()) {
-	            Debug.logMessage("Task Manager Metrics: " + taskManager.getMetrics());
-	        }
 	    }
 
 	    RenderHelper.clearRenderers();
