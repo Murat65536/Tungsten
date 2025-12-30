@@ -1,9 +1,5 @@
 package kaptainwutax.tungsten.path.specialMoves.neo;
 
-import java.util.stream.Stream;
-
-import com.google.common.collect.Streams;
-
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
@@ -45,9 +41,17 @@ public class NeoJump {
         while (limit < 40 && !jump && newNode.agent.getPos().y > nextBlockNode.getBlockPos().getY()-1) {
             Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.04, 0, -0.04);
         	limit++;
-        	Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
+        	
+        	boolean hasCollision = false;
+        	for(VoxelShape shape : agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox)) {
+        		if(!shape.isEmpty()) {
+        			hasCollision = true;
+        			break;
+        		}
+        	}
+        	
 //        	RenderHelper.renderNode(newNode);
-            if (blockCollisions.findAny().isEmpty()) {
+            if (!hasCollision) {
         		desiredYaw = nudgeRotation(jumpTowardsRotation, 5);
         		jump = true;
         	}
