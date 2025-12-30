@@ -261,7 +261,7 @@ public class BlockSpacePathFinder {
 		
 		List<BlockNode> path2 = new ArrayList<>();
 
-    	path2.add(path.get(0));
+    	path2.add(path.getFirst());
 		for (int i = 1; i < path.size(); i++) {
 			BlockNode blockNode = path.get(i);
 			BlockNode lastBlockNode = path.get(i-1);

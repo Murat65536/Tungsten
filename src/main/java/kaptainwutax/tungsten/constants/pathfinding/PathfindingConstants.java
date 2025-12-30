@@ -66,10 +66,10 @@ public final class PathfindingConstants {
     public static final class ClosedSetScale {
         private ClosedSetScale() {}
 
-        /** Base scaling factor used uniformly across the entire system */
-        public static final double BASE_SCALE = 100.0;
+        /** Position rounding factor */
+        public static final double POSITION_ROUNDING = 100.0;
 
-        /** Velocity scaling factor (consistent with position scaling) */
-        public static final double VELOCITY_SCALE = BASE_SCALE;
+        /** Velocity rounding factor */
+        public static final double VELOCITY_ROUNDING = 10.0;
     }
 }

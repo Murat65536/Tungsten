@@ -3,7 +3,6 @@ package kaptainwutax.tungsten.path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,7 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.stream.Collectors;
 
-import kaptainwutax.tungsten.concurrent.PathfindingExecutor;
 import kaptainwutax.tungsten.concurrent.TaskManager;
 
 import com.google.common.util.concurrent.AtomicDoubleArray;
@@ -54,7 +52,7 @@ public class PathFinder {
 	public AtomicBoolean active = new AtomicBoolean(false);
 	public AtomicBoolean stop = new AtomicBoolean(false);
 	public Thread thread = null;
-	private final Set<Vec3d> closed = Collections.synchronizedSet(new HashSet<>());
+	private final Set<Integer> closed = Collections.synchronizedSet(new HashSet<>());
 	private AtomicDoubleArray bestHeuristicSoFar;
 	private IOpenSet<Node> openSet = new BinaryHeapOpenSet<>();
 	protected static final double[] COEFFICIENTS = PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS;
@@ -311,11 +309,11 @@ public class PathFinder {
 		}
 	}
 
-	private boolean shouldSkipChild(Node child, Vec3d target, Set<Vec3d> closed, Optional<List<BlockNode>> blockPath) {
+	private boolean shouldSkipChild(Node child, Vec3d target, Set<Integer> closed, Optional<List<BlockNode>> blockPath) {
 	    return child.agent.touchingWater && shouldSkipNode(child, target, closed, blockPath);
 	}
-	
-	private boolean shouldSkipNode(Node node, Vec3d target, Set<Vec3d> closed, Optional<List<BlockNode>> blockPath) {
+
+	private boolean shouldSkipNode(Node node, Vec3d target, Set<Integer> closed, Optional<List<BlockNode>> blockPath) {
 	    BlockNode bN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get());
 	    BlockNode lBN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()-1);
 	    boolean isBottomSlab = BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(bN.getBlockPos().down()));
@@ -334,36 +332,21 @@ public class PathFinder {
 	    );
 	}
 	
-	private static boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Vec3d> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
+	private static boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Integer> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
 
-		int hashCode = n.hashCode(1, shouldAddYaw);
-	    Vec3d agentPos = n.agent.getPos();
+		int hashCode = n.hashCode(shouldAddYaw);
 
-	    // Use unified BASE_SCALE for all movement types
-	    double scale = PathfindingConstants.ClosedSetScale.BASE_SCALE;
-
-	    // Compute scaled position with hashCode offset
-	    Vec3d scaledPos = computeScaledPosition(agentPos, hashCode, scale, scale, scale);
-
-	    // Check if the position is in the closed set
-	    if (closed.contains(scaledPos)) {
+	    // Check if the hashcode is in the closed set
+	    if (closed.contains(hashCode)) {
 	        return true;
 	    }
 
-	    // Optionally add the position to the closed set
+	    // Optionally add the hashcode to the closed set
 	    if (addToClosed) {
-	        closed.add(scaledPos);
+	        closed.add(hashCode);
 	    }
 
 	    return false;
-	}
-	
-	private static Vec3d computeScaledPosition(Vec3d pos, int hashCode, double xScale, double yScale, double zScale) {
-	    return new Vec3d(
-	        Math.round(pos.x * xScale + hashCode),
-	        Math.round(pos.y * yScale),
-	        Math.round(pos.z * zScale)
-	    );
 	}
 
 	private static double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
@@ -378,7 +361,7 @@ public class PathFinder {
 	    return (Math.sqrt(dx * dx + dy * dy + dz * dz) + (((blockPath.map(List::size).orElse(0)) - NEXT_CLOSEST_BLOCKNODE_IDX.get()) * CostConstants.Heuristics.BLOCK_PATH_DISTANCE_WEIGHT));
 	}
 	
-	private static void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath, Set<Vec3d> closed) {
+	private static void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath, Set<Integer> closed) {
 	    Vec3d childPos = child.agent.getPos();
 
 	    double collisionScore = 0;
@@ -580,7 +563,7 @@ public class PathFinder {
         return Optional.empty();
     }
 
-    private boolean handleTimeout(long startTime, long primaryTimeoutTime, Node next, Vec3d target, Node start, ClientPlayerEntity player, Set<Vec3d> closed) {
+    private boolean handleTimeout(long startTime, long primaryTimeoutTime, Node next, Vec3d target, Node start, ClientPlayerEntity player, Set<Integer> closed) {
         long now = System.currentTimeMillis();
         Optional<List<Node>> result = bestSoFar(true, 0, start);
 
@@ -610,7 +593,7 @@ public class PathFinder {
         return false;
     }
     
-    private boolean filterChidren(Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock) {
+    private boolean filterChildren(Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock) {
     	boolean isLadder = TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock;
     	boolean isLadderBelow = TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos().down()).getBlock() instanceof LadderBlock;
     	if (isLadder || isLadderBelow) return false;
@@ -631,7 +614,7 @@ public class PathFinder {
     }
 
     private boolean processNodeChildren(WorldView world, Node parent, Vec3d target, Optional<List<BlockNode>> blockPath,
-            IOpenSet<Node> openSet, Set<Vec3d> closed) {
+            IOpenSet<Node> openSet, Set<Integer> closed) {
 			AtomicBoolean failing = new AtomicBoolean(true);
 			List<Node> children = parent.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()));
 
@@ -648,7 +631,7 @@ public class PathFinder {
 				if (stop.get()) return null;
 		    	if (Thread.currentThread().isInterrupted()) return null;
 
-				boolean skip = filterChidren(child, lastBlockNode, nextBlockNode, isSmallBlock);
+				boolean skip = filterChildren(child, lastBlockNode, nextBlockNode, isSmallBlock);
 
 				if (skip || checkForFallDamage(child)) {
 					return null;
@@ -766,7 +749,7 @@ public class PathFinder {
 			return failing.get();
 		}
     
-    private static void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node, Set<Vec3d> closed) {
+    private static void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node, Set<Integer> closed) {
     	if (blockPath == null) return;
 
     	BlockNode lastClosestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()-1);

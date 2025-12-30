@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Streams;
@@ -11,8 +12,8 @@ import com.google.common.collect.Streams;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
-import kaptainwutax.tungsten.constants.physics.PlayerConstants;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
+import kaptainwutax.tungsten.constants.physics.PlayerConstants;
 import kaptainwutax.tungsten.path.common.HeapNode;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
@@ -86,37 +87,97 @@ public class Node implements HeapNode {
         return heapPosition != -1;
     }
 
+    @Override
     public int hashCode() {
-        return hashCode(1, true);
+        return hashCode(true);
     }
 
-    public int hashCode(int round, boolean shouldAddYaw) {
-        long result = 3241;
-        if (this.input != null) {
-            result = 2L * Boolean.hashCode(this.input.forward());
-            result = result + 3L * Boolean.hashCode(this.input.back());
-            result = result + 5L * Boolean.hashCode(this.input.right());
-            result = result + 11L * Boolean.hashCode(this.input.left());
-            result = result + 13L * Boolean.hashCode(this.input.jump());
-            result = result + 17L * Boolean.hashCode(this.input.sneak());
-            result = result + 19L * Boolean.hashCode(this.input.sprint());
-//		    result = result + (Math.round(this.input.pitch));
-            if (shouldAddYaw) result = result + (Math.round(this.input.yaw()));
-            result = result + (Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_SCALE));
-            result = result + (Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_SCALE));
+    public int hashCode(boolean shouldAddYaw) {
+        // Initialize quantized values
+        int quantizedPosX = 0, quantizedPosY = 0, quantizedPosZ = 0;
+        int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
+
+        if (this.agent != null) {
+            // Quantize velocities to 0.01 blocks/tick (low precision)
+            quantizedVelX = (int)(this.agent.velX * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+            quantizedVelY = (int)(this.agent.velY * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+            quantizedVelZ = (int)(this.agent.velZ * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+
+            Vec3d pos = this.agent.getPos();
+            if (pos != null) {
+                // Quantize positions to 0.1 blocks (low precision)
+                quantizedPosX = (int)(pos.x * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+                quantizedPosY = (int)(pos.y * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+                quantizedPosZ = (int)(pos.z * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            }
         }
-//	    if (round > 1) {
-//		    result = 34L * result + Double.hashCode(roundToPrecision(this.agent.getPos().x, round));
-//		    result = 87L * result + Double.hashCode(roundToPrecision(this.agent.getPos().y, round));
-//		    result = 28L * result + Double.hashCode(roundToPrecision(this.agent.getPos().z, round));
-//	    } else {
-//		    result = 34L * result + Double.hashCode(this.agent.getPos().x);
-//		    result = 87L * result + Double.hashCode(this.agent.getPos().y);
-//		    result = 28L * result + Double.hashCode(this.agent.getPos().z);
-//	    }
-        return (int) result;
+
+        // Build hash with quantized values
+        if (shouldAddYaw && this.input != null) {
+            return Objects.hash(
+                this.input.forward(), this.input.back(), this.input.right(), this.input.left(),
+                this.input.jump(), this.input.sneak(), this.input.sprint(),
+                this.input.pitch(), this.input.yaw(),
+                quantizedVelX, quantizedVelY, quantizedVelZ,
+                quantizedPosX, quantizedPosY, quantizedPosZ
+            );
+        } else if (this.input != null) {
+            return Objects.hash(
+                this.input.forward(), this.input.back(), this.input.right(), this.input.left(),
+                this.input.jump(), this.input.sneak(), this.input.sprint(),
+                this.input.pitch(),
+                quantizedVelX, quantizedVelY, quantizedVelZ,
+                quantizedPosX, quantizedPosY, quantizedPosZ
+            );
+        } else {
+            return Objects.hash(quantizedVelX, quantizedVelZ,
+                              quantizedPosX, quantizedPosY, quantizedPosZ);
+        }
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        Node other = (Node) obj;
+
+        // Compare quantized values for equality
+        if (this.agent == null || other.agent == null) {
+            return this.agent == other.agent;
+        }
+
+        // Quantize positions (0.1 block precision)
+        Vec3d thisPos = this.agent.getPos();
+        Vec3d otherPos = other.agent.getPos();
+        if (thisPos == null || otherPos == null) {
+            return thisPos == otherPos;
+        }
+
+        if (!((int)(thisPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int)(otherPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
+                (int)(thisPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int)(otherPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
+                (int)(thisPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int)(otherPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
+                (int)(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int)(other.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
+                (int)(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int)(other.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
+                (int)(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int)(other.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING))) {
+            return false;
+        }
+
+        // Check input equality if present
+        if (this.input == null || other.input == null) {
+            return this.input == other.input;
+        }
+
+        return this.input.forward() == other.input.forward() &&
+               this.input.back() == other.input.back() &&
+               this.input.right() == other.input.right() &&
+               this.input.left() == other.input.left() &&
+               this.input.jump() == other.input.jump() &&
+               this.input.sneak() == other.input.sneak() &&
+               this.input.sprint() == other.input.sprint() &&
+               this.input.pitch() == other.input.pitch() &&
+               this.input.yaw() == other.input.yaw();
+    }
 
     public List<Node> getChildren(WorldView world, Vec3d target, BlockNode nextBlockNode) {
         if (shouldSkipNodeGeneration(nextBlockNode)) {
