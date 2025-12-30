@@ -3,9 +3,9 @@ package kaptainwutax.tungsten.path.blockSpaceSearchAssist;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
+import kaptainwutax.tungsten.concurrent.PathfindingExecutor;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -293,11 +293,10 @@ public class BlockNode implements HeapNode {
 	    int distanceWanted = d;
 	    int finalYMax = (int) Math.ceil(yMax);
 
-	    ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+	    PathfindingExecutor pathfindingExecutor = PathfindingExecutor.getInstance();
 
-	    try {
-	    	executor.submit(() ->
-	            IntStream.range(generateDeep ? -64 : -4, finalYMax).parallel().forEach(py -> {
+	    Future<Void> future = pathfindingExecutor.submitTask(() -> {
+	        IntStream.range(generateDeep ? -64 : -4, finalYMax).parallel().forEach(py -> {
 	                int localD;
 
 	                if (py < -5) {
@@ -330,14 +329,14 @@ public class BlockNode implements HeapNode {
 	                        nodes.add(newNode);
 	                    }
 	                }
-	            })
-	        );
-	    	executor.shutdown();
-			executor.awaitTermination(2, TimeUnit.SECONDS);
-	    } catch (InterruptedException e) {
+	            });
+	        return null;
+	    }, 2000L); // 2 second timeout
+
+	    try {
+	        future.get(); // Wait for completion
+	    } catch (InterruptedException | ExecutionException e) {
 	        e.printStackTrace();
-	    } finally {
-	    	executor.shutdown();
 	    }
 
 	    return new ArrayList<>(nodes);

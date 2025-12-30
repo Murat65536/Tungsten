@@ -98,17 +98,17 @@ public class Node implements HeapNode {
         int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
 
         if (this.agent != null) {
-            // Quantize velocities to 0.01 blocks/tick (low precision)
-            quantizedVelX = (int)(this.agent.velX * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-            quantizedVelY = (int)(this.agent.velY * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-            quantizedVelZ = (int)(this.agent.velZ * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+            // Quantize velocities to 0.1 blocks/tick
+            quantizedVelX = (int)(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            quantizedVelY = (int)(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            quantizedVelZ = (int)(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
 
             Vec3d pos = this.agent.getPos();
             if (pos != null) {
-                // Quantize positions to 0.1 blocks (low precision)
-                quantizedPosX = (int)(pos.x * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-                quantizedPosY = (int)(pos.y * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-                quantizedPosZ = (int)(pos.z * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+                // Quantize positions to 0.01 blocks
+                quantizedPosX = (int)(pos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosY = (int)(pos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosZ = (int)(pos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
             }
         }
 
@@ -147,7 +147,7 @@ public class Node implements HeapNode {
             return this.agent == other.agent;
         }
 
-        // Quantize positions (0.1 block precision)
+        // Quantize positions (0.01 block precision)
         Vec3d thisPos = this.agent.getPos();
         Vec3d otherPos = other.agent.getPos();
         if (thisPos == null || otherPos == null) {
