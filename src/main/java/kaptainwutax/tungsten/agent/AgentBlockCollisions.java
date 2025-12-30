@@ -64,77 +64,50 @@ public class AgentBlockCollisions extends AbstractIterator<VoxelShape> {
     }
 
     protected VoxelShape computeNext() {
-//        while(true) {
-//            if (this.blockIterator.step()) {
-//                int i = this.blockIterator.getX();
-//                int j = this.blockIterator.getY();
-//                int k = this.blockIterator.getZ();
-//                int l = this.blockIterator.getEdgeCoordinatesCount();
-//
-//                if(l == 3) {
-//                    continue;
-//                }
-//
-//                /*
-//                BlockView blockView = this.getChunk(i, k);
-//
-//                if(blockView == null) {
-//                    continue;
-//                }*/
-//
-//                BlockView blockView = this.world;
-//
-//                this.pos.set(i, j, k);
-//                BlockState blockState = blockView.getBlockState(this.pos);
-//                this.scannedBlocks++;
-//
-//                if(this.forEntity && !blockState.shouldSuffocate(blockView, this.pos) || l == 1 && !blockState.exceedsCube()
-//                    || l == 2 && !blockState.isOf(Blocks.MOVING_PISTON)) {
-//                    continue;
-//                }
-//
-//                VoxelShape voxelShape = blockState.getCollisionShape(this.world, this.pos, this.context);
-//
-//                if(voxelShape == VoxelShapes.fullCube()) {
-//                    if(!this.box.intersects((double)i, (double)j, (double)k, (double)i + 1.0D, (double)j + 1.0D, (double)k + 1.0D)) {
-//                        continue;
-//                    }
-//
-//                    return voxelShape.offset((double)i, (double)j, (double)k);
-//                }
-//
-//                VoxelShape voxelShape2 = voxelShape.offset((double)i, (double)j, (double)k);
-//
-//                if(!VoxelShapes.matchesAnywhere(voxelShape2, this.boxShape, BooleanBiFunction.AND)) {
-//                    continue;
-//                }
-//
-//                return voxelShape2;
-//            }
-//
-//            return this.endOfData();
-//        }
     	while (this.blockIterator.step()) {
-			int i = this.blockIterator.getX();
-			int j = this.blockIterator.getY();
-			int k = this.blockIterator.getZ();
-			int l = this.blockIterator.getEdgeCoordinatesCount();
-			if (l != 3) {
-				BlockView blockView = this.getChunk(i, k);
+			int x = this.blockIterator.getX();
+			int y = this.blockIterator.getY();
+			int z = this.blockIterator.getZ();
+			int edgeCoordinatesCount = this.blockIterator.getEdgeCoordinatesCount();
+			if (edgeCoordinatesCount != 3) {
+				// Early exit: Skip if the block is completely outside our box
+                double blockMaxX = x + 1;
+				double blockMaxY = y + 1;
+				double blockMaxZ = z + 1;
+
+				// Quick AABB check before fetching chunk/block state
+				if (this.box.maxX <= (double)x || this.box.minX >= blockMaxX ||
+				    this.box.maxY <= (double)y || this.box.minY >= blockMaxY ||
+				    this.box.maxZ <= (double)z || this.box.minZ >= blockMaxZ) {
+					continue;
+				}
+
+				BlockView blockView = this.getChunk(x, z);
 				if (blockView != null) {
-					this.pos.set(i, j, k);
+					this.pos.set(x, y, z);
 					BlockState blockState = blockView.getBlockState(this.pos);
+
+					// Early exit: Skip air blocks immediately
+					if (blockState.isAir()) {
+						continue;
+					}
+
 					if ((!this.forEntity || blockState.shouldSuffocate(blockView, this.pos))
-						&& (l != 1 || blockState.exceedsCube())
-						&& (l != 2 || blockState.isOf(Blocks.MOVING_PISTON))) {
+						&& (edgeCoordinatesCount != 1 || blockState.exceedsCube())
+						&& (edgeCoordinatesCount != 2 || blockState.isOf(Blocks.MOVING_PISTON))) {
 						VoxelShape voxelShape = blockState.getCollisionShape(this.world, this.pos, this.context);
+
+						// Early exit: Skip empty collision shapes
+						if (voxelShape.isEmpty()) {
+							continue;
+						}
+
 						if (voxelShape == VoxelShapes.fullCube()) {
-							if (this.box.intersects(i, j, k, (double)i + 1.0, (double)j + 1.0, (double)k + 1.0)) {
-								return voxelShape.offset(i, j, k);
-							}
+							// We already know it intersects from the AABB check above
+							return voxelShape.offset(x, y, z);
 						} else {
-							VoxelShape voxelShape2 = voxelShape.offset(i, j, k);
-							if (!voxelShape2.isEmpty() && VoxelShapes.matchesAnywhere(voxelShape2, this.boxShape, BooleanBiFunction.AND)) {
+							VoxelShape voxelShape2 = voxelShape.offset(x, y, z);
+							if (VoxelShapes.matchesAnywhere(voxelShape2, this.boxShape, BooleanBiFunction.AND)) {
 								return voxelShape2;
 							}
 						}

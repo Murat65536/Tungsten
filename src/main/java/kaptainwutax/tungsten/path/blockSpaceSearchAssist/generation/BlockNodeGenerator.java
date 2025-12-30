@@ -51,15 +51,48 @@ public class BlockNodeGenerator {
      * @return List of valid child nodes
      */
     public List<BlockNode> generateChildren(BlockNode parent, WorldView world, Goal goal, boolean generateDeep) {
-        // Generate all possible nodes in a 3D circle
-        List<BlockNode> nodes = generateNodesIn3DCircle(NODE_GENERATION_RADIUS, parent, goal, generateDeep);
+        // Optimize generation radius based on distance to goal
+        int effectiveRadius = calculateEffectiveRadius(parent, goal, NODE_GENERATION_RADIUS);
 
-        // Filter nodes using validators
-        List<BlockNode> filtered = nodes.parallelStream()
+        // Generate all possible nodes in a 3D circle
+        List<BlockNode> nodes = generateNodesIn3DCircle(effectiveRadius, parent, goal, generateDeep);
+
+        // Pre-filter nodes by distance heuristic before expensive validation
+        double parentDistance = parent.estimatedCostToGoal;
+        List<BlockNode> preFiltered = nodes.stream()
+            .filter(node -> {
+                // Early reject nodes that move significantly away from goal
+                double nodeDistance = node.estimatedCostToGoal;
+                // Allow some backtracking but not excessive
+                return nodeDistance <= parentDistance + 5.0;
+            })
+            .toList();
+
+        // Filter nodes using validators in parallel
+
+        return preFiltered.parallelStream()
             .filter(node -> isValidNode(world, parent, node))
             .collect(Collectors.toList());
+    }
 
-        return filtered;
+    /**
+     * Calculates an optimized generation radius based on distance to goal.
+     * Reduces unnecessary node generation when close to goal.
+     */
+    private int calculateEffectiveRadius(BlockNode parent, Goal goal, int maxRadius) {
+        double distanceToGoal = parent.estimatedCostToGoal;
+
+        // When very close to goal, reduce radius significantly
+        if (distanceToGoal < 5.0) {
+            return Math.min(3, maxRadius);
+        } else if (distanceToGoal < 10.0) {
+            return Math.min(5, maxRadius);
+        } else if (distanceToGoal < 20.0) {
+            return Math.min(6, maxRadius);
+        }
+
+        // Use full radius when far from goal
+        return maxRadius;
     }
 
     /**

@@ -1069,24 +1069,32 @@ public class Agent {
 
     private List<VoxelShape> findCollisionsForMovement(WorldView world, List<VoxelShape> regularCollisions, Box movingEntityBoundingBox
     ) {
-        Builder<VoxelShape> builder = ImmutableList.builderWithExpectedSize(regularCollisions.size() + 1);
+        // Use ArrayList with pre-sized capacity for better performance
+        List<VoxelShape> result = new ArrayList<>(regularCollisions.size() + 16);
         if (!regularCollisions.isEmpty()) {
-            builder.addAll(regularCollisions);
+            result.addAll(regularCollisions);
         }
 
-        builder.addAll(this.getBlockCollisions(world, movingEntityBoundingBox));
-        return builder.build();
+        // Add block collisions
+        for (VoxelShape shape : this.getBlockCollisions(world, movingEntityBoundingBox)) {
+            result.add(shape);
+        }
+        return result;
     }
 
     public Vec3d adjustMovementForCollisions(Vec3d movement, Box entityBoundingBox, WorldView world, List<VoxelShape> entityCollisions) {
-        ImmutableList.Builder<VoxelShape> builder = ImmutableList.builderWithExpectedSize(entityCollisions.size() + 1);
+        // Use ArrayList with pre-sized capacity for better performance
+        List<VoxelShape> collisions = new ArrayList<>(entityCollisions.size() + 16);
 
         if (!entityCollisions.isEmpty()) {
-            builder.addAll(entityCollisions);
+            collisions.addAll(entityCollisions);
         }
 
-        builder.addAll(this.getBlockCollisions(world, entityBoundingBox.stretch(movement)));
-        return this.adjustMovementForCollisions(movement, entityBoundingBox, builder.build());
+        // Add block collisions
+        for (VoxelShape shape : this.getBlockCollisions(world, entityBoundingBox.stretch(movement))) {
+            collisions.add(shape);
+        }
+        return this.adjustMovementForCollisions(movement, entityBoundingBox, collisions);
     }
 
     private Vec3d adjustMovementForCollisions(Vec3d movement, Box entityBoundingBox, List<VoxelShape> collisions) {
@@ -1097,21 +1105,35 @@ public class Agent {
         double d = movement.x;
         double e = movement.y;
         double f = movement.z;
-        boolean bl = Math.abs(d) < Math.abs(f);
 
-        if (e != 0.0D) {
-            e = VoxelShapes.calculateMaxOffset(Direction.Axis.Y, entityBoundingBox, collisions, e);
-            if (e != 0.0D) entityBoundingBox = entityBoundingBox.offset(0.0D, e, 0.0D);
+        // Early exit if no movement
+        if (d == 0.0D && e == 0.0D && f == 0.0D) {
+            return movement;
         }
 
+        boolean bl = Math.abs(d) < Math.abs(f);
+
+        // Y-axis collision (usually most important for gravity)
+        if (e != 0.0D) {
+            e = VoxelShapes.calculateMaxOffset(Direction.Axis.Y, entityBoundingBox, collisions, e);
+            if (e != 0.0D) {
+                entityBoundingBox = entityBoundingBox.offset(0.0D, e, 0.0D);
+            }
+        }
+
+        // Horizontal collision handling with optimized order
         if (bl && f != 0.0D) {
             f = VoxelShapes.calculateMaxOffset(Direction.Axis.Z, entityBoundingBox, collisions, f);
-            if (f != 0.0D) entityBoundingBox = entityBoundingBox.offset(0.0D, 0.0D, f);
+            if (f != 0.0D) {
+                entityBoundingBox = entityBoundingBox.offset(0.0D, 0.0D, f);
+            }
         }
 
         if (d != 0.0D) {
             d = VoxelShapes.calculateMaxOffset(Direction.Axis.X, entityBoundingBox, collisions, d);
-            if (!bl && d != 0.0D) entityBoundingBox = entityBoundingBox.offset(d, 0.0D, 0.0D);
+            if (!bl && d != 0.0D) {
+                entityBoundingBox = entityBoundingBox.offset(d, 0.0D, 0.0D);
+            }
         }
 
         if (!bl && f != 0.0D) {
