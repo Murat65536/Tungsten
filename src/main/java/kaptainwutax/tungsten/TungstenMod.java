@@ -56,7 +56,7 @@ public class TungstenMod implements ClientModInitializer {
     public static KeyBinding createGoalKeyBinding;
     public static boolean renderPositonBoxes = true;
     public static boolean ignoreFallDamage = true;
-    private static CommandExecutor _commandExecutor;
+    private static CommandExecutor commandExecutor;
 
     static {
         // MOD_META = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow().getMetadata();
@@ -71,7 +71,7 @@ public class TungstenMod implements ClientModInitializer {
      * Executes commands
      */
     public static CommandExecutor getCommandExecutor() {
-        return _commandExecutor;
+        return commandExecutor;
     }
 
     @Override
@@ -100,7 +100,7 @@ public class TungstenMod implements ClientModInitializer {
                 GLFW.GLFW_KEY_H, // The keycode of the key
                 "key.category.tungsten.test" // The translation key of the keybinding's category.
         ));
-        _commandExecutor = new CommandExecutor(this);
+        commandExecutor = new CommandExecutor(this);
 
         // Global minecraft client accessor
         mc = MinecraftClient.getInstance();

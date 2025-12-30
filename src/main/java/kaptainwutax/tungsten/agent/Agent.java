@@ -54,6 +54,10 @@ public class Agent {
 
     public static Agent INSTANCE;
 
+    // Thread-local mutable BlockPos to avoid allocations
+    private static final ThreadLocal<BlockPos.Mutable> threadLocalBlockPos =
+        ThreadLocal.withInitial(BlockPos.Mutable::new);
+
     public final ClientPlayerEntity player;
     public final AgentInput input = new AgentInput(this);
     public final Object2DoubleMap<TagKey<Fluid>> fluidHeight = new Object2DoubleArrayMap<>(2);
@@ -319,14 +323,6 @@ public class Agent {
         this.blockY = MathHelper.floor(y);
         this.blockZ = MathHelper.floor(z);
 //		this.setBoundingBox(this.calculateBoundingBox());
-    }
-
-    public final void setBoundingBox(Box boundingBox) {
-        this.box = boundingBox;
-    }
-
-    protected Box calculateBoundingBox() {
-        return this.dimensions.getBoxAt(this.getPos());
     }
 
     public Agent tick(WorldView world) {
@@ -1126,7 +1122,9 @@ public class Agent {
     }
 
     public boolean isClimbing(WorldView world) {
-        BlockState state = world.getBlockState(new BlockPos(this.blockX, this.blockY, this.blockZ));
+        BlockPos.Mutable mutable = threadLocalBlockPos.get();
+        mutable.set(this.blockX, this.blockY, this.blockZ);
+        BlockState state = world.getBlockState(mutable);
         if (state.isIn(BlockTags.CLIMBABLE)) return true;
         return state.getBlock() instanceof TrapdoorBlock && this.canEnterTrapdoor(world, state);
     }
@@ -1134,7 +1132,9 @@ public class Agent {
     private boolean canEnterTrapdoor(WorldView world, BlockState trapdoor) {
         if (!trapdoor.get(TrapdoorBlock.OPEN)) return false;
 
-        BlockState ladder = world.getBlockState(new BlockPos(this.blockX, this.blockY - 1, this.blockZ));
+        BlockPos.Mutable mutable = threadLocalBlockPos.get();
+        mutable.set(this.blockX, this.blockY - 1, this.blockZ);
+        BlockState ladder = world.getBlockState(mutable);
 
         return ladder.isOf(Blocks.LADDER) && ladder.get(LadderBlock.FACING) == trapdoor.get(TrapdoorBlock.FACING);
     }
