@@ -1,11 +1,9 @@
 package kaptainwutax.tungsten.commands;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
-import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.TungstenMod.clickModeEnum;
+import kaptainwutax.tungsten.TungstenMod.ClickModeEnum;
 import kaptainwutax.tungsten.commands.arguments.EnumArgumentType;
 import kaptainwutax.tungsten.commandsystem.Command;
 import kaptainwutax.tungsten.commandsystem.CommandException;
@@ -19,8 +17,8 @@ public class ClickCommand extends Command {
 	@Override
 	public void build(LiteralArgumentBuilder<CommandSource> builder) {
 		
-		builder.then(argument("click mode", EnumArgumentType.of(clickModeEnum.class)).executes(context -> {
-        	TungstenMod.clickMode = context.getArgument("click mode", clickModeEnum.class);
+		builder.then(argument("click mode", EnumArgumentType.of(ClickModeEnum.class)).executes(context -> {
+        	TungstenMod.clickMode = context.getArgument("click mode", ClickModeEnum.class);
 			
 			return SINGLE_SUCCESS;
 		}));
