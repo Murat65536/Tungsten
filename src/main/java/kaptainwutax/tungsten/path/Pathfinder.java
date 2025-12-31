@@ -48,7 +48,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
 
-public class PathFinder {
+public class Pathfinder {
 
 	public AtomicBoolean active = new AtomicBoolean(false);
 	public AtomicBoolean stop = new AtomicBoolean(false);
@@ -168,7 +168,7 @@ public class PathFinder {
 		    Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
 		    if (blockPath.isPresent()) {
 	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
-	        	PathFinder.blockPath = blockPath;
+	        	Pathfinder.blockPath = blockPath;
 	        }
 	    }
 //	    if (blockPath.isEmpty()) {
@@ -206,7 +206,7 @@ public class PathFinder {
 	        		TungstenMod.RENDERERS.clear();
 	        		TungstenMod.TEST.clear();
 	    			closed.clear();
-	    			PathFinder.blockPath = Optional.empty();
+	    			Pathfinder.blockPath = Optional.empty();
 	                return;
 	            }
 	        } else if (NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size()-1) && blockPath.get().getLast().getPos(true).distanceTo(target) > 5) {
@@ -214,7 +214,7 @@ public class PathFinder {
 	        		TungstenMod.RENDERERS.clear();
 	        		TungstenMod.TEST.clear();
 	    			closed.clear();
-	    			PathFinder.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
+	    			Pathfinder.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
 	    		    if (blockPath.isPresent()) {
 	    		    	NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
 	    	        	RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
@@ -272,7 +272,7 @@ public class PathFinder {
 
 	    RenderHelper.clearRenderers();
 		closed.clear();
-		PathFinder.blockPath = Optional.empty();
+		Pathfinder.blockPath = Optional.empty();
 	}
 	protected static Optional<List<Node>> bestSoFar(boolean logInfo, int numNodes, Node startNode) {
         if (startNode == null) {

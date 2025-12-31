@@ -5,7 +5,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.commandsystem.Command;
-import kaptainwutax.tungsten.path.PathFinder;
 import net.minecraft.command.CommandSource;
 
 public class StopCommand extends Command {

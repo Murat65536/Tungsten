@@ -7,9 +7,7 @@ import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.commands.arguments.GotoTargetArgumentType;
 import kaptainwutax.tungsten.commandsystem.Command;
 import kaptainwutax.tungsten.commandsystem.CommandException;
-import kaptainwutax.tungsten.path.PathFinder;
 import kaptainwutax.tungsten.path.targets.BlockTarget;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.CommandSource;
 
 public class GotoCommand extends Command {

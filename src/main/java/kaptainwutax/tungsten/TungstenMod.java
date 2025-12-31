@@ -2,7 +2,7 @@ package kaptainwutax.tungsten;
 
 import kaptainwutax.tungsten.commandsystem.CommandExecutor;
 import kaptainwutax.tungsten.path.PathExecutor;
-import kaptainwutax.tungsten.path.PathFinder;
+import kaptainwutax.tungsten.path.Pathfinder;
 import kaptainwutax.tungsten.render.Renderer;
 import kaptainwutax.tungsten.world.VoxelWorld;
 import net.fabricmc.api.ClientModInitializer;
@@ -48,7 +48,7 @@ public class TungstenMod implements ClientModInitializer {
     public static Vec3d TARGET = new Vec3d(0.5D, 10.0D, 0.5D);
     public static ClickModeEnum clickMode = ClickModeEnum.OFF;
     public static PathExecutor EXECUTOR = new PathExecutor();
-    public static PathFinder PATHFINDER = new PathFinder();
+    public static Pathfinder PATHFINDER = new Pathfinder();
     public static VoxelWorld WORLD;
     public static KeyBinding pauseKeyBinding;
     public static KeyBinding runKeyBinding;
