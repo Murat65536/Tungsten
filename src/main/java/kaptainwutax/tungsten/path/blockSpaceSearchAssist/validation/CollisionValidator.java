@@ -40,12 +40,6 @@ public class CollisionValidator implements NodeValidator {
             }
         }
 
-        // Check for double slabs
-        if (BlockStateChecker.isDoubleSlab(context.world(), context.from().getBlockPos()) ||
-            toBelowBlock instanceof SnowBlock) {
-            return false;
-        }
-
         // Check collision shape validity
         boolean canStandOn = BlockShapeChecker.hasBiggerCollisionShapeThanAbove(
             context.world(),

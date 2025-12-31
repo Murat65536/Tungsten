@@ -185,17 +185,16 @@ public class BlockSpacePathfinder {
     }
 	
 	private static double computeHeuristic(Vec3d position, Vec3d target) {
-	    double dx = Math.abs(position.x - target.x);
-	    double dy = Math.abs(position.y - target.y);
-	    double dz = Math.abs(position.z - target.z);
+	    double dx = position.x - target.x;
+	    double dy = position.y - target.y;
+	    double dz = position.z - target.z;
 	    
-	    double cost = (dx + dz) * BlockSpacePathfindingConstants.Heuristics.XZ_MULTIPLIER;
+	    double distSq = dx * dx + dy * dy + dz * dz;
+	    double cost = Math.sqrt(distSq) * BlockSpacePathfindingConstants.Heuristics.XZ_MULTIPLIER;
 	    
-	    // Add vertical cost
+	    // Add extra vertical cost for water to guide it better
 	    if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(new BlockPos((int) position.x, (int) position.y, (int) position.z)))) {
-	    	cost += dy * BlockSpacePathfindingConstants.Heuristics.Y_MULTIPLIER_WATER;
-	    } else {
-	    	cost += dy; 
+	    	cost += Math.abs(dy) * (BlockSpacePathfindingConstants.Heuristics.Y_MULTIPLIER_WATER - 1.0);
 	    }
 	    
 	    return cost * CostConstants.BaseCosts.WALK_ONE_BLOCK_COST;

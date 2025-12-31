@@ -779,7 +779,7 @@ public class PathFinder {
         double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(closestPos.getBlockPos().down());
         double closestBlockVolume = BlockShapeChecker.getShapeVolume(closestPos.getBlockPos());
         double distanceToClosestPos = nodePos.distanceTo(closestPos.getPos(true));
-        int heightDiff = closestPos.getJumpHeight((int) Math.ceil(nodePos.y), closestPos.y);
+        int heightDiff = DistanceCalculator.getJumpHeight((int) Math.ceil(nodePos.y), closestPos.y);
 
         boolean isWater = BlockStateChecker.isAnyWater(state);
         boolean isLadder = state.getBlock() instanceof LadderBlock;
