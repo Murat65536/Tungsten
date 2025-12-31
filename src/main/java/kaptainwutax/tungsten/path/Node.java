@@ -22,7 +22,6 @@ import kaptainwutax.tungsten.helpers.MathHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.IceBlock;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.Box;
@@ -179,11 +178,7 @@ public class Node implements HeapNode {
 
         List<Node> nodes = new ArrayList<>();
 
-        if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
-            generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
-        } else {
-            generateAirborneNodes(world, nextBlockNode, nodes);
-        }
+        generateNodes(world, target, nextBlockNode, nodes);
 
         sortNodesByYaw(nodes, target);
 
@@ -200,7 +195,7 @@ public class Node implements HeapNode {
         ));
     }
 
-    private void generateGroundOrWaterNodes(WorldView world, Vec3d target, BlockNode nextBlockNode, List<Node> nodes) {
+    private void generateNodes(WorldView world, Vec3d target, BlockNode nextBlockNode, List<Node> nodes) {
         boolean isDoingLongJump = nextBlockNode.isDoingLongJump() || nextBlockNode.isDoingNeo();
         boolean isCloseToBlockNode = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true)) < 1;
         BlockState state = world.getBlockState(nextBlockNode.getBlockPos());
@@ -225,6 +220,7 @@ public class Node implements HeapNode {
         for (int i = 0; i < (agent.onGround ? PlayerConstants.Inputs.ALL_INPUTS.length : PlayerConstants.Inputs.NO_JUMP_INPUT_LENGTH); i++) {
             KeyboardInput input = PlayerConstants.Inputs.ALL_INPUTS[i];
             float increment = PlayerConstants.Inputs.YAW_RANGE * 2 / (PlayerConstants.Inputs.YAW_PRECISION - 1);
+            // TODO Should we be using target instead of the block position?
             float directYaw = (float) Math.round(DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true)) / increment) * increment;
             for (float yaw = directYaw - PlayerConstants.Inputs.YAW_RANGE; yaw <= directYaw + PlayerConstants.Inputs.YAW_RANGE; yaw += increment) {
                 createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), yaw, isDoingLongJump, isCloseToBlockNode);
@@ -252,7 +248,7 @@ public class Node implements HeapNode {
                 return;
             if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY())
                 return;
-            double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, isCloseToBlockNode, isDoingLongJump, newNode.agent);
+            double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, newNode.agent);
             if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
             double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
             double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
@@ -287,8 +283,7 @@ public class Node implements HeapNode {
         }
     }
 
-    private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, boolean isCloseToBlockNode,
-                                     boolean isDoingLongJump, Agent agent) {
+    private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, Agent agent) {
         double addNodeCost = 1;
 
         if (forward && sprint && jump && !sneak) {
@@ -300,51 +295,6 @@ public class Node implements HeapNode {
         }
 
         return addNodeCost;
-    }
-
-    private void generateAirborneNodes(WorldView world, BlockNode nextBlockNode, List<Node> nodes) {
-        try {
-            for (float yaw = agent.yaw - 45; yaw < 180.0f; yaw += 22.5 + Math.random()) {
-                for (boolean forward : new boolean[]{true, false}) {
-                    for (boolean right : new boolean[]{false, true}) {
-                        createAirborneNodes(world, nextBlockNode, nodes, forward, right, yaw);
-                    }
-                }
-            }
-        } catch (ConcurrentModificationException e) {
-            try {
-                Thread.sleep(2);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                Debug.logWarning("Thread interrupted: " + ie.getMessage());
-            }
-        }
-    }
-
-    private void createAirborneNodes(WorldView world, BlockNode nextBlockNode, List<Node> nodes, boolean forward, boolean right, float yaw) {
-        Node newNode = new Node(this, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-                new Color(0, 255, 255), this.cost + 1);
-
-
-        if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.9, 0.4)) return;
-        double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e4);
-        double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e4);
-
-        if (newNodeDistanceToBlockNode >= parentNodeDistanceToBlockNode) return;
-        int i = 0;
-        boolean isBelowClosedTrapDoor = BlockStateChecker.isClosedBottomTrapdoor(world.getBlockState(nextBlockNode.getBlockPos().down()));
-        boolean shouldAllowWalkingOnLowerBlock = !world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3;
-        double minY = isBelowClosedTrapDoor ? nextBlockNode.getPos(true).y - 1 : nextBlockNode.getBlockPos().getY() - (shouldAllowWalkingOnLowerBlock ? 1.4 : 0.4);
-        while (!newNode.agent.onGround && !newNode.agent.isClimbing(world) && newNode.agent.getPos().y >= minY) {
-            if (i > 60) break;
-            i++;
-            newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-                    new Color(0, 255, 255), this.cost + 1);
-        }
-        newNode = new Node(newNode, world, new PathInput(forward, false, right, false, false, false, true, agent.pitch, yaw),
-                new Color(0, 255, 255), this.cost + 1);
-
-        nodes.add(newNode);
     }
 
     private void sortNodesByYaw(List<Node> nodes, Vec3d target) {
