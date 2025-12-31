@@ -2,13 +2,7 @@ package kaptainwutax.tungsten.path.blockSpaceSearchAssist.generation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
-import kaptainwutax.tungsten.concurrent.PathfindingExecutor;
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.physics.GravityConstants;
 import kaptainwutax.tungsten.constants.physics.MovementConstants;
@@ -25,8 +19,7 @@ import net.minecraft.world.WorldView;
  */
 public class BlockNodeGenerator {
 
-    private static final int NODE_GENERATION_RADIUS = 8;
-    private static final long PATHFINDING_TIMEOUT_MS = 2000;
+    private static final int NODE_GENERATION_RADIUS = 5;
     private static final int DEEP_GENERATION_MIN = -64;
     private static final int SHALLOW_GENERATION_MIN = -4;
     private static final int SLIME_BOUNCE_CHECK_HEIGHT = 4;
@@ -34,11 +27,9 @@ public class BlockNodeGenerator {
     private static final double SLAB_HEIGHT = 0.5;
 
     private final CompositeValidator validator;
-    private final PathfindingExecutor executor;
 
     public BlockNodeGenerator() {
         this.validator = new CompositeValidator();
-        this.executor = PathfindingExecutor.getInstance();
     }
 
     /**
@@ -57,22 +48,15 @@ public class BlockNodeGenerator {
         // Generate all possible nodes in a 3D circle
         List<BlockNode> nodes = generateNodesIn3DCircle(effectiveRadius, parent, goal, generateDeep);
 
-        // Pre-filter nodes by distance heuristic before expensive validation
-        double parentDistance = parent.estimatedCostToGoal;
-        List<BlockNode> preFiltered = nodes.stream()
-            .filter(node -> {
-                // Early reject nodes that move significantly away from goal
-                double nodeDistance = node.estimatedCostToGoal;
-                // Allow some backtracking but not excessive
-                return nodeDistance <= parentDistance + 5.0;
-            })
-            .toList();
-
-        // Filter nodes using validators in parallel
-
-        return preFiltered.parallelStream()
-            .filter(node -> isValidNode(world, parent, node))
-            .collect(Collectors.toList());
+        // Filter nodes using validators
+        List<BlockNode> validNodes = new ArrayList<>(nodes.size());
+        for (BlockNode node : nodes) {
+            if (isValidNode(world, parent, node)) {
+                validNodes.add(node);
+            }
+        }
+        
+        return validNodes;
     }
 
     /**
@@ -85,10 +69,6 @@ public class BlockNodeGenerator {
         // When very close to goal, reduce radius significantly
         if (distanceToGoal < 5.0) {
             return Math.min(3, maxRadius);
-        } else if (distanceToGoal < 10.0) {
-            return Math.min(5, maxRadius);
-        } else if (distanceToGoal < 20.0) {
-            return Math.min(6, maxRadius);
         }
 
         // Use full radius when far from goal
@@ -118,28 +98,19 @@ public class BlockNodeGenerator {
      * @return List of generated nodes
      */
     private List<BlockNode> generateNodesIn3DCircle(int radius, BlockNode parent, Goal goal, boolean generateDeep) {
-        ConcurrentLinkedQueue<BlockNode> nodes = new ConcurrentLinkedQueue<>();
+        List<BlockNode> nodes = new ArrayList<>();
 
         // Calculate maximum Y based on slime bounce or normal jump
         double yMax = calculateMaxY(parent, generateDeep);
         int finalYMax = (int) Math.ceil(yMax);
+        
+        int minY = generateDeep ? DEEP_GENERATION_MIN : SHALLOW_GENERATION_MIN;
 
-        // Generate nodes in parallel
-        Future<Void> future = executor.submitTask(() -> {
-            IntStream.range(
-                generateDeep ? DEEP_GENERATION_MIN : SHALLOW_GENERATION_MIN,
-                finalYMax
-            ).parallel().forEach(py -> generateNodesAtHeight(nodes, parent, goal, radius, py, generateDeep));
-            return null;
-        }, PATHFINDING_TIMEOUT_MS);
-
-        try {
-            future.get(); // Wait for completion
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+        for (int py = minY; py < finalYMax; py++) {
+            generateNodesAtHeight(nodes, parent, goal, radius, py, generateDeep);
         }
 
-        return new ArrayList<>(nodes);
+        return nodes;
     }
 
     /**
@@ -171,7 +142,7 @@ public class BlockNodeGenerator {
      * @param py The Y offset from parent
      * @param generateDeep Whether generating deep nodes
      */
-    private void generateNodesAtHeight(ConcurrentLinkedQueue<BlockNode> nodes,
+    private void generateNodesAtHeight(List<BlockNode> nodes,
                                       BlockNode parent,
                                       Goal goal,
                                       int radius,
@@ -207,7 +178,7 @@ public class BlockNodeGenerator {
      * @param radius The pattern radius
      * @param py The Y offset
      */
-    private void generateDiamondPattern(ConcurrentLinkedQueue<BlockNode> nodes,
+    private void generateDiamondPattern(List<BlockNode> nodes,
                                        BlockNode parent,
                                        Goal goal,
                                        int radius,

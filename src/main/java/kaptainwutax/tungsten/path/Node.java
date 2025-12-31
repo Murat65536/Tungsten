@@ -261,7 +261,9 @@ public class Node implements HeapNode {
             }
         }
 
-        for (KeyboardInput input : PlayerConstants.Inputs.ALL_INPUTS) {
+
+        for (int i = 0; i < (agent.onGround ? PlayerConstants.Inputs.ALL_INPUTS.length : PlayerConstants.Inputs.NO_JUMP_INPUT_LENGTH); i++) {
+            KeyboardInput input = PlayerConstants.Inputs.ALL_INPUTS[i];
             float increment = PlayerConstants.Inputs.YAW_RANGE * 2 / (PlayerConstants.Inputs.YAW_PRECISION - 1);
             float directYaw = (float) Math.round(DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true)) / increment) * increment;
             for (float yaw = directYaw - PlayerConstants.Inputs.YAW_RANGE; yaw <= directYaw + PlayerConstants.Inputs.YAW_RANGE; yaw += increment) {

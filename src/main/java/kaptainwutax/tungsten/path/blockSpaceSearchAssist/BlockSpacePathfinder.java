@@ -14,6 +14,7 @@ import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.constants.pathfinding.BlockSpacePathfindingConstants;
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
+import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.path.common.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.path.common.IOpenSet;
 import kaptainwutax.tungsten.TungstenMod;
@@ -201,13 +202,12 @@ public class BlockSpacePathfinder {
 	}
 	
 	private static void updateNode(BlockNode current, BlockNode child, Vec3d target) {
-	    double moveCost = CostConstants.BaseCosts.WALK_ONE_BLOCK_COST;
+	    double distance = DistanceCalculator.getHorizontalEuclideanDistance(current.getPos(true), child.getPos(true));
+	    // If distance is 0 (e.g. vertical move), treat as 1 block cost for now to avoid zero cost cycles
+	    if (distance < 0.1) distance = 1.0;
 	    
-	    // Penalize water slightly if not necessary, or based on block type
-	    if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(child.getBlockPos()))) {
-	    	moveCost *= 1.5; 
-	    }
-
+	    double moveCost = distance * CostConstants.BaseCosts.WALK_ONE_BLOCK_COST;
+	    
 	    double tentativeCost = current.cost + moveCost;
 	    
 	    double estimatedCostToGoal = computeHeuristic(child.getPos(), target);

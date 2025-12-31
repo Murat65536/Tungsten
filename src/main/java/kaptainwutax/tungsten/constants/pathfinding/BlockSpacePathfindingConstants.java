@@ -14,11 +14,6 @@ public final class BlockSpacePathfindingConstants {
      */
     public static final int TIME_CHECK_INTERVAL = 64;
 
-    /**
-     * Time between checks to see if a valid path was found in milliseconds
-     */
-    public static final double MINIMUM_IMPROVEMENT = 0.21;
-
     // TODO Is this really needed?
     /**
      * Minimum length of a path to be considered

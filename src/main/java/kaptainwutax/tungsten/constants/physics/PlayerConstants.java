@@ -41,17 +41,17 @@ public final class PlayerConstants {
 
         static {
             int index = 0;
-            for (boolean sprint : new boolean[] {false, true}) {
-                for (boolean sneak : new boolean[] {false, true}) {
-                    if (!(sprint && sneak)) {
-                        for (boolean forward : new boolean[] {false, true}) {
-                            if (!(sprint && !forward)) {
-                                for (boolean back : new boolean[] {false, true}) {
-                                    if (!(forward && back)) {
-                                        for (boolean left : new boolean[] {false, true}) {
-                                            for (boolean right : new boolean[] {false, true}) {
-                                                if (!(left && right)) {
-                                                    for (boolean jump : new boolean[] {false, true}) {
+            for (boolean jump : new boolean[] {false, true}) {
+                for (boolean sprint : new boolean[]{false, true}) {
+                    for (boolean sneak : new boolean[]{false, true}) {
+                        if (!(sprint && sneak)) {
+                            for (boolean forward : new boolean[]{false, true}) {
+                                if (!(sprint && !forward)) {
+                                    for (boolean back : new boolean[]{false, true}) {
+                                        if (!(forward && back)) {
+                                            for (boolean left : new boolean[]{false, true}) {
+                                                for (boolean right : new boolean[]{false, true}) {
+                                                    if (!(left && right)) {
                                                         ALL_INPUTS[index++] = new KeyboardInput(forward, back, right, left, jump, sneak, sprint);
                                                     }
                                                 }
@@ -65,5 +65,10 @@ public final class PlayerConstants {
                 }
             }
         }
+
+        /**
+         * Length of the section of {@link Inputs#ALL_INPUTS} that doesn't include jumping
+         */
+        public static final int NO_JUMP_INPUT_LENGTH = ALL_INPUTS.length / 2;
     }
 }
