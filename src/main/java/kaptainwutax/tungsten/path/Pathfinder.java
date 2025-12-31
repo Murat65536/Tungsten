@@ -378,8 +378,8 @@ public class Pathfinder {
 
         int closestIDX = NEXT_CLOSEST_BLOCKNODE_IDX.get();
         BlockNode closest = positions.get(closestIDX);
-        double minDistance = current.getSquaredDistance(closest.getPos(true))/* + Math.abs(closest.y - current.getY()) * 160*/;
-        int maxLoop = Math.min(closestIDX+10, positions.size());
+        double minDistance = current.getSquaredDistance(closest.getPos(true));
+        int maxLoop = Math.min(closestIDX + 10, positions.size());
         for (int i = closestIDX + 1; i < maxLoop; i++) {
         	BlockNode position = positions.get(i);
             double distance = current.getSquaredDistance(position.getPos(true));
