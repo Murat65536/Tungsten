@@ -57,7 +57,6 @@ public class Pathfinder {
 	private AtomicDoubleArray bestHeuristicSoFar;
 	private IOpenSet<Node> openSet = new BinaryHeapOpenSet<>();
 	protected static final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<Node>(PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length);
-	private static final double minimumImprovement = PathfindingConstants.NodeEvaluation.MINIMUM_IMPROVEMENT;
 	private static Optional<List<BlockNode>> blockPath = Optional.empty();
 	protected static final double MIN_DIST_PATH = 5.0;
 	protected static AtomicInteger NEXT_CLOSEST_BLOCKNODE_IDX = new AtomicInteger(1);
@@ -322,14 +321,7 @@ public class Pathfinder {
 	    if (!isBottomSlab && !node.agent.onGround && agentPos.y < bN.y && lBN != null && lBN.y <= bN.y && parentAgentPos != null && parentAgentPos.y > agentPos.y) {
 	    	return true;
 	    }
-	    return shouldNodeBeSkipped(node, target, closed, true, 
-	        blockPath.isPresent() && (
-	            blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()).isDoingLongJump() ||
-	            blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()).isDoingNeo() ||
-	            blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get() - 1).isDoingCornerJump()
-	        ),
-	        blockPath.isPresent() && !blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()).isDoingNeo()
-	    );
+	    return shouldNodeBeSkipped(node, target, closed, true, false, blockPath.isPresent());
 	}
 	
 	private static boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Integer> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
@@ -440,7 +432,7 @@ public class Pathfinder {
 	    for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
 	        double heuristic = child.combinedCost / PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS[i];
 //	        Debug.logMessage("" + (bestHeuristicSoFar[i] - heuristic));
-	        if (bestHeuristicSoFar.get(i) - heuristic > minimumImprovement) {
+	        if (bestHeuristicSoFar.get(i) - heuristic > PathfindingConstants.NodeEvaluation.MINIMUM_IMPROVEMENT) {
 	            bestHeuristicSoFar.set(i, heuristic);
 	            bestSoFar.set(i, child);
 	            if (failing && getDistFromStartSq(child, target) > MIN_DIST_PATH * MIN_DIST_PATH) {
@@ -600,11 +592,6 @@ public class Pathfinder {
     	double distB = DistanceCalculator.getHorizontalEuclideanDistance(lastBlockNode.getPos(true), nextBlockNode.getPos(true));
     	
     	if (distB > 6 || child.agent.isClimbing(TungstenMod.mc.world)) return  child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
-    	
-    	if (nextBlockNode.isDoingNeo())
-    		return !child.agent.onGround && child.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY();
-    	
-    	if (nextBlockNode.isDoingLongJump()) return !child.agent.onGround;
     	
     	if (isSmallBlock) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY());
     	
