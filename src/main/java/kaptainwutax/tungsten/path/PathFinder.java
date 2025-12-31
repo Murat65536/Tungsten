@@ -33,6 +33,7 @@ import kaptainwutax.tungsten.helpers.blockPath.BlockPosShifter;
 import kaptainwutax.tungsten.helpers.movement.StraightMovementHelper;
 import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathfinder;
 import kaptainwutax.tungsten.path.common.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.path.common.IOpenSet;
 import kaptainwutax.tungsten.render.Color;
@@ -55,8 +56,7 @@ public class PathFinder {
 	private final Set<Integer> closed = Collections.synchronizedSet(new HashSet<>());
 	private AtomicDoubleArray bestHeuristicSoFar;
 	private IOpenSet<Node> openSet = new BinaryHeapOpenSet<>();
-	protected static final double[] COEFFICIENTS = PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS;
-	protected static final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<Node>(COEFFICIENTS.length);
+	protected static final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<Node>(PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length);
 	private static final double minimumImprovement = PathfindingConstants.NodeEvaluation.MINIMUM_IMPROVEMENT;
 	private static Optional<List<BlockNode>> blockPath = Optional.empty();
 	protected static final double MIN_DIST_PATH = 5.0;
@@ -279,7 +279,7 @@ public class PathFinder {
             return Optional.empty();
         }
         double bestDist = 0;
-        for (int i = 0; i < COEFFICIENTS.length; i++) {
+        for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
             if (bestSoFar.get(i) == null) {
                 continue;
             }
@@ -304,7 +304,7 @@ public class PathFinder {
     }
 	
 	private void clearParentsForBestSoFar(Node node) {
-		for (int i = 0; i < COEFFICIENTS.length; i++) {
+		for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
 			bestSoFar.set(i, null);
 		}
 	}
@@ -437,8 +437,8 @@ public class PathFinder {
 	
 	private static boolean updateBestSoFar(Node child, Vec3d target, AtomicDoubleArray bestHeuristicSoFar) {
 		boolean failing = true;
-	    for (int i = 0; i < COEFFICIENTS.length; i++) {
-	        double heuristic = child.combinedCost / COEFFICIENTS[i];
+	    for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
+	        double heuristic = child.combinedCost / PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS[i];
 //	        Debug.logMessage("" + (bestHeuristicSoFar[i] - heuristic));
 	        if (bestHeuristicSoFar.get(i) - heuristic > minimumImprovement) {
 	            bestHeuristicSoFar.set(i, heuristic);
@@ -471,17 +471,17 @@ public class PathFinder {
     }
 
     private Optional<List<BlockNode>> findBlockPath(WorldView world, Vec3d target) {
-        return kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathFinder.search(world, target);
+        return BlockSpacePathfinder.search(world, target);
     }
     
     private Optional<List<BlockNode>> findBlockPath(WorldView world, BlockNode start, Vec3d target) {
-        return kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathFinder.search(world, start, target);
+        return BlockSpacePathfinder.search(world, start, target);
     }
 
     private AtomicDoubleArray initializeBestHeuristics(Node start) {
-    	AtomicDoubleArray bestHeuristicSoFar = new AtomicDoubleArray(COEFFICIENTS.length);
+    	AtomicDoubleArray bestHeuristicSoFar = new AtomicDoubleArray(PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length);
         for (int i = 0; i < bestHeuristicSoFar.length(); i++) {
-            bestHeuristicSoFar.set(i, start.combinedCost / COEFFICIENTS[i]);
+            bestHeuristicSoFar.set(i, start.combinedCost / PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS[i]);
             bestSoFar.set(i, start);
         }
         return bestHeuristicSoFar;

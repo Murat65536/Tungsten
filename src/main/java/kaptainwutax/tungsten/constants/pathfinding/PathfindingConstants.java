@@ -67,7 +67,7 @@ public final class PathfindingConstants {
         private ClosedSetScale() {}
 
         /** Position rounding factor */
-        public static final double POSITION_ROUNDING = 100.0;
+        public static final double POSITION_ROUNDING = 10.0;
 
         /** Velocity rounding factor */
         public static final double VELOCITY_ROUNDING = 10.0;

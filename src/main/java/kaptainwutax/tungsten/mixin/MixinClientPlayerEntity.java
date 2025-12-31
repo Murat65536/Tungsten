@@ -12,7 +12,7 @@ import com.mojang.authlib.GameProfile;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.agent.Agent;
-import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathFinder;
+import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathfinder;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
@@ -42,7 +42,7 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 			TungstenMod.PATHFINDER.find(this.getWorld(), TungstenMod.TARGET);
 		}
 		if(TungstenMod.runBlockSearchKeyBinding.isPressed() && !TungstenMod.PATHFINDER.active.get()) {
-			BlockSpacePathFinder.find(getWorld(), TungstenMod.TARGET);
+			BlockSpacePathfinder.find(getWorld(), TungstenMod.TARGET);
 		}
 		if (TungstenMod.pauseKeyBinding.isPressed()) {
 			try {
