@@ -65,8 +65,8 @@ public class Pathfinder {
 	private TaskManager taskManager;
 	
 	
-	synchronized public void find(WorldView world, Vec3d target) {
-		if(active.get() || thread != null)return;
+	public synchronized void find(WorldView world, Vec3d target) {
+		if (active.get() || thread != null) return;
 		active.set(true);
 		NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
 
@@ -380,10 +380,10 @@ public class Pathfinder {
         BlockNode closest = positions.get(closestIDX);
         double minDistance = current.getSquaredDistance(closest.getPos(true))/* + Math.abs(closest.y - current.getY()) * 160*/;
         int maxLoop = Math.min(closestIDX+10, positions.size());
-        for (int i = closestIDX+1; i < maxLoop; i++) {
+        for (int i = closestIDX + 1; i < maxLoop; i++) {
         	BlockNode position = positions.get(i);
             double distance = current.getSquaredDistance(position.getPos(true));
-            if ( distance < 1 && closestIDX < i-1) continue;
+            if (distance < 1 && closestIDX < i - 1) continue;
             if (distance < minDistance
             		&& StraightMovementHelper.isPossible(world, position.getBlockPos(), current)
             		) {
