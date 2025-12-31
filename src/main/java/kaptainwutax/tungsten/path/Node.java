@@ -20,13 +20,6 @@ import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.MathHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
-import kaptainwutax.tungsten.path.specialMoves.CornerJump;
-import kaptainwutax.tungsten.path.specialMoves.DivingMove;
-import kaptainwutax.tungsten.path.specialMoves.ExitWaterMove;
-import kaptainwutax.tungsten.path.specialMoves.LongJump;
-import kaptainwutax.tungsten.path.specialMoves.SprintJumpMove;
-import kaptainwutax.tungsten.path.specialMoves.SwimmingMove;
-import kaptainwutax.tungsten.path.specialMoves.neo.NeoJump;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.IceBlock;
@@ -185,14 +178,6 @@ public class Node implements HeapNode {
         }
 
         List<Node> nodes = new ArrayList<>();
-        if (agent.onGround) {
-            if (!world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3) {
-                //    		nodes.add(TurnACornerMove.generateMove(this, nextBlockNode, false));
-                //    		nodes.add(TurnACornerMove.generateMove(this, nextBlockNode, true));
-                nodes.add(CornerJump.generateMove(this, nextBlockNode, false));
-                nodes.add(CornerJump.generateMove(this, nextBlockNode, true));
-            }
-        }
 
         if (agent.onGround || agent.touchingWater || agent.isClimbing(world)) {
             generateGroundOrWaterNodes(world, target, nextBlockNode, nodes);
@@ -201,31 +186,6 @@ public class Node implements HeapNode {
         }
 
         sortNodesByYaw(nodes, target);
-
-        if (agent.touchingWater && BlockStateChecker.isAnyWater(world.getBlockState(nextBlockNode.getBlockPos()))) {
-            if (world.getBlockState(nextBlockNode.getBlockPos().up()).isAir())
-                nodes.add(SwimmingMove.generateMove(this, nextBlockNode));
-            else nodes.add(DivingMove.generateMove(this, nextBlockNode));
-        }
-        if (agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir()) {
-            nodes.add(ExitWaterMove.generateMove(this, nextBlockNode));
-        }
-        if (!agent.touchingWater && world.getBlockState(nextBlockNode.getBlockPos()).isAir()) {
-            nodes.add(SprintJumpMove.generateMove(this, nextBlockNode));
-        }
-
-        if (agent.onGround) {
-            if (nextBlockNode.isDoingNeo()) {
-                nodes.add(NeoJump.generateMove(this, nextBlockNode));
-            }
-            if (nextBlockNode.isDoingLongJump() || world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock || world.getBlockState(nextBlockNode.previous.getBlockPos()).getBlock() instanceof IceBlock) {
-                nodes.add(LongJump.generateMove(this, nextBlockNode));
-            }
-        }
-        if (!agent.isClimbing(world) && world.getBlockState(agent.getBlockPos().down()).getBlock() instanceof LadderBlock) {
-            nodes.add(LongJump.generateMove(this, nextBlockNode));
-//    		nodes.add(CornerJump.generateMove(this, nextBlockNode));
-        }
 
         return nodes;
     }
