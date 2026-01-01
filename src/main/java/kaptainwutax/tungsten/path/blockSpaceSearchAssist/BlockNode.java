@@ -193,12 +193,7 @@ public class BlockNode implements HeapNode {
 	public static boolean wasCleared(WorldView world, BlockPos start, BlockPos end, BlockNode startNode,
 			BlockNode endNode) {
 
-		TungstenMod.TEST.clear();
-		boolean shouldRender = false;
-		boolean shouldSlow = false;
-		
-
-		boolean isStraightPossible = StraightMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+		boolean isStraightPossible = StraightMovementHelper.isPossible(world, start, end);
 		
 		if (isStraightPossible) return true;
 		if (endNode == null) return false;
@@ -206,13 +201,13 @@ public class BlockNode implements HeapNode {
 		// When running bot in a normal environment instead of parkour, you need to turn on Neo and Corner jump checks to avoid cases where it can get stuck
 		boolean shouldCheckNeo = start.isWithinDistance(end, MovementLimits.NEO_CHECK_DISTANCE);
 		if (shouldCheckNeo) {
-			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end, shouldRender, shouldSlow);
+			Direction neoDirection = NeoMovementHelper.getNeoDirection(world, start, end);
 			if (neoDirection != null) {
 				endNode.setNeoMovement(neoDirection);
 				return true;
 			}
 		}
-		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end, shouldRender, shouldSlow);
+		boolean isCornerJumpPossible = CornerJumpMovementHelper.isPossible(world, start, end);
 		if (isCornerJumpPossible) {
 			endNode.setCornerJump();
 			return true;

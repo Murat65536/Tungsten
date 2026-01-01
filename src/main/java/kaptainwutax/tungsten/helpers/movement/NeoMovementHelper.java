@@ -2,11 +2,8 @@ package kaptainwutax.tungsten.helpers.movement;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.helpers.MovementHelper;
-import kaptainwutax.tungsten.render.Color;
-import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
 
 public class NeoMovementHelper {
@@ -17,22 +14,18 @@ public class NeoMovementHelper {
 	 * @param world
 	 * @param startPos
 	 * @param endPos
-	 * @param shouldRender
-	 * @param shouldSlow
 	 * @return Horizontal direction in which neo is possible and null otherwise
 	 */
-	public static Direction getNeoDirection(WorldView world, BlockPos startPos, BlockPos endPos, boolean shouldRender, boolean shouldSlow) {
+	public static Direction getNeoDirection(WorldView world, BlockPos startPos, BlockPos endPos) {
 
 		boolean isMovingOnXAxis = startPos.getX() - endPos.getX() == 0;
 		boolean isMovingOnZAxis = startPos.getZ() - endPos.getZ() == 0;
 		boolean isJumpingUp = endPos.getY() - startPos.getY() == 1;
 		
 		if (isMovingOnXAxis) {
-			return getNeoDirection(world, Direction.Axis.X, startPos, endPos, isJumpingUp, false, shouldRender,
-					shouldSlow);
+			return getNeoDirection(world, Direction.Axis.X, startPos, endPos, isJumpingUp, false);
 		} else if (isMovingOnZAxis) {
-			return getNeoDirection(world, Direction.Axis.Z, startPos, endPos, isJumpingUp, false, shouldRender,
-					shouldSlow);
+			return getNeoDirection(world, Direction.Axis.Z, startPos, endPos, isJumpingUp, false);
 		}
 
 		return null;
@@ -47,19 +40,15 @@ public class NeoMovementHelper {
 	 * @param startPos
 	 * @param endPos
 	 * @param isJumpingOneBlock
-	 * @param shouldRender
-	 * @param shouldSlow
 	 * @return Horizontal direction in which neo is possible and null otherwise
 	 */
 	public static Direction getNeoDirection(WorldView world, boolean isMovingOnXAxis, boolean isMovingOnZAxis,
-			BlockPos startPos, BlockPos endPos, boolean isJumpingUp, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
+			BlockPos startPos, BlockPos endPos, boolean isJumpingUp, boolean isJumpingOneBlock) {
 
 		if (isMovingOnXAxis) {
-			return getNeoDirection(world, Direction.Axis.X, startPos, endPos, isJumpingUp, isJumpingOneBlock, shouldRender,
-					shouldSlow);
+			return getNeoDirection(world, Direction.Axis.X, startPos, endPos, isJumpingUp, isJumpingOneBlock);
 		} else if (isMovingOnZAxis) {
-			return getNeoDirection(world, Direction.Axis.Z, startPos, endPos, isJumpingUp, isJumpingOneBlock, shouldRender,
-					shouldSlow);
+			return getNeoDirection(world, Direction.Axis.Z, startPos, endPos, isJumpingUp, isJumpingOneBlock);
 		}
 
 		return null;
@@ -73,19 +62,17 @@ public class NeoMovementHelper {
 	 * @param startPos
 	 * @param endPos
 	 * @param isJumpingOneBlock
-	 * @param shouldRender
-	 * @param shouldSlow
 	 * @return Horizontal direction in which neo is possible and null otherwise
 	 */
 	public static Direction getNeoDirection(WorldView world, Direction.Axis movementDir, BlockPos startPos,
-		BlockPos endPos, boolean isJumpingUp, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
+		BlockPos endPos, boolean isJumpingUp, boolean isJumpingOneBlock) {
 		if (!movementDir.isHorizontal())
 			throw new IllegalArgumentException("Only X and Z directions are allowed for movementDir");
 		if (Math.abs(startPos.getY() - endPos.getY()) > 1) return null;
 			
 		int endX = endPos.getX();
 		int endZ = endPos.getZ();
-		PathState pathState = new PathState(isJumpingUp, isJumpingOneBlock, shouldRender, shouldSlow);
+		PathState pathState = new PathState(isJumpingUp, isJumpingOneBlock);
 		if (movementDir == Direction.Axis.X) {
 			if (startPos.getZ() > endZ) {
 				int neoX = startPos.getX() - 1;
@@ -122,7 +109,7 @@ public class NeoMovementHelper {
 	}
 
 	// Encapsulates the path traversal state
-		private record PathState(boolean isJumpingUp, boolean isJumpingOneBlock, boolean shouldRender, boolean shouldSlow) {
+		private record PathState(boolean isJumpingUp, boolean isJumpingOneBlock) {
 
 		private boolean isClear(WorldView world, int start, int end, int fixed, boolean isXAxis, int y) {
 				int count = 0;
@@ -154,32 +141,12 @@ public class NeoMovementHelper {
 					}
 
 					if (MovementHelper.isObscured(world, currPos, isJumpingUp, isJumpingOneBlock)) {
-						if (shouldRender) {
-							renderBlock(currPos, Color.RED, shouldSlow);
-						}
 						return false;
-					} else {
-						if (shouldRender) {
-							renderBlock(currPos, Color.WHITE, shouldSlow);
-						}
 					}
 
 					curr += increment;
 				}
 				return true;
-			}
-
-			private void renderBlock(BlockPos.Mutable currPos, Color color, boolean shouldSlow) {
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()),
-						new Vec3d(1.0D, 1.0D, 1.0D), color));
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()),
-						new Vec3d(1.0D, 1.0D, 1.0D), color));
-				if (shouldSlow) {
-					try {
-						Thread.sleep(450);
-					} catch (InterruptedException ignored) {
-					}
-				}
 			}
 		}
 }

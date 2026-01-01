@@ -102,9 +102,7 @@ public class MovementTypeDetector {
         return NeoMovementHelper.getNeoDirection(
             world,
             from.getBlockPos(),
-            to.getBlockPos(),
-            false, // Don't render
-            false  // Don't slow down
+            to.getBlockPos()
         );
     }
 
@@ -120,9 +118,7 @@ public class MovementTypeDetector {
         return CornerJumpMovementHelper.isPossible(
             world,
             from.getBlockPos(),
-            to.getBlockPos(),
-            false, // Don't render
-            false  // Don't slow down
+            to.getBlockPos()
         );
     }
 
