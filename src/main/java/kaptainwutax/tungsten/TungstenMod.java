@@ -160,12 +160,10 @@ public class TungstenMod implements ClientModInitializer {
                     BlockState state = mc.world.getBlockState(pos);
 
                     VoxelShape shape = state.getCollisionShape(mc.world, pos);
-//		                 if (shape.isEmpty()) shape = state.getOutlineShape(mc.world, pos);
 
                     double height = shape.isEmpty() ? 0 : shape.getMax(Direction.Axis.Y);
 
-                    Vec3d newPos = new Vec3d(pos.getX() + 0.5, pos.getY() + height, pos.getZ() + 0.5);
-                    TungstenMod.TARGET = newPos;
+                    TungstenMod.TARGET = new Vec3d(pos.getX() + 0.5, pos.getY() + height, pos.getZ() + 0.5);
 
 
                     if (clickMode == ClickModeEnum.GOTO && !TungstenMod.PATHFINDER.active.get()) {

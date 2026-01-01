@@ -28,10 +28,10 @@ public class BlockShapeChecker {
     }
 
     /**
-     * Calculates the volume in X and Z axis of a block at given position.
+     * Calculates the volume in X and Z axis of a block at a given position.
      *
      * @param pos Position of the block
-     * @return the volume of a block at given position.
+     * @return the volume of a block at a given position.
      */
     public static double getShapeVolume(BlockPos pos) {
         WorldView world = TungstenMod.mc.world;
@@ -48,7 +48,6 @@ public class BlockShapeChecker {
     public static double getShapeVolume(BlockState state, BlockPos pos) {
         WorldView world = TungstenMod.mc.world;
         VoxelShape shape = state.getCollisionShape(world, pos);
-//        if (shape.isEmpty()) shape = state.getOutlineShape(world, pos);
 
         return getShapeVolume(shape);
     }

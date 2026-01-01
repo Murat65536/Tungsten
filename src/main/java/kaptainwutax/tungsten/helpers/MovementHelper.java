@@ -237,7 +237,6 @@ public class MovementHelper {
         int dz = startPos.getZ() - endZ;
         double distance = Math.sqrt(dx * dx + dz * dz);
         boolean shouldRender = false;
-        boolean shouldSlow = false;
         boolean isCornerXPossible = true;
         boolean isCornerZPossible = true;
         boolean isLadder = world.getBlockState(endPos).getBlock() instanceof LadderBlock
@@ -275,27 +274,11 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                     } else {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                     }
                 }
@@ -324,27 +307,11 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                     } else {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                     }
                 }
@@ -383,28 +350,12 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                         break;
                     } else {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                     }
                 }
@@ -436,28 +387,12 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                         break;
                     } else {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()), new Vec3d(1.0D, 1.0D, 1.0D), Color.WHITE));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                     }
                 }
@@ -492,14 +427,6 @@ public class MovementHelper {
                             if (shouldRender) {
                                 TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                                 TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                                if (shouldSlow) {
-                                    try {
-                                        Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                    } catch (InterruptedException e) {
-                                        Thread.currentThread().interrupt();
-                                        Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                    }
-                                }
                             }
                             isCornerXPossible = false;
                         } else {
@@ -520,14 +447,6 @@ public class MovementHelper {
                                 if (shouldRender) {
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                                    if (shouldSlow) {
-                                        try {
-                                            Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                        } catch (InterruptedException e) {
-                                            Thread.currentThread().interrupt();
-                                            Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                        }
-                                    }
                                 }
                                 isCornerZPossible = false;
                             } else {
@@ -548,14 +467,6 @@ public class MovementHelper {
                                 if (shouldRender) {
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                                    if (shouldSlow) {
-                                        try {
-                                            Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                        } catch (InterruptedException e) {
-                                            Thread.currentThread().interrupt();
-                                            Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                        }
-                                    }
                                 }
                                 isCornerZPossible = false;
                             } else {
@@ -577,14 +488,6 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                         isCornerXPossible = false;
                     } else {
@@ -612,14 +515,6 @@ public class MovementHelper {
                             if (shouldRender) {
                                 TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                                 TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                                if (shouldSlow) {
-                                    try {
-                                        Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                    } catch (InterruptedException e) {
-                                        Thread.currentThread().interrupt();
-                                        Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                    }
-                                }
                             }
                             isCornerXPossible = false;
                         } else {
@@ -640,14 +535,6 @@ public class MovementHelper {
                                 if (shouldRender) {
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                                    if (shouldSlow) {
-                                        try {
-                                            Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                        } catch (InterruptedException e) {
-                                            Thread.currentThread().interrupt();
-                                            Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                        }
-                                    }
                                 }
                                 isCornerXPossible = false;
                             } else {
@@ -668,14 +555,6 @@ public class MovementHelper {
                                 if (shouldRender) {
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                                     TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                                    if (shouldSlow) {
-                                        try {
-                                            Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                        } catch (InterruptedException e) {
-                                            Thread.currentThread().interrupt();
-                                            Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                        }
-                                    }
                                 }
                                 isCornerXPossible = false;
                             } else {
@@ -698,14 +577,6 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                         isCornerXPossible = false;
                     } else {
@@ -737,14 +608,6 @@ public class MovementHelper {
                     if (shouldRender) {
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                        if (shouldSlow) {
-                            try {
-                                Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                Debug.logWarning("Thread interrupted: " + e.getMessage());
-                            }
-                        }
                     }
                     return false;
                 } else {
@@ -764,14 +627,6 @@ public class MovementHelper {
                     if (shouldRender) {
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                        if (shouldSlow) {
-                            try {
-                                Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                Debug.logWarning("Thread interrupted: " + e.getMessage());
-                            }
-                        }
                     }
                     return false;
                 } else {
@@ -791,14 +646,6 @@ public class MovementHelper {
                         if (shouldRender) {
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                             TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                            if (shouldSlow) {
-                                try {
-                                    Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    Debug.logWarning("Thread interrupted: " + e.getMessage());
-                                }
-                            }
                         }
                         return false;
                     } else {
@@ -819,14 +666,6 @@ public class MovementHelper {
                     if (shouldRender) {
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                        if (shouldSlow) {
-                            try {
-                                Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                Debug.logWarning("Thread interrupted: " + e.getMessage());
-                            }
-                        }
                     }
                     return false;
                 } else {
@@ -847,14 +686,6 @@ public class MovementHelper {
                     if (shouldRender) {
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x + 0.5, y, z + 0.5), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x + 0.5, y + 1, z + 0.5), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                        if (shouldSlow) {
-                            try {
-                                Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                Debug.logWarning("Thread interrupted: " + e.getMessage());
-                            }
-                        }
                     }
                     return false;
                 } else {
@@ -875,14 +706,6 @@ public class MovementHelper {
                     if (shouldRender) {
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
                         TungstenMod.TEST.add(new Cuboid(new Vec3d(x, y + 1, z), new Vec3d(1.0D, 1.0D, 1.0D), Color.RED));
-                        if (shouldSlow) {
-                            try {
-                                Thread.sleep(DebugConstants.SleepDelays.DELAY_VERY_LONG_MS);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                Debug.logWarning("Thread interrupted: " + e.getMessage());
-                            }
-                        }
                     }
                     return false;
                 } else {
@@ -894,17 +717,6 @@ public class MovementHelper {
             }
             return true;
         }
-
-        if (shouldSlow) {
-            try {
-                Thread.sleep(850); // Custom delay
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Debug.logWarning("Thread interrupted: " + e.getMessage());
-            }
-        }
-
-
         return isCornerXPossible || isCornerZPossible;
     }
 
