@@ -5,6 +5,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Final;
@@ -22,7 +23,7 @@ public class MixinClientPlayerInteractionManager {
 	@Inject(method = "attackBlock", at = @At("HEAD"))
 	public void attackBlock(BlockPos pos, Direction direction, CallbackInfoReturnable<Boolean> ci) {
 		if(this.client.world.getBlockState(pos).getBlock() == Blocks.GOLD_BLOCK) {
-			TungstenMod.TARGET = new Vec3d(pos.getX() + 0.5D, pos.getY() + 1.0D, pos.getZ() + 0.5D);
+			TungstenMod.TARGET = new Box(pos.up());
 		}
 	}
 

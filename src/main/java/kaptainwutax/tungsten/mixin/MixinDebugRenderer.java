@@ -30,7 +30,7 @@ public class MixinDebugRenderer {
         RenderSystem.lineWidth(2.0F);
         
         buffer.begin(VertexFormat.DrawMode.DEBUG_LINE_STRIP, VertexFormats.POSITION_COLOR);
-        Cuboid goal = new Cuboid(TungstenMod.TARGET.subtract(0.5D, 0D, 0.5D), new Vec3d(1.0D, 2.0D, 1.0D), Color.GREEN);
+        Cuboid goal = new Cuboid(new Vec3d(TungstenMod.TARGET.minX, TungstenMod.TARGET.minY, TungstenMod.TARGET.minZ), new Vec3d(TungstenMod.TARGET.getXLength(), TungstenMod.TARGET.getYLength(), TungstenMod.TARGET.getZLength()), Color.GREEN);
         goal.render();
         tessellator.draw();
 

@@ -16,6 +16,7 @@ import kaptainwutax.tungsten.render.Cuboid;
 import kaptainwutax.tungsten.render.Line;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
@@ -30,7 +31,7 @@ public class PathFinder {
 	protected static final double MIN_DIST_PATH = PathfindingConstants.MIN_DISTANCE_PATH;
 	
 	
-	public static void find(WorldView world, Vec3d target) {
+	public static void find(WorldView world, Box target) {
 		if(active)return;
 		active = true;
 
@@ -46,7 +47,7 @@ public class PathFinder {
 		thread.start();
 	}
 
-	private static void search(WorldView world, Vec3d target) {
+	private static void search(WorldView world, Box target) {
 		boolean failing = true;
 		TungstenMod.RENDERERS.clear();
 
@@ -54,9 +55,10 @@ public class PathFinder {
 		
 		double startTime = System.currentTimeMillis();
 		
+		Vec3d targetPos = target.getCenter();
 
 		Node start = new Node(null, Agent.of(player), null, 0);
-		start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
+		start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, targetPos);
 		
 		double[] bestHeuristicSoFar = new double[COEFFICIENTS.length];//keep track of the best node by the metric of (estimatedCostToGoal + cost / COEFFICIENTS[i])
 		for (int i = 0; i < bestHeuristicSoFar.length; i++) {
@@ -70,12 +72,12 @@ public class PathFinder {
 		while(!openSet.isEmpty()) {
 			TungstenMod.RENDERERS.clear();
 			Node next = openSet.removeLowest();
-			if (shouldNodeBeSkiped(next, target, closed, true)) continue;
+			if (shouldNodeBeSkiped(next, targetPos, closed, true)) continue;
 
 			
 			if(MinecraftClient.getInstance().options.socialInteractionsKey.isPressed()) break;
 			double minVel = PathfindingConstants.MIN_VELOCITY;
-			if(next.agent.getPos().squaredDistanceTo(target) <= PathfindingConstants.TARGET_REACHED_DISTANCE_SQUARED && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
+			if(next.agent.box.intersects(target) && !failing /*|| !failing && (startTime + 5000) - System.currentTimeMillis() <= 0*/) {
 				TungstenMod.RENDERERS.clear();
 				Node n = next;
 				List<Node> path = new ArrayList<>();
@@ -105,8 +107,8 @@ public class PathFinder {
 //                 Thread.sleep(600);
 //             } catch (InterruptedException ignored) {}
 			 
-			for(Node child : next.getChildren(world, target)) {
-				if (shouldNodeBeSkiped(child, target, closed)) continue;
+			for(Node child : next.getChildren(world, targetPos)) {
+				if (shouldNodeBeSkiped(child, targetPos, closed)) continue;
 //				if(closed.contains(child.agent.getPos()))continue;
 				
 				// DUMB HEURISTIC CALC
@@ -125,7 +127,7 @@ public class PathFinder {
 				
 				// AStar? HEURISTIC CALC
 //				if (next.agent.getPos().distanceTo(child.agent.getPos()) < 0.2) continue;
-				updateNode(next, child, target);
+				updateNode(next, child, targetPos);
 				
                 if (child.isOpen()) {
                     openSet.update(child);
@@ -133,7 +135,7 @@ public class PathFinder {
                     openSet.insert(child);//dont double count, dont insert into open set if it's already there
                 }
                 
-                failing = updateBestSoFar(child, bestHeuristicSoFar, target);
+                failing = updateBestSoFar(child, bestHeuristicSoFar, targetPos);
 
 		        
 //				open.add(child);
