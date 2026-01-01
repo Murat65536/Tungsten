@@ -7,7 +7,8 @@
 	import java.util.List;
 	
 	import org.spongepowered.asm.mixin.Mixin;
-	import org.spongepowered.asm.mixin.injection.At;
+    import org.spongepowered.asm.mixin.Unique;
+    import org.spongepowered.asm.mixin.injection.At;
 	import org.spongepowered.asm.mixin.injection.Inject;
 	import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 	
@@ -35,7 +36,8 @@ import net.minecraft.client.render.Tessellator;
 	public class MixinDebugRenderer {
 		
 		// Maximum number of renderers to draw at once to prevent performance issues
-		private static final int MAX_RENDERERS_PER_CATEGORY = 500;
+		@Unique
+        private static final int MAX_RENDERERS_PER_CATEGORY = 500;
 	
 		@Inject(method = "render", at = @At("RETURN"))
 		public void render(MatrixStack matrices, Frustum frustum, VertexConsumerProvider.Immediate vertexConsumers,
@@ -53,18 +55,6 @@ import net.minecraft.client.render.Tessellator;
 			Cuboid goal = new Cuboid(TungstenMod.TARGET.subtract(0.5D, 0D, 0.5D), new Vec3d(1.0D, 2.0D, 1.0D), Color.GREEN);
 			goal.render(builder);
 			RenderLayer.getDebugLineStrip(2).draw(builder.end());
-	
-	//	    if (!TungstenMod.RUNNING_PATH_RENDERER.isEmpty())
-	//	        TungstenMod.RUNNING_PATH_RENDERER.forEach(r -> render(r, tessellator));
-	//
-	//	    if (!TungstenMod.BLOCK_PATH_RENDERER.isEmpty())
-	//	        TungstenMod.BLOCK_PATH_RENDERER.forEach(r -> render(r, tessellator));
-	
-	//	    if (!TungstenMod.RENDERERS.isEmpty())
-	//	        TungstenMod.RENDERERS.forEach(r -> render(r, tessellator));
-	//
-	//	    if (!TungstenMod.TEST.isEmpty())
-	//	        TungstenMod.TEST.forEach(r -> render(r, tessellator));
 	
 			// Batch render each collection with culling and limiting
 			if (!TungstenMod.RUNNING_PATH_RENDERER.isEmpty())
@@ -89,9 +79,7 @@ import net.minecraft.client.render.Tessellator;
 		private static void renderCollection(Collection<Renderer> renderers, Tessellator tessellator, Frustum frustum,
 				double cameraX, double cameraY, double cameraZ) {
 			int count = 0;
-	//		Vec3d target = new Vec3d(cameraX, cameraY, cameraZ);
 			List<Renderer> sortedRenderers = new ArrayList<>(renderers);
-	//		sortedRenderers.sort(Comparator.comparingDouble(obj -> obj.toVec3d(obj.getPos()).distanceTo(TungstenMod.mc.player.getPos())));
 			Collections.reverse(sortedRenderers);
 			try {
 				for (Renderer r : sortedRenderers) {

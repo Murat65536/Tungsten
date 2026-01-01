@@ -52,10 +52,9 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
         if (message.startsWith(prefix)) {
             try {
             	if (message.contains("|")) {
-//            		CommandExecutor.dispatch(message.split(";")[0].substring(prefix.length()));
                 	Collection<Command> commands = new ArrayList<>(TungstenMod.getCommandExecutor().allCommands());
                 	commands.removeIf((command) -> !message.contains(command.getName()));
-                	TungstenMod.getCommandExecutor().executeRecursive(commands.toArray(new Command[commands.size()]), message.split("|"), 0, () -> {
+                	TungstenMod.getCommandExecutor().executeRecursive(commands.toArray(new Command[0]), message.split("|"), 0, () -> {
                     }, ex -> Debug.logWarning(ex.getMessage()));
             	} else CommandExecutor.dispatch(message.substring(prefix.length()));
             } catch (CommandSyntaxException | IllegalArgumentException e) {
@@ -83,13 +82,6 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
         shift = At.Shift.AFTER), cancellable = true)
     public void onPlayerPositionLook(PlayerPositionLookS2CPacket packet, CallbackInfo ci) {
         if(TungstenMod.EXECUTOR.isRunning()) {
-            ClientPlayerEntity player = TungstenMod.mc.player;
-
-//            if(player != null) {
-//                this.connection.send(new TeleportConfirmC2SPacket(packet.getTeleportId()));
-//                this.connection.send(new PlayerMoveC2SPacket.Full(player.getX(), player.getY(), player.getZ(), player.getYaw(), player.getPitch(), player.isOnGround()));
-//            }
-
             ci.cancel();
         }
     }

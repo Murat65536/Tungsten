@@ -27,7 +27,7 @@ public class MixinClientCommandSource {
     private static final char[] SPECIAL_CUTOFF_CHARS = new char[]{'[', '=', ','};
 
 	/**
-	 * In order to fetch all possible suggestions the last argument needs to be empty.
+	 * To fetch all possible suggestions, the last argument needs to be empty.
 	 */
 	@Redirect(method = "getCompletions", at = @At(target = "Lcom/mojang/brigadier/context/CommandContext;getInput()Ljava/lang/String;", value = "INVOKE"))
 	private String processInput(CommandContext<?> context) {

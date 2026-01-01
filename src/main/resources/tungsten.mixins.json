@@ -13,7 +13,6 @@
     "MixinShapeContext",
     "MixinClientPlayNetworkHandler",
     "MixinWorldChunk",
-    "MixinMinecraftClient",
     "MixinClientCommandSource",
     "AccessorChatInputSuggester",
     "MixinChatInputSuggester",

@@ -22,8 +22,6 @@ public interface MixinCommandSource {
 	 */
 	@Overwrite
 	static <T> void forEachMatching(Iterable<T> candidates, String remaining, Function<T, Identifier> getIdentifier, Consumer<T> action) {
-//		Debug.logMessage("CommandSourceMixin - forEachMatching " + remaining);
-//		Debug.logMessage("CommandSourceMixin - forEachMatching " + candidates.toString());
 		for (T candidate : candidates) {
 			Identifier identifier = getIdentifier.apply(candidate);
 
