@@ -1,5 +1,7 @@
 package kaptainwutax.tungsten.constants.physics;
 
+import kaptainwutax.tungsten.constants.game.MechanicsConstants;
+
 /**
  * Constants related to collision detection, bounding box adjustments,
  * and precision thresholds for physics calculations.
@@ -28,7 +30,7 @@ public final class CollisionConstants {
         private Thresholds() {}
 
         /** Soft collision angle threshold in radians */
-        public static final double SOFT_COLLISION_ANGLE_THRESHOLD = 0.13962633907794952;
+        public static final double SOFT_COLLISION_ANGLE_THRESHOLD = 8.0 * MechanicsConstants.Angles.DEGREES_TO_RADIANS;
     }
 
     /**
