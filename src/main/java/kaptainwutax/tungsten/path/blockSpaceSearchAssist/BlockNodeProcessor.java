@@ -92,7 +92,9 @@ public class BlockNodeProcessor {
             from.getBlockPos(),
             to.getBlockPos(),
             from,
-            to
+            to,
+            false,  // shouldRender
+            false   // shouldSlow
         );
     }
 

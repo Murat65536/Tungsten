@@ -2,11 +2,8 @@ package kaptainwutax.tungsten.helpers.movement;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.helpers.MovementHelper;
-import kaptainwutax.tungsten.render.Color;
-import kaptainwutax.tungsten.render.Cuboid;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
 
 public class NeoMovementHelper {
@@ -154,32 +151,20 @@ public class NeoMovementHelper {
 					}
 
 					if (MovementHelper.isObscured(world, currPos, isJumpingUp, isJumpingOneBlock)) {
-						if (shouldRender) {
-							renderBlock(currPos, Color.RED, shouldSlow);
+						if (shouldSlow) {
+							try {
+								Thread.sleep(450);
+							} catch (InterruptedException ignored) {
+							}
 						}
 						return false;
 					} else {
-						if (shouldRender) {
-							renderBlock(currPos, Color.WHITE, shouldSlow);
-						}
+						// No rendering here
 					}
 
 					curr += increment;
 				}
 				return true;
-			}
-
-			private void renderBlock(BlockPos.Mutable currPos, Color color, boolean shouldSlow) {
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY(), currPos.getZ()),
-						new Vec3d(1.0D, 1.0D, 1.0D), color));
-				TungstenMod.TEST.add(new Cuboid(new Vec3d(currPos.getX(), currPos.getY() + 1, currPos.getZ()),
-						new Vec3d(1.0D, 1.0D, 1.0D), color));
-				if (shouldSlow) {
-					try {
-						Thread.sleep(450);
-					} catch (InterruptedException ignored) {
-					}
-				}
 			}
 		}
 }

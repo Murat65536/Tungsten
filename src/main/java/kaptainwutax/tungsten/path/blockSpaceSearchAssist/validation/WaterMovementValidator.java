@@ -34,7 +34,12 @@ public class WaterMovementValidator implements NodeValidator {
             // Must have clear path
             return BlockNode.wasCleared(context.world(),
                 context.from().getBlockPos(),
-                context.to().getBlockPos());
+                context.to().getBlockPos(),
+                null,
+                null,
+                false,  // shouldRender
+                false   // shouldSlow
+            );
         }
 
         // Moving from water
