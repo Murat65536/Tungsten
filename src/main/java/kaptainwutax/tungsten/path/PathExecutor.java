@@ -46,17 +46,17 @@ public class PathExecutor {
 
 		    if(node.input != null) {
 			    player.stopFallFlying();
-			    options.forwardKey.setPressed(node.input.forward);
-			    options.backKey.setPressed(node.input.back);
-			    options.leftKey.setPressed(node.input.left);
-			    options.rightKey.setPressed(node.input.right);
-			    options.jumpKey.setPressed(node.input.jump);
-			    options.sneakKey.setPressed(node.input.sneak);
-			    options.sprintKey.setPressed(node.input.sprint);
+			    options.forwardKey.setPressed(node.input.forward());
+			    options.backKey.setPressed(node.input.back());
+			    options.leftKey.setPressed(node.input.left());
+			    options.rightKey.setPressed(node.input.right());
+			    options.jumpKey.setPressed(node.input.jump());
+			    options.sneakKey.setPressed(node.input.sneak());
+			    options.sprintKey.setPressed(node.input.sprint());
 			    player.prevYaw = player.getYaw();
 			    player.prevPitch = player.getPitch();
-			    player.setYaw(node.input.yaw);
-			    player.setPitch(node.input.pitch);
+			    player.setYaw(node.input.yaw());
+			    player.setPitch(node.input.pitch());
 		    }
 	    }
 

@@ -1539,7 +1539,7 @@ public class Agent {
     }
 
     public static Agent of(Agent agent, PathInput input) {
-        return of(agent, input.forward, input.back, input.left, input.right, input.jump, input.sneak, input.sprint, input.pitch, input.yaw);
+        return of(agent, input.forward(), input.back(), input.left(), input.right(), input.jump(), input.sneak(), input.sprint(), input.pitch(), input.yaw());
     }
 
 }

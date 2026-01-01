@@ -8,7 +8,6 @@ import kaptainwutax.tungsten.constants.PathfindingConstants;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.WorldView;
-import org.jetbrains.annotations.NotNull;
 
 public class Node {
 
@@ -45,32 +44,12 @@ public class Node {
         return heapPosition != -1;
     }
 
-    public List<Node> getChildren(WorldView world, Vec3d target) {
-        List<Node> nodes = new ArrayList<>();;
-        if (this.agent.onGround || this.agent.touchingWater) {
-	        for (boolean forward : new boolean[]{true, false}) {
-		        for (boolean back : new boolean[]{true, false}) {
-			        for (boolean right : new boolean[]{true, false}) {
-				        for (boolean left : new boolean[]{true, false}) {
-					        for (boolean sneak : new boolean[]{true, false}) {
-						        for (float yaw = PathfindingConstants.YAW_MIN; yaw <= PathfindingConstants.YAW_MAX; yaw += PathfindingConstants.YAW_INCREMENT) {
-							        for (boolean sprint : new boolean[]{true, false}) {
-								        for (boolean jump : new boolean[]{true, false}) {
-									        Node newNode = new Node(this, world, new PathInput(forward, back, right, left, jump, sneak, sprint, agent.pitch, yaw), new Color(0, 255, 0), this.cost + (jump ? sneak ? 4 : 0.5 : sneak ? 4 : 2));
-									        nodes.add(newNode);
-								        }
-							        }
-						        }
-					        }
-				        }
-			        }
-		        }
-	        }
-        } else {
-            nodes.add(
-                    new Node(this, world, new PathInput(true, false, false, false, false, false, true, this.agent.pitch, this.agent.yaw), new Color(0, 255, 255), this.cost + PathfindingConstants.UNIFORM_COST_PER_STEP)
-            );
+    public Node[] getChildren(WorldView world, Vec3d target) {
+        int length = this.agent.onGround || this.agent.touchingWater ? PathfindingConstants.ALL_INPUTS.length : PathfindingConstants.ALL_INPUTS.length / 2;
+        Node[] children = new Node[length];
+        for (int i = 0; i < length; i++) {
+            children[i] = new Node(this, world, PathfindingConstants.ALL_INPUTS[i], new Color(0, 255, 0), this.cost);
         }
-        return nodes;
+        return children;
     }
 }
