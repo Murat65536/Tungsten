@@ -282,8 +282,8 @@ public class Agent {
             return Vec3d.ZERO;
         } else {
             Vec3d vec3d = (d > 1.0 ? movementInput.normalize() : movementInput).multiply(speed);
-            float f = MathHelper.sin(yaw * (float) (Math.PI / 180.0));
-            float g = MathHelper.cos(yaw * (float) (Math.PI / 180.0));
+            float f = MathHelper.sin(yaw * (float) MechanicsConstants.Angles.DEGREES_TO_RADIANS);
+            float g = MathHelper.cos(yaw * (float) MechanicsConstants.Angles.DEGREES_TO_RADIANS);
             return new Vec3d(vec3d.x * g - vec3d.z * f, vec3d.y, vec3d.z * g + vec3d.x * f);
         }
     }

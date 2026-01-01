@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -49,10 +50,6 @@ public abstract class MixinChatInputSuggester {
     @Shadow
     @Final
     private boolean slashOptional;
-    
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("^(@)");
-    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("(\\s+)");
-    
 
     @Shadow
     public abstract void show(boolean narrateFirstSuggestion);
@@ -62,7 +59,7 @@ public abstract class MixinChatInputSuggester {
     protected abstract void showCommandSuggestions();
 
     @Inject(method = "sortSuggestions", at = @At("HEAD"), cancellable = true)
-	private List<Suggestion> sortSuggestions(Suggestions suggestions, CallbackInfoReturnable<List<Suggestion>> ci) {
+	private void sortSuggestions(Suggestions suggestions, CallbackInfoReturnable<List<Suggestion>> ci) {
 		String command = textField.getText().substring(0, textField.getCursor());
 
     	ci.cancel();
@@ -103,14 +100,12 @@ public abstract class MixinChatInputSuggester {
 		strictList.addAll(looseList);
 		strictList.addAll(veryLooseList);
     	ci.setReturnValue(strictList);
-		return strictList;
 	}
 
 
 	@Inject(method = "refresh", at = @At(value = "INVOKE", target = "Lcom/mojang/brigadier/StringReader;canRead()Z", remap = false),
-	        cancellable = true,
-	        locals = LocalCapture.CAPTURE_FAILHARD)
-    private void inject(CallbackInfo ci, String string, StringReader reader) {
+			cancellable = true)
+    private void inject(CallbackInfo ci, @Local StringReader reader) {
 		String prefix = TungstenMod.getCommandPrefix();
         int length = prefix.length();
 
@@ -119,7 +114,6 @@ public abstract class MixinChatInputSuggester {
             reader.setCursor(reader.getCursor() + length);
 
             if (this.parse == null) {
-            	TungstenMod.getCommandExecutor();
                 if (message.contains("|")) {
                 	this.parse = CommandExecutor.DISPATCHER.parse(new StringReader(message.split("|")[message.split("|").length-1]), TungstenMod.mc.getNetworkHandler().getCommandSource());
                 } else
@@ -128,7 +122,6 @@ public abstract class MixinChatInputSuggester {
 
             int cursor = textField.getCursor();
             if (cursor >= length && (this.window == null || !this.completingSuggestions)) {
-            	TungstenMod.getCommandExecutor();
                 if (message.contains("|")) {
                 	this.pendingSuggestions = CommandExecutor.DISPATCHER.getCompletionSuggestions(this.parse, new StringReader(message.split("|")[message.split("|").length-1]).getTotalLength());
                 } else
