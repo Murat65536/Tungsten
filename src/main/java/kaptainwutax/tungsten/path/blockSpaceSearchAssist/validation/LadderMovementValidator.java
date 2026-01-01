@@ -36,12 +36,7 @@ public class LadderMovementValidator implements NodeValidator {
             if (context.distance() < MAX_LADDER_DISTANCE) {
                 return BlockNode.wasCleared(context.world(),
                     context.from().getBlockPos(),
-                    context.to().getBlockPos(),
-                    null,
-                    null,
-                    false,  // shouldRender
-                    false   // shouldSlow
-                );
+                    context.to().getBlockPos());
             }
             return false;
         }
@@ -84,10 +79,7 @@ public class LadderMovementValidator implements NodeValidator {
                     context.from().getBlockPos(),
                     context.to().getBlockPos(),
                     context.from(),
-                    context.to(),
-                    false,  // shouldRender
-                    false   // shouldSlow
-                );
+                    context.to());
             }
         }
 

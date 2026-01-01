@@ -76,9 +76,7 @@ public class CollisionValidator implements NodeValidator {
             context.from().getBlockPos(),
             context.to().getBlockPos(),
             context.from(),
-            context.to(),
-            false,  // shouldRender
-            false   // shouldSlow
+            context.to()
         );
     }
 }

@@ -49,14 +49,10 @@ public class MovementHelper {
 
 
     public static boolean wasCleared(WorldView world, BlockPos start, BlockPos end) {
-        return wasCleared(world, start, end, null, null, false, false);
+        return wasCleared(world, start, end, null, null);
     }
 
     public static boolean wasCleared(WorldView world, BlockPos start, BlockPos end, BlockNode startNode, BlockNode endNode) {
-        return wasCleared(world, start, end, startNode, endNode, false, false);
-    }
-
-    public static boolean wasCleared(WorldView world, BlockPos start, BlockPos end, BlockNode startNode, BlockNode endNode, boolean shouldRender, boolean shouldSlow) {
         int x1 = start.getX();
         int y1 = start.getY();
         int z1 = start.getZ();
@@ -79,6 +75,8 @@ public class MovementHelper {
         boolean isMovingOnZAxis = z1 - z2 == 0;
         boolean shouldCheckNeo = start.isWithinDistance(end, MovementConstants.Special.NEO_MOVEMENT_CHECK_DISTANCE);
         boolean isNeoPossible = isNeoPossible(world, isMovingOnXAxis, isMovingOnZAxis, start, end, isJumpingOneBlock, endNode);
+        boolean shouldRender = false;
+        boolean shouldSlow = false;
         if (shouldSlow) {
             TungstenMod.TEST.add(new Cuboid(new Vec3d(x1, y1, z1), new Vec3d(1.0D, 1.0D, 1.0D), Color.GREEN));
             TungstenMod.TEST.add(new Cuboid(new Vec3d(x2, y2, z2), new Vec3d(1.0D, 1.0D, 1.0D), Color.GREEN));
