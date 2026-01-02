@@ -210,6 +210,7 @@ public class Pathfinder {
         for (int i = 0; i < 4; i++) {
             if (p != null && !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80)))
                 return;
+            if (p != null) p = p.parent;
         }
 
         boolean isNextNodeAbove = nextNodePos.getBlockPos().getY() > closestPos.getBlockPos().getY();
@@ -474,10 +475,6 @@ public class Pathfinder {
         for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
             bestSoFar.set(i, null);
         }
-    }
-
-    private boolean shouldSkipChild(Node child, Vec3d target, Set<Integer> closed, Optional<List<BlockNode>> blockPath) {
-        return child.agent.touchingWater && shouldSkipNode(child, target, closed, blockPath);
     }
 
     private boolean shouldSkipNode(Node node, Vec3d target, Set<Integer> closed, Optional<List<BlockNode>> blockPath) {
