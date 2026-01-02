@@ -46,8 +46,6 @@ public class Pathfinder {
     public Thread thread = null;
     private AtomicDoubleArray bestHeuristicSoFar;
     private IOpenSet<Node> openSet = new BinaryHeapOpenSet<>();
-    // Task manager for handling parallel node processing
-    private TaskManager taskManager;
 
     protected static Optional<List<Node>> bestSoFar(boolean logInfo, int numNodes, Node startNode) {
         if (startNode == null) {
@@ -309,12 +307,6 @@ public class Pathfinder {
             blockPath = Optional.empty();
             NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
 
-            // Clean up task manager
-            if (taskManager != null) {
-                taskManager.cancelAll();
-                taskManager = null;
-            }
-
         });
         thread.setName("PathFinder");
         thread.setPriority(PathfindingConstants.NodeEvaluation.THREAD_PRIORITY);
@@ -355,122 +347,121 @@ public class Pathfinder {
         NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
 
         // Initialize task manager for this pathfinding session
-        taskManager = new TaskManager();
+        TaskManager taskManager = new TaskManager();
 
-        // Performance profiling variables
-        long startTime = System.currentTimeMillis();
-        long primaryTimeoutTime = startTime + PathfindingConstants.Timeouts.PRIMARY_TIMEOUT_MS;
-        int numNodesConsidered = 1;
-        int totalNodesEvaluated = 0;
-        long nodeGenerationTime = 0;
-        int timeCheckInterval = PathfindingConstants.NodeEvaluation.TIME_CHECK_INTERVAL;
-        double minVelocity = BlockStateChecker.isAnyWater(world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))) ? CollisionConstants.VelocityThresholds.MIN_VELOCITY_WATER : CollisionConstants.VelocityThresholds.MIN_VELOCITY_STATIONARY;
+        try {
+            // Performance profiling variables
+            long startTime = System.currentTimeMillis();
+            long primaryTimeoutTime = startTime + PathfindingConstants.Timeouts.PRIMARY_TIMEOUT_MS;
+            int numNodesConsidered = 1;
+            int totalNodesEvaluated = 0;
+            long nodeGenerationTime = 0;
+            int timeCheckInterval = PathfindingConstants.NodeEvaluation.TIME_CHECK_INTERVAL;
 
-        ClientPlayerEntity player = Objects.requireNonNull(TungstenMod.mc.player);
-        if (player.getPos().distanceTo(target) < 1.0) {
-            Debug.logMessage("Already at target location!");
-            return;
-        }
-        if (start == null) start = initializeStartNode(player, target);
-        if (blockPath.isEmpty()) {
-            Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
-            if (blockPath.isPresent()) {
-                RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
-                Pathfinder.blockPath = blockPath;
+            ClientPlayerEntity player = Objects.requireNonNull(TungstenMod.mc.player);
+            if (player.getPos().distanceTo(target) < 1.0) {
+                Debug.logMessage("Already at target location!");
+                return;
             }
-        }
-
-        bestHeuristicSoFar = initializeBestHeuristics(start);
-        openSet = new BinaryHeapOpenSet<>();
-        openSet.insert(start);
-
-        while (!openSet.isEmpty()) {
-            if (stop.get()) {
-                RenderHelper.clearRenderers();
-                break;
-            }
-
-            if (blockPath.isPresent() && TungstenMod.BLOCK_PATH_RENDERER.isEmpty()) {
-                RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
-            }
-
-            Node next = openSet.removeLowest();
-            // Search for a path without fall damage
-            if (checkForFallDamage(next)) {
-                continue;
-            }
-
-            if (shouldSkipNode(next, target, closed, blockPath)) {
-                continue;
-            }
-
-
-            if (isPathComplete(next, target, failing)) {
-                if (tryExecutePath(next, target, minVelocity)) {
-                    TungstenMod.RENDERERS.clear();
-                    TungstenMod.TEST.clear();
-                    closed.clear();
-                    Pathfinder.blockPath = Optional.empty();
-                    return;
+            if (start == null) start = initializeStartNode(player, target);
+            if (blockPath.isEmpty()) {
+                Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
+                if (blockPath.isPresent()) {
+                    RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
+                    Pathfinder.blockPath = blockPath;
                 }
-            } else if (NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size() - 1) && blockPath.get().getLast().getPos(true).distanceTo(target) > 5) {
-                if (tryExecutePath(next, blockPath.get().getLast().getPos(true), 5)) {
-                    TungstenMod.RENDERERS.clear();
-                    TungstenMod.TEST.clear();
-                    closed.clear();
-                    Pathfinder.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
-                    if (blockPath.isPresent()) {
-                        NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
-                        RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
+            }
+
+            bestHeuristicSoFar = initializeBestHeuristics(start);
+            openSet = new BinaryHeapOpenSet<>();
+            openSet.insert(start);
+
+            while (!openSet.isEmpty()) {
+                if (stop.get()) {
+                    RenderHelper.clearRenderers();
+                    break;
+                }
+
+                if (blockPath.isPresent() && TungstenMod.BLOCK_PATH_RENDERER.isEmpty()) {
+                    RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
+                }
+
+                Node next = openSet.removeLowest();
+                // Search for a path without fall damage
+                if (checkForFallDamage(next)) {
+                    continue;
+                }
+
+                if (shouldSkipNode(next, target, closed, blockPath)) {
+                    continue;
+                }
+
+
+                if (isPathComplete(next, target, failing)) {
+                    if (tryExecutePath(next, target)) {
+                        TungstenMod.RENDERERS.clear();
+                        TungstenMod.TEST.clear();
+                        closed.clear();
+                        Pathfinder.blockPath = Optional.empty();
+                        return;
+                    }
+                } else if (NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size() - 1) && blockPath.get().getLast().getPos(true).distanceTo(target) > 5) {
+                    if (tryExecutePath(next, blockPath.get().getLast().getPos(true))) {
+                        TungstenMod.RENDERERS.clear();
+                        TungstenMod.TEST.clear();
+                        closed.clear();
+                        Pathfinder.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
+                        if (blockPath.isPresent()) {
+                            NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
+                            RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
+                        }
                     }
                 }
-            }
 
-            if (shouldResetSearch(numNodesConsidered, blockPath, next, target)) {
-                blockPath = resetSearch(next, world, blockPath, target);
-                openSet = new BinaryHeapOpenSet<>();
-                start = initializeStartNode(next, target);
-                openSet.insert(start);
-                continue;
-            }
-
-            if ((numNodesConsidered & (timeCheckInterval - 1)) == 0) {
-                if (handleTimeout(startTime, primaryTimeoutTime, next, target, start, player, closed)) {
-                    return;
+                if (shouldResetSearch(numNodesConsidered, blockPath, next, target)) {
+                    blockPath = resetSearch(next, world, blockPath, target);
+                    openSet = new BinaryHeapOpenSet<>();
+                    start = initializeStartNode(next, target);
+                    openSet.insert(start);
+                    continue;
                 }
+
+                if ((numNodesConsidered & (timeCheckInterval - 1)) == 0) {
+                    if (handleTimeout(startTime, primaryTimeoutTime, next, target, start, player, closed)) {
+                        return;
+                    }
+                }
+                updateNextClosestBlockNodeIDX(blockPath.get(), next, closed);
+
+                if (numNodesConsidered % PathfindingConstants.NodeEvaluation.NODE_RENDER_INTERVAL == 0) {
+                    RenderHelper.renderPathSoFar(next);
+                }
+
+                // Profile node generation
+                long nodeGenStart = System.currentTimeMillis();
+                failing = processNodeChildren(world, next, target, blockPath, openSet, closed, taskManager);
+                nodeGenerationTime += (System.currentTimeMillis() - nodeGenStart);
+                numNodesConsidered++;
+                totalNodesEvaluated++;
             }
-            updateNextClosestBlockNodeIDX(blockPath.get(), next, closed);
 
-            if (numNodesConsidered % PathfindingConstants.NodeEvaluation.NODE_RENDER_INTERVAL == 0) {
-                RenderHelper.renderPathSoFar(next);
+            // Print performance metrics
+            long totalTime = System.currentTimeMillis() - startTime;
+            Debug.logMessage("=== PathFinder Performance Metrics ===");
+            Debug.logMessage("Total pathfinding time: " + totalTime + "ms");
+            Debug.logMessage("Total nodes evaluated: " + totalNodesEvaluated);
+            Debug.logMessage("Nodes per second: " + (totalNodesEvaluated * 1000L / Math.max(1, totalTime)));
+            Debug.logMessage("Average node generation time: " + (nodeGenerationTime / Math.max(1, totalNodesEvaluated)) + "ms");
+            Debug.logMessage("Node generation total time: " + nodeGenerationTime + "ms");
+            Debug.logMessage("====================================");
+
+            if (stop.get()) {
+                stop.set(false);
+            } else if (openSet.isEmpty()) {
+                Debug.logMessage("Ran out of nodes!");
             }
-
-            // Profile node generation
-            long nodeGenStart = System.currentTimeMillis();
-            failing = processNodeChildren(world, next, target, blockPath, openSet, closed);
-            nodeGenerationTime += (System.currentTimeMillis() - nodeGenStart);
-            numNodesConsidered++;
-            totalNodesEvaluated++;
-        }
-
-        // Print performance metrics
-        long totalTime = System.currentTimeMillis() - startTime;
-        Debug.logMessage("=== PathFinder Performance Metrics ===");
-        Debug.logMessage("Total pathfinding time: " + totalTime + "ms");
-        Debug.logMessage("Total nodes evaluated: " + totalNodesEvaluated);
-        Debug.logMessage("Nodes per second: " + (totalNodesEvaluated * 1000L / Math.max(1, totalTime)));
-        Debug.logMessage("Average node generation time: " + (nodeGenerationTime / Math.max(1, totalNodesEvaluated)) + "ms");
-        Debug.logMessage("Node generation total time: " + nodeGenerationTime + "ms");
-        Debug.logMessage("====================================");
-
-        if (stop.get()) {
-            stop.set(false);
-        } else if (openSet.isEmpty()) {
-            Debug.logMessage("Ran out of nodes!");
-        }
-
-        // Clean up task manager before exiting
-        if (taskManager != null) {
+        } finally {
+            // Clean up task manager before exiting
             taskManager.cancelAll();
         }
 
@@ -538,7 +529,7 @@ public class Pathfinder {
         return node.agent.getPos().squaredDistanceTo(target) <= 0.2D && !failing;
     }
 
-    private boolean tryExecutePath(Node node, Vec3d target, double minVelocity) {
+    private boolean tryExecutePath(Node node, Vec3d target) {
         TungstenMod.TEST.clear();
         RenderHelper.renderPathSoFar(node);
         while (TungstenMod.EXECUTOR.isRunning()) {
@@ -549,13 +540,9 @@ public class Pathfinder {
                 e.printStackTrace();
             }
         }
-        if (AgentChecker.isAgentStationary(node.agent, minVelocity) ||
-                TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ())).getBlock() instanceof LadderBlock) {
-            List<Node> path = constructPath(node);
-            executePath(path);
-            return true;
-        }
-        return false;
+        List<Node> path = constructPath(node);
+        executePath(path);
+        return true;
     }
 
     private List<Node> constructPath(Node node) {
@@ -651,7 +638,7 @@ public class Pathfinder {
     }
 
     private boolean processNodeChildren(WorldView world, Node parent, Vec3d target, Optional<List<BlockNode>> blockPath,
-                                        IOpenSet<Node> openSet, Set<Integer> closed) {
+                                        IOpenSet<Node> openSet, Set<Integer> closed, TaskManager taskManager) {
         AtomicBoolean failing = new AtomicBoolean(true);
         List<Node> children = parent.getChildren(world, target, blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get()));
 

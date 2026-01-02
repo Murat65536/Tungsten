@@ -1641,11 +1641,9 @@ public class Agent {
                     player.getPos().x == this.posX ? "x" : this.posX,
                     player.getPos().y == this.posY ? "y" : this.posY,
                     player.getPos().z == this.posZ ? "z" : this.posZ));
-            // I know this is probably a really stupid way to fix a mismatch but server doesnt seem to care so I'm doing it anyway!
             if (TungstenMod.EXECUTOR.isRunning()) {
-                player.setPosition(this.posX, this.posY, this.posZ);
 //            	TungstenMod.EXECUTOR.stop = true;
-//            	TungstenMod.PATHFINDER.stop.set(true);;
+//            	TungstenMod.PATHFINDER.stop.set(true);
 
                 Node node = TungstenMod.EXECUTOR.getCurrentNode();
                 if (node != null) RenderHelper.renderNode(node, TungstenMod.ERROR);
