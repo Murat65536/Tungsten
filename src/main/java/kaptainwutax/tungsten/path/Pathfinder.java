@@ -7,7 +7,6 @@ import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.concurrent.TaskManager;
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
-import kaptainwutax.tungsten.constants.physics.CollisionConstants;
 import kaptainwutax.tungsten.helpers.AgentChecker;
 import kaptainwutax.tungsten.helpers.BlockShapeChecker;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
@@ -36,10 +35,10 @@ import java.util.stream.Collectors;
 
 public class Pathfinder {
 
-    protected static final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<Node>(PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length);
+    protected final AtomicReferenceArray<Node> bestSoFar = new AtomicReferenceArray<>(PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length);
     protected static final double MIN_DIST_PATH = 5.0;
-    protected static AtomicInteger NEXT_CLOSEST_BLOCKNODE_IDX = new AtomicInteger(1);
-    private static Optional<List<BlockNode>> blockPath = Optional.empty();
+    protected AtomicInteger NEXT_CLOSEST_BLOCKNODE_IDX = new AtomicInteger(1);
+    private Optional<List<BlockNode>> blockPath = Optional.empty();
     private final Set<Integer> closed = Collections.synchronizedSet(new HashSet<>());
     public AtomicBoolean active = new AtomicBoolean(false);
     public AtomicBoolean stop = new AtomicBoolean(false);
@@ -47,22 +46,30 @@ public class Pathfinder {
     private AtomicDoubleArray bestHeuristicSoFar;
     private IOpenSet<Node> openSet = new BinaryHeapOpenSet<>();
 
-    protected static Optional<List<Node>> bestSoFar(boolean logInfo, int numNodes, Node startNode) {
+    protected Optional<List<Node>> bestSoFar(Node startNode) {
         if (startNode == null) {
             return Optional.empty();
         }
-        double bestDist = 0;
+        double bestDist = -1.0D;
+        Node bestNode = null;
+
         for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
-            if (bestSoFar.get(i) == null) {
+            Node n = bestSoFar.get(i);
+            if (n == null) {
                 continue;
             }
-            double dist = computeHeuristic(startNode.agent.getPos(), startNode.agent.onGround || startNode.agent.slimeBounce, bestSoFar.get(i).agent.getPos());
+            if (!n.agent.onGround) continue;
+
+            double dist = computeHeuristic(startNode.agent.getPos(), startNode.agent.onGround || startNode.agent.slimeBounce, n.agent.getPos());
             if (dist > bestDist) {
                 bestDist = dist;
+                bestNode = n;
             }
-            Node n = bestSoFar.get(i);
-            if (!n.agent.onGround) continue;
+        }
+
+        if (bestNode != null) {
             List<Node> path = new ArrayList<>();
+            Node n = bestNode;
             while (n.parent != null) {
                 path.add(n);
                 n = n.parent;
@@ -75,7 +82,7 @@ public class Pathfinder {
         return Optional.empty();
     }
 
-    private static boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Integer> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
+    private boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Integer> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
 
         int hashCode = n.hashCode(shouldAddYaw);
 
@@ -92,7 +99,7 @@ public class Pathfinder {
         return false;
     }
 
-    private static double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
+    private double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
         double xzMultiplier = CostConstants.Heuristics.XZ_HEURISTIC_MULTIPLIER;
         double dx = (position.x - target.x) * xzMultiplier;
         double dy = 0;
@@ -105,7 +112,7 @@ public class Pathfinder {
         return (Math.sqrt(dx * dx + dy * dy + dz * dz) + (((blockPath.map(List::size).orElse(0)) - NEXT_CLOSEST_BLOCKNODE_IDX.get()) * CostConstants.Heuristics.BLOCK_PATH_DISTANCE_WEIGHT));
     }
 
-    private static void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath, Set<Integer> closed) {
+    private void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath, Set<Integer> closed) {
         Vec3d childPos = child.agent.getPos();
 
         double collisionScore = 0;
@@ -145,7 +152,7 @@ public class Pathfinder {
         child.combinedCost = tentativeCost + estimatedCostToGoal;
     }
 
-    private static int findClosestPositionIDX(WorldView world, BlockPos current, List<BlockNode> positions) {
+    private int findClosestPositionIDX(WorldView world, BlockPos current, List<BlockNode> positions) {
         if (positions == null || positions.isEmpty()) {
             throw new IllegalArgumentException("The list of positions must not be null or empty.");
         }
@@ -169,7 +176,7 @@ public class Pathfinder {
         return closestIDX;
     }
 
-    private static boolean updateBestSoFar(Node child, Vec3d target, AtomicDoubleArray bestHeuristicSoFar) {
+    private boolean updateBestSoFar(Node child, Vec3d target, AtomicDoubleArray bestHeuristicSoFar) {
         boolean failing = true;
         for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
             double heuristic = child.combinedCost / PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS[i];
@@ -184,14 +191,14 @@ public class Pathfinder {
         return failing;
     }
 
-    protected static double getDistFromStartSq(Node n, Vec3d target) {
+    protected double getDistFromStartSq(Node n, Vec3d target) {
         double xDiff = n.agent.getPos().x - target.x;
         double yDiff = n.agent.getPos().y - target.y;
         double zDiff = n.agent.getPos().z - target.z;
         return xDiff * xDiff + yDiff * yDiff + zDiff * zDiff;
     }
 
-    private static void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node, Set<Integer> closed) {
+    private void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node, Set<Integer> closed) {
         if (blockPath == null) return;
 
         BlockNode lastClosestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get() - 1);
@@ -369,7 +376,7 @@ public class Pathfinder {
                 Optional<List<BlockNode>> blockPath = findBlockPath(world, target);
                 if (blockPath.isPresent()) {
                     RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
-                    Pathfinder.blockPath = blockPath;
+                    this.blockPath = blockPath;
                 }
             }
 
@@ -403,7 +410,7 @@ public class Pathfinder {
                         TungstenMod.RENDERERS.clear();
                         TungstenMod.TEST.clear();
                         closed.clear();
-                        Pathfinder.blockPath = Optional.empty();
+                        this.blockPath = Optional.empty();
                         return;
                     }
                 } else if (NEXT_CLOSEST_BLOCKNODE_IDX.get() == (blockPath.get().size() - 1) && blockPath.get().getLast().getPos(true).distanceTo(target) > 5) {
@@ -411,7 +418,7 @@ public class Pathfinder {
                         TungstenMod.RENDERERS.clear();
                         TungstenMod.TEST.clear();
                         closed.clear();
-                        Pathfinder.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
+                        this.blockPath = findBlockPath(world, blockPath.get().getLast(), target);
                         if (blockPath.isPresent()) {
                             NEXT_CLOSEST_BLOCKNODE_IDX.set(1);
                             RenderHelper.renderBlockPath(blockPath.get(), NEXT_CLOSEST_BLOCKNODE_IDX.get());
@@ -468,7 +475,7 @@ public class Pathfinder {
 
         RenderHelper.clearRenderers();
         closed.clear();
-        Pathfinder.blockPath = Optional.empty();
+        this.blockPath = Optional.empty();
     }
 
     private void clearParentsForBestSoFar(Node node) {
@@ -591,7 +598,7 @@ public class Pathfinder {
 
     private boolean handleTimeout(long startTime, long primaryTimeoutTime, Node next, Vec3d target, Node start, ClientPlayerEntity player, Set<Integer> closed) {
         long now = System.currentTimeMillis();
-        Optional<List<Node>> result = bestSoFar(true, 0, start);
+        Optional<List<Node>> result = bestSoFar(start);
 
         if (!result.isPresent() || now < primaryTimeoutTime) {
             return false;
