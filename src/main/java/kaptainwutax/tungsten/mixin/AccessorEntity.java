@@ -2,6 +2,7 @@ package kaptainwutax.tungsten.mixin;
 
 import java.util.Set;
 
+import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -21,5 +22,4 @@ public interface AccessorEntity {
 
 	@Accessor
 	Set<TagKey<Fluid>> getSubmergedFluidTag();
-
 }

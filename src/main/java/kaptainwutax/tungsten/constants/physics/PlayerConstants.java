@@ -11,19 +11,6 @@ public final class PlayerConstants {
     private PlayerConstants() {}
 
     /**
-     * Step heights for automatic step-up mechanics.
-     * Determines the maximum height the player can step up automatically.
-     */
-    public static final class StepHeight {
-        private StepHeight() {}
-
-        /** Default step height in blocks */
-        public static final float DEFAULT = 0.6f;
-        /** Step height when riding horses */
-        public static final float HORSE = 1.0f;
-    }
-
-    /**
      * Movement input mechanics.
      * Stores information related to player movement inputs.
      */
@@ -41,16 +28,17 @@ public final class PlayerConstants {
 
         static {
             int index = 0;
-            for (boolean jump : new boolean[] {false, true}) {
-                for (boolean sprint : new boolean[]{false, true}) {
-                    for (boolean sneak : new boolean[]{false, true}) {
+            boolean[] toggle = new boolean[] {false, true};
+            for (boolean jump : toggle) {
+                for (boolean sprint : toggle) {
+                    for (boolean sneak : toggle) {
                         if (!(sprint && sneak)) {
-                            for (boolean forward : new boolean[]{false, true}) {
+                            for (boolean forward : toggle) {
                                 if (!(sprint && !forward)) {
-                                    for (boolean back : new boolean[]{false, true}) {
+                                    for (boolean back : toggle) {
                                         if (!(forward && back)) {
-                                            for (boolean left : new boolean[]{false, true}) {
-                                                for (boolean right : new boolean[]{false, true}) {
+                                            for (boolean left : toggle) {
+                                                for (boolean right : toggle) {
                                                     if (!(left && right)) {
                                                         ALL_INPUTS[index++] = new KeyboardInput(forward, back, right, left, jump, sneak, sprint);
                                                     }

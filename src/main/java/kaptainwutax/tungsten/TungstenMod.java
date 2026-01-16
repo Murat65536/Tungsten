@@ -4,6 +4,11 @@ import kaptainwutax.tungsten.commandsystem.CommandExecutor;
 import kaptainwutax.tungsten.path.PathExecutor;
 import kaptainwutax.tungsten.path.Pathfinder;
 import kaptainwutax.tungsten.render.Renderer;
+import kaptainwutax.tungsten.simulation.HollowClientPlayerEntity;
+import kaptainwutax.tungsten.simulation.HollowPlayerFactory;
+
+import kaptainwutax.tungsten.simulation.SimulatedInput;
+import kaptainwutax.tungsten.simulation.SimulatedPlayerState;
 import kaptainwutax.tungsten.world.VoxelWorld;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -49,6 +54,7 @@ public class TungstenMod implements ClientModInitializer {
     public static ClickModeEnum clickMode = ClickModeEnum.OFF;
     public static PathExecutor EXECUTOR = new PathExecutor();
     public static Pathfinder PATHFINDER = new Pathfinder();
+    public static HollowClientPlayerEntity HOLLOW_PLAYER;
     public static VoxelWorld WORLD;
     public static KeyBinding pauseKeyBinding;
     public static KeyBinding runKeyBinding;
@@ -171,8 +177,6 @@ public class TungstenMod implements ClientModInitializer {
                     }
                 }
             }
-
-
         });
     }
 

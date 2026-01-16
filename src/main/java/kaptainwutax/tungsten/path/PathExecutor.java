@@ -87,21 +87,18 @@ public class PathExecutor {
 		    }
 	    } else {
 		    Node node = this.path.get(this.tick);
-		    if(this.tick != 0) {
-			    this.path.get(this.tick - 1).agent.compare(player, true);
-		    }
 
 		    if(node.input != null) {
-			    player.setYaw(node.input.yaw());
-			    player.setPitch(node.input.pitch());
-			    if (player.isCreative()) player.stopGliding();
-			    options.forwardKey.setPressed(node.input.forward());
-			    options.backKey.setPressed(node.input.back());
-			    options.leftKey.setPressed(node.input.left());
-			    options.rightKey.setPressed(node.input.right());
-			    options.jumpKey.setPressed(node.input.jump());
-			    options.sneakKey.setPressed(node.input.sneak());
-			    options.sprintKey.setPressed(node.input.sprint());
+//			    player.setYaw(node.state.getYaw());
+//			    player.setPitch(node.state.getPitch());
+//			    if (player.isCreative()) player.stopGliding();
+//			    options.forwardKey.setPressed(node.input.forward());
+//			    options.backKey.setPressed(node.input.backward());
+//			    options.leftKey.setPressed(node.input.left());
+//			    options.rightKey.setPressed(node.input.right());
+//			    options.jumpKey.setPressed(node.input.jump());
+//			    options.sneakKey.setPressed(node.input.sneak());
+//			    options.sprintKey.setPressed(node.input.sprint());
 		    }
 		    if (!TungstenMod.RUNNING_PATH_RENDERER.isEmpty() && this.tick != 0) {
 		    	TungstenMod.RUNNING_PATH_RENDERER.remove(TungstenMod.RUNNING_PATH_RENDERER.toArray()[TungstenMod.RUNNING_PATH_RENDERER.size()-1]);

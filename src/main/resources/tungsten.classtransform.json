@@ -1,0 +1,9 @@
+{
+  "package": "kaptainwutax.tungsten.transformer",
+  "java": [
+    "ClientPlayerEntityHierarchyTransformer$CommonTransformer",
+    "ClientPlayerEntityHierarchyTransformer$EntitySpecifics",
+    "ClientPlayerEntityHierarchyTransformer$ClientPlayerSpecifics"
+  ],
+  "mixins": []
+}
