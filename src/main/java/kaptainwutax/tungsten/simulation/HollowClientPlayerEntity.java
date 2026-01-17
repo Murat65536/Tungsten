@@ -1,6 +1,7 @@
 package kaptainwutax.tungsten.simulation;
 
 import com.sun.jdi.InvocationException;
+import kaptainwutax.tungsten.simulation.serialization.PlayerAttributeCopier;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.entity.Entity;
 
@@ -61,6 +62,16 @@ public class HollowClientPlayerEntity {
         // The transformer has been modified to allow tickMovement to run even when hollow,
         // with NPE protection injected to skip operations on null fields.
         player.tickMovement();
+    }
+
+    /**
+     * Copies attributes from the given source player to this hollow player
+     * using Kryo serialization for deep copies.
+     *
+     * @param source The source player
+     */
+    public void copyAttributesFrom(ClientPlayerEntity source) {
+        PlayerAttributeCopier.copyAttributes(source, this.player);
     }
 
     /**

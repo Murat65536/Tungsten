@@ -236,25 +236,19 @@ public final class TransformerUtils {
      * Used when initializing fields to default values in constructors.
      */
     public static InsnNode getDefaultValueInstruction(String fieldDescriptor) {
-        switch (fieldDescriptor.charAt(0)) {
-            case 'L': // Object reference
-            case '[': // Array
-                return new InsnNode(Opcodes.ACONST_NULL);
-            case 'Z': // boolean
-            case 'B': // byte
-            case 'C': // char
-            case 'S': // short
-            case 'I': // int
-                return new InsnNode(Opcodes.ICONST_0);
-            case 'J': // long
-                return new InsnNode(Opcodes.LCONST_0);
-            case 'F': // float
-                return new InsnNode(Opcodes.FCONST_0);
-            case 'D': // double
-                return new InsnNode(Opcodes.DCONST_0);
-            default:
-                return new InsnNode(Opcodes.ACONST_NULL);
-        }
+        return switch (fieldDescriptor.charAt(0)) { // Object reference
+            case 'L', '[' -> // Array
+                    new InsnNode(Opcodes.ACONST_NULL);
+            case 'Z', 'B', 'C', 'S', 'I' -> // boolean, byte, char, short, int
+                    new InsnNode(Opcodes.ICONST_0);
+            case 'J' -> // long
+                    new InsnNode(Opcodes.LCONST_0);
+            case 'F' -> // float
+                    new InsnNode(Opcodes.FCONST_0);
+            case 'D' -> // double
+                    new InsnNode(Opcodes.DCONST_0);
+            default -> new InsnNode(Opcodes.ACONST_NULL);
+        };
     }
 
     /**

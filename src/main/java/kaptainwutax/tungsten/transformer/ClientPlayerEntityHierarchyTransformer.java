@@ -30,7 +30,7 @@ public class ClientPlayerEntityHierarchyTransformer {
         @CASM
         public static void transform(ClassNode node) {
             addNullConstructor(node);
-            nullifyMethods(node);
+            skipNPEOnMethods(node);
         }
     }
 
@@ -127,21 +127,13 @@ public class ClientPlayerEntityHierarchyTransformer {
         node.methods.add(constructor);
     }
 
-    public static void nullifyMethods(ClassNode node) {
+    public static void skipNPEOnMethods(ClassNode node) {
         for (MethodNode method : node.methods) {
             if (!TransformerUtils.shouldTransformMethod(method)) {
                 continue;
             }
 
-            // Special handling for tickMovement: Make it NPE safe
-            if (method.name.equals("tickMovement")) {
-                TransformerUtils.makeMethodNPESafe(method);
-                continue;
-            }
-
-            // Insert check for tungsten$isHollow at the beginning of the method
-            InsnList checkList = TransformerUtils.createFieldCheck(ENTITY_CLASS, HOLLOW_FIELD, method.desc);
-            method.instructions.insert(checkList);
+            TransformerUtils.makeMethodNPESafe(method);
         }
     }
 }
