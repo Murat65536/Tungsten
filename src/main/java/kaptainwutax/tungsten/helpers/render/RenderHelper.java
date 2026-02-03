@@ -23,18 +23,20 @@ public class RenderHelper {
 //		TungstenMod.RENDERERS.clear();
 //		TungstenMod.TEST.clear();
 		BlockNode previous = null;
-        for (BlockNode node : nodes) {
-            if (previous != null)
-                TungstenMod.BLOCK_PATH_RENDERER.add(new Line(new Vec3d(previous.x + 0.5, previous.y + 0.1, previous.z + 0.5), new Vec3d(node.x + 0.5, node.y + 0.1, node.z + 0.5), Color.RED));
-            if (nodes.size() <= nextNodeIDX) nextNodeIDX = nodes.size() - 1;
-            TungstenMod.BLOCK_PATH_RENDERER.add(new Cuboid(node.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D),
-                    (nodes.get(nextNodeIDX).equals(node)) ? Color.WHITE : Color.BLUE
-            ));
+		for (Iterator<BlockNode> iterator = nodes.iterator(); iterator.hasNext();) {
+			BlockNode node = iterator.next();
+			
+			if (previous != null)
+			TungstenMod.BLOCK_PATH_RENDERER.add(new Line(new Vec3d(previous.x + 0.5, previous.y + 0.1, previous.z + 0.5), new Vec3d(node.x + 0.5, node.y + 0.1, node.z + 0.5), Color.RED));
+			if (nodes.size() <= nextNodeIDX) nextNodeIDX = nodes.size()-1;
+            TungstenMod.BLOCK_PATH_RENDERER.add(new Cuboid(node.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), 
+            		(nodes.get(nextNodeIDX).equals(node)) ? Color.WHITE : Color.BLUE
+            		));
             previous = node;
 //            TungstenMod.BLOCK_PATH_RENDERER.add(new Cuboid(new Vec3d(node.getBlockPos().getX(), node.getBlockPos().getY(), node.getBlockPos().getZ()), new Vec3d(1.0D, 1.0D, 1.0D), 
 //            		(nodes.get(NEXT_CLOSEST_BLOCKNODE_IDX).equals(node)) ? Color.WHITE : Color.BLUE
 //            		));
-        }
+		}
 	}
 	
 	public static void renderPathCurrentlyExecuted() {
@@ -44,9 +46,9 @@ public class RenderHelper {
 		if (TungstenMod.EXECUTOR == null || TungstenMod.EXECUTOR.getPath() == null || !TungstenMod.EXECUTOR.isRunning()) return;
 		Node n = TungstenMod.EXECUTOR.getPath().getLast();
 		while (n.parent != null) {
-			TungstenMod.RUNNING_PATH_RENDERER.add(new Line(n.state.getPos(), n.parent.state.getPos(), n.color));
+			TungstenMod.RUNNING_PATH_RENDERER.add(new Line(n.agent.getPos(), n.parent.agent.getPos(), n.color));
 			if (TungstenMod.renderPositonBoxes) {				
-				TungstenMod.RUNNING_PATH_RENDERER.add(new Cuboid(n.state.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
+				TungstenMod.RUNNING_PATH_RENDERER.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
 			}
 			n = n.parent;
 		}
@@ -63,25 +65,25 @@ public class RenderHelper {
 	
 	public static void renderPathSoFar(Node n) {
 		TungstenMod.RENDERERS.clear();
-		TungstenMod.RENDERERS.add(new Cuboid(n.state.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.RED));
+		TungstenMod.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.RED));
 		while(n.parent != null) {
-			TungstenMod.RENDERERS.add(new Line(n.state.getPos(), n.parent.state.getPos(), n.color));
+			TungstenMod.RENDERERS.add(new Line(n.agent.getPos(), n.parent.agent.getPos(), n.color));
 			n = n.parent;
 		}
 	}
 	
 	public static void renderNode(Node n) {
-		TungstenMod.RENDERERS.add(new Cuboid(n.state.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
+		TungstenMod.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
 	}
 	
 	public static void renderNode(Node n, Collection<Renderer> renderer) {
-		renderer.add(new Cuboid(n.state.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
+		renderer.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
 	}
 	
 	public static void renderNodeConnection(Node child, Node parent) {
-	    TungstenMod.RUNNING_PATH_RENDERER.add(new Line(child.state.getPos(), parent.state.getPos(), child.color));
+	    TungstenMod.RUNNING_PATH_RENDERER.add(new Line(child.agent.getPos(), parent.agent.getPos(), child.color));
 	    if (TungstenMod.renderPositonBoxes) {
-	    	TungstenMod.RUNNING_PATH_RENDERER.add(new Cuboid(child.state.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), child.color));
+	    	TungstenMod.RUNNING_PATH_RENDERER.add(new Cuboid(child.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), child.color));
 	    }
 	}
 	

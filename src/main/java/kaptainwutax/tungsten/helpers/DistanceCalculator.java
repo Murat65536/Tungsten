@@ -1,6 +1,6 @@
 package kaptainwutax.tungsten.helpers;
 
-import kaptainwutax.tungsten.simulation.SimulatedPlayerState;
+import kaptainwutax.tungsten.agent.Agent;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -61,14 +61,14 @@ public class DistanceCalculator {
 	/**
      * Calculates the distance to the edge of the block the player is standing on in the direction they're looking.
      * 
-     * @param state The simulated player state
+     * @param agent The simulated player
      * @return distance to the edge of the block in the look direction
      */
-    public static double getDistanceToEdge(SimulatedPlayerState state) {
-        Vec3d position = state.getPos(); // Get player's position
-        BlockPos blockPos = state.getBlockPos(); // Block the player is standing on
-		float f = state.getPitch() * (float) (Math.PI / 180.0);
-		float g = -state.getYaw() * (float) (Math.PI / 180.0);
+    public static double getDistanceToEdge(Agent agent) {
+        Vec3d position = agent.getPos(); // Get player's position
+        BlockPos blockPos = agent.getBlockPos(); // Block the player is standing on
+		float f = agent.pitch * (float) (Math.PI / 180.0);
+		float g = -agent.yaw * (float) (Math.PI / 180.0);
 		float h = MathHelper.cos(g);
 		float i = MathHelper.sin(g);
 		float j = MathHelper.cos(f);

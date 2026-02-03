@@ -3,9 +3,7 @@ package kaptainwutax.tungsten.path;
 import com.google.common.util.concurrent.AtomicDoubleArray;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.simulation.HollowClientPlayerEntity;
-import kaptainwutax.tungsten.simulation.SimulatedInput;
-import kaptainwutax.tungsten.simulation.SimulatedPlayerState;
+import kaptainwutax.tungsten.agent.Agent;
 import kaptainwutax.tungsten.concurrent.TaskManager;
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
@@ -60,9 +58,9 @@ public class Pathfinder {
             if (n == null) {
                 continue;
             }
-            if (!n.state.isOnGround()) continue;
+            if (!n.agent.onGround) continue;
 
-            double dist = computeHeuristic(startNode.state.getPos(), startNode.state.isOnGround(), n.state.getPos());
+            double dist = computeHeuristic(startNode.agent.getPos(), startNode.agent.onGround || startNode.agent.slimeBounce, n.agent.getPos());
             if (dist > bestDist) {
                 bestDist = dist;
                 bestNode = n;
@@ -115,26 +113,26 @@ public class Pathfinder {
     }
 
     private void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath, Set<Integer> closed) {
-        Vec3d childPos = child.state.getPos();
+        Vec3d childPos = child.agent.getPos();
 
         double collisionScore = 0;
         double tentativeCost = child.cost + 1; // Assuming uniform cost for each step
-        if (child.state.isHorizontalCollision() && child.state.getPos().distanceTo(target) > 3) {
-            collisionScore += CostConstants.Penalties.HORIZONTAL_COLLISION_PENALTY + (Math.abs(0.3 - child.state.getVelocity().z) + Math.abs(0.3 - child.state.getVelocity().x));
+        if (child.agent.horizontalCollision && child.agent.getPos().distanceTo(target) > 3) {
+            collisionScore += CostConstants.Penalties.HORIZONTAL_COLLISION_PENALTY + (Math.abs(0.3 - child.agent.velZ) + Math.abs(0.3 - child.agent.velX));
         }
 
-        if (child.state.isTouchingWater()) {
+        if (child.agent.touchingWater) {
             if (BlockStateChecker.isAnyWater(world.getBlockState(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()).getBlockPos())))
                 collisionScore += CostConstants.Bonuses.WATER_BONUS;
 
         } else {
-            collisionScore += (Math.abs(0.3 - child.state.getVelocity().z) + Math.abs(0.3 - child.state.getVelocity().x));
+            collisionScore += (Math.abs(0.3 - child.agent.velZ) + Math.abs(0.3 - child.agent.velX));
         }
         assert TungstenMod.mc.world != null;
-        if (child.state.isClimbing(TungstenMod.mc.world)) {
+        if (child.agent.isClimbing(TungstenMod.mc.world)) {
             collisionScore += CostConstants.Bonuses.CLIMBING_BONUS;
         }
-        if (world.getBlockState(child.state.getBlockPos()).getBlock() instanceof CobwebBlock) {
+        if (world.getBlockState(child.agent.getBlockPos()).getBlock() instanceof CobwebBlock) {
             collisionScore += CostConstants.Penalties.COBWEB_PENALTY;
         }
 
@@ -142,11 +140,11 @@ public class Pathfinder {
         if (blockPath != null) {
             Vec3d posToGetTo = BlockPosShifter.getPosOnLadder(blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get()));
 
-            if (child.state.getPos().squaredDistanceTo(target) <= 2.0D) {
+            if (child.agent.getPos().squaredDistanceTo(target) <= 2.0D) {
                 posToGetTo = target;
             }
 
-            estimatedCostToGoal += computeHeuristic(childPos, child.state.isOnGround(), posToGetTo);
+            estimatedCostToGoal += computeHeuristic(childPos, child.agent.onGround || child.agent.slimeBounce, posToGetTo);
         }
 
         child.cost = tentativeCost;
@@ -194,9 +192,9 @@ public class Pathfinder {
     }
 
     protected double getDistFromStartSq(Node n, Vec3d target) {
-        double xDiff = n.state.getPos().x - target.x;
-        double yDiff = n.state.getPos().y - target.y;
-        double zDiff = n.state.getPos().z - target.z;
+        double xDiff = n.agent.getPos().x - target.x;
+        double yDiff = n.agent.getPos().y - target.y;
+        double zDiff = n.agent.getPos().z - target.z;
         return xDiff * xDiff + yDiff * yDiff + zDiff * zDiff;
     }
 
@@ -210,14 +208,14 @@ public class Pathfinder {
 
         boolean isRunningLongDist = lastClosestPos.getPos(true).distanceTo(closestPos.getPos(true)) > 7;
 
-        Vec3d nodePos = node.state.getPos();
+        Vec3d nodePos = node.agent.getPos();
 
         if (!nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80)))
             return;
 
         Node p = node.parent;
         for (int i = 0; i < 4; i++) {
-            if (p != null && !p.state.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80)))
+            if (p != null && !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80)))
                 return;
             if (p != null) p = p.parent;
         }
@@ -226,7 +224,7 @@ public class Pathfinder {
         boolean isNextNodeBelow = nextNodePos.getBlockPos().getY() < closestPos.getBlockPos().getY();
 
         WorldView world = TungstenMod.mc.world;
-        BlockPos nodeBlockPos = node.state.getBlockPos();
+        BlockPos nodeBlockPos = new BlockPos(node.agent.blockX, node.agent.blockY, node.agent.blockZ);
         int closestPosIDX = findClosestPositionIDX(world, nodeBlockPos, blockPath);
         BlockState state = world.getBlockState(closestPos.getBlockPos());
         BlockState stateBelow = world.getBlockState(closestPos.getBlockPos().down());
@@ -247,13 +245,13 @@ public class Pathfinder {
 
         boolean validWaterProximity = isWater && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.9, 1.2);
         // Agent state conditions
-        boolean agentOnGroundOrClimbingOrOnTallBlock = node.state.isOnGround() || node.state.isClimbing(world) || isBelowLadder || isBlockBelowTall;
+        boolean agentOnGroundOrClimbingOrOnTallBlock = node.agent.onGround || node.agent.isClimbing(world) || isBelowLadder || isBlockBelowTall;
 
         // Ladder-specific conditions
         boolean validLadderProximity = (isLadder || isBelowLadder || isVine)
-                && (!isLadder && isBelowLadder || node.state.isClimbing(world))
+                && (!isLadder && isBelowLadder || node.agent.isClimbing(world))
                 && (nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.4, 0.9) ||
-                node.state.isClimbing(world) &&
+                node.agent.isClimbing(world) &&
                         (isNextNodeAbove && nodePos.getY() > closestPos.getBlockPos().getY() || !isNextNodeBelow && nodePos.getY() < closestPos.getBlockPos().getY())
                         && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.7, 3.7));
 
@@ -326,7 +324,7 @@ public class Pathfinder {
     private boolean checkForFallDamage(Node n) {
         if (TungstenMod.ignoreFallDamage) return false;
         assert TungstenMod.mc.world != null;
-        if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(n.state.getBlockPos()))) return false;
+        if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(n.agent.getBlockPos()))) return false;
         if (n.parent == null) return false;
         if (Thread.currentThread().isInterrupted()) return false;
         Node prev = null;
@@ -338,13 +336,13 @@ public class Pathfinder {
             } else {
                 prev = prev.parent;
             }
-            double currFallDist = DistanceCalculator.getJumpHeight(prev.state.getPos().y, n.state.getPos().y);
+            double currFallDist = DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y);
             if (currFallDist < -3) {
                 return true;
             }
-        } while (!prev.state.isOnGround());
+        } while (!prev.agent.onGround);
 
-        return DistanceCalculator.getJumpHeight(prev.state.getPos().y, n.state.getPos().y) < -3;
+        return DistanceCalculator.getJumpHeight(prev.agent.getPos().y, n.agent.getPos().y) < -3;
     }
 
     private void search(WorldView world, Vec3d target) {
@@ -490,27 +488,23 @@ public class Pathfinder {
         BlockNode bN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get());
         BlockNode lBN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get() - 1);
         boolean isBottomSlab = BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(bN.getBlockPos().down()));
-        Vec3d agentPos = node.state.getPos();
-        Vec3d parentAgentPos = node.parent == null ? null : node.parent.state.getPos();
-        if (!isBottomSlab && !node.state.isOnGround() && agentPos.y < bN.y && lBN != null && lBN.y <= bN.y && parentAgentPos != null && parentAgentPos.y > agentPos.y) {
+        Vec3d agentPos = node.agent.getPos();
+        Vec3d parentAgentPos = node.parent == null ? null : node.parent.agent.getPos();
+        if (!isBottomSlab && !node.agent.onGround && agentPos.y < bN.y && lBN != null && lBN.y <= bN.y && parentAgentPos != null && parentAgentPos.y > agentPos.y) {
             return true;
         }
         return shouldNodeBeSkipped(node, target, closed, true, false, blockPath.isPresent());
     }
 
     private Node initializeStartNode(Node node, Vec3d target) {
-        Node start = new Node(null, node.state, Color.GREEN, 0);
-        start.combinedCost = computeHeuristic(start.state.getPos(), start.state.isOnGround(), target);
+        Node start = new Node(null, node.agent, Color.GREEN, 0);
+        start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
         return start;
     }
 
     private Node initializeStartNode(ClientPlayerEntity player, Vec3d target) {
-        if (TungstenMod.HOLLOW_PLAYER == null) {
-            // Use the hollow player instance for simulation
-            TungstenMod.HOLLOW_PLAYER = HollowClientPlayerEntity.createHollow();
-        }
-        Node start = new Node(null, new SimulatedPlayerState(player, new SimulatedInput(player.input.playerInput, player.getYaw(), player.getPitch())), Color.GREEN, 0);
-        start.combinedCost = computeHeuristic(start.state.getPos(), start.state.isOnGround(), target);
+        Node start = new Node(null, new Agent(player), Color.GREEN, 0);
+        start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
         return start;
     }
 
@@ -533,10 +527,10 @@ public class Pathfinder {
 
     private boolean isPathComplete(Node node, Vec3d target, boolean failing) {
         if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))))
-            return node.state.getPos().squaredDistanceTo(target) <= 0.9D;
+            return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
         if (TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ())).getBlock() instanceof LadderBlock)
-            return node.state.getPos().squaredDistanceTo(target) <= 0.9D;
-        return node.state.getPos().squaredDistanceTo(target) <= 0.2D && !failing;
+            return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
+        return node.agent.getPos().squaredDistanceTo(target) <= 0.2D && !failing;
     }
 
     private boolean tryExecutePath(Node node, Vec3d target) {
@@ -581,9 +575,9 @@ public class Pathfinder {
         return (numNodesConsidered & (8 - 1)) == 0 &&
                 NEXT_CLOSEST_BLOCKNODE_IDX.get() > blockPath.get().size() - 10 &&
                 !TungstenMod.EXECUTOR.isRunning() &&
-                blockPath.get().get(blockPath.get().size() - 1).getPos().squaredDistanceTo(next.state.getPos()) < 3.0D &&
+                blockPath.get().get(blockPath.get().size() - 1).getPos().squaredDistanceTo(next.agent.getPos()) < 3.0D &&
                 blockPath.get().get(blockPath.get().size() - 1).getPos().squaredDistanceTo(target) > 1.0D &&
-                AgentChecker.isAgentStationary(next.state, 0.08);
+                AgentChecker.isAgentStationary(next.agent, 0.08);
     }
 
     private Optional<List<BlockNode>> resetSearch(Node next, WorldView world, Optional<List<BlockNode>> blockPath, Vec3d target) {
@@ -609,7 +603,7 @@ public class Pathfinder {
         if (!result.isPresent() || now < primaryTimeoutTime) {
             return false;
         }
-        if (player.getPos().distanceTo(result.get().get(0).state.getPos()) < 1 && player.getPos().distanceTo(result.get().getLast().state.getPos()) > 3 && next.state.getPos().distanceTo(target) > 1) {
+        if (player.getPos().distanceTo(result.get().get(0).agent.getPos()) < 1 && player.getPos().distanceTo(result.get().getLast().agent.getPos()) > 3 && next.agent.getPos().distanceTo(target) > 1) {
             Debug.logMessage("Time ran out");
             TungstenMod.EXECUTOR.setPath(result.get());
             RenderHelper.renderPathCurrentlyExecuted();
@@ -638,13 +632,13 @@ public class Pathfinder {
         if (isLadder || isLadderBelow) return false;
         double distB = DistanceCalculator.getHorizontalEuclideanDistance(lastBlockNode.getPos(true), nextBlockNode.getPos(true));
 
-        if (distB > 6 || child.state.isClimbing(TungstenMod.mc.world))
-            return child.state.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
+        if (distB > 6 || child.agent.isClimbing(TungstenMod.mc.world))
+            return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
 
-        if (isSmallBlock) return child.state.getPos().getY() < (nextBlockNode.getPos(true).getY());
+        if (isSmallBlock) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY());
 
 
-        return !BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos().down())) && child.state.getPos().getY() < (nextBlockNode.getPos(true).getY() - 2.5);
+        return !BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos().down())) && child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 2.5);
     }
 
     private boolean processNodeChildren(WorldView world, Node parent, Vec3d target, Optional<List<BlockNode>> blockPath,
@@ -689,9 +683,9 @@ public class Pathfinder {
 
             boolean tooClose = false;
             for (Node other : validChildren) {
-                double distance = other.state.getPos().distanceTo(child.state.getPos());
-                boolean bothClimbing = other.state.isClimbing(world) && child.state.isClimbing(world);
-                boolean bothNotClimbing = !other.state.isClimbing(world) && !child.state.isClimbing(world);
+                double distance = other.agent.getPos().distanceTo(child.agent.getPos());
+                boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
+                boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 
                 if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
                     tooClose = true;
