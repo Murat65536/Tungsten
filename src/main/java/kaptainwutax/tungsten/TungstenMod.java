@@ -13,6 +13,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -38,6 +39,7 @@ public class TungstenMod implements ClientModInitializer {
     public static final String MOD_ID = "tungsten";
     //    public static final ModMetadata MOD_META;
     public static final String NAME = "Tungsten";
+    public static final KeyBinding.Category TUNGSTEN_CATEGORY = KeyBinding.Category.create(Identifier.of("tungsten", "test"));
     public static final Logger LOG = LoggerFactory.getLogger(NAME);
     public static MinecraftClient mc;
     public static Collection<Renderer> BLOCK_PATH_RENDERER = Collections.synchronizedCollection(new ArrayList<>());
@@ -80,25 +82,25 @@ public class TungstenMod implements ClientModInitializer {
                 "key.tungsten.pause", // The translation key of the keybinding's name
                 InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_P, // The keycode of the key
-                "key.category.tungsten.test" // The translation key of the keybinding's category.
+                TUNGSTEN_CATEGORY // The translation key of the keybinding's category.
         ));
         runKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.tungsten.run", // The translation key of the keybinding's name
                 InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_G, // The keycode of the key
-                "key.category.tungsten.test" // The translation key of the keybinding's category.
+                TUNGSTEN_CATEGORY // The translation key of the keybinding's category.
         ));
         runBlockSearchKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.tungsten.run_block_search", // The translation key of the keybinding's name
                 InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_J, // The keycode of the key
-                "key.category.tungsten.test.development" // The translation key of the keybinding's category.
+                TUNGSTEN_CATEGORY // The translation key of the keybinding's category.
         ));
         createGoalKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.tungsten.create_goal", // The translation key of the keybinding's name
                 InputUtil.Type.KEYSYM, // The type of the keybinding, KEYSYM for keyboard, MOUSE for mouse.
                 GLFW.GLFW_KEY_H, // The keycode of the key
-                "key.category.tungsten.test" // The translation key of the keybinding's category.
+                TUNGSTEN_CATEGORY // The translation key of the keybinding's category.
         ));
         commandExecutor = new CommandExecutor(this);
 
@@ -135,7 +137,7 @@ public class TungstenMod implements ClientModInitializer {
             if (clickMode != ClickModeEnum.OFF && mc.options.useKey.isPressed() && !isRunning) {
 
                 Camera camera = mc.gameRenderer.getCamera();
-                Vec3d cameraPos = camera.getPos();
+                Vec3d cameraPos = camera.getCameraPos();
 
                 // Calculate the direction the camera is looking based on its pitch and yaw, and extend this direction 210 units away from the camera position
                 // 210 is used here as the maximum distance of 200 blocks
@@ -182,7 +184,8 @@ public class TungstenMod implements ClientModInitializer {
             // This creates the commands. If you want any more commands feel free to initialize new command lists.
             new TungstenCommands(this);
         } catch (Exception e) {
-            e.printStackTrace();
+            Debug.logMessage("Command initialization error: " + e.getMessage());
+            Debug.logInternal("Command initialization exception", e);
         }
     }
 

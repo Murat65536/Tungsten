@@ -27,7 +27,7 @@ public class Line extends Renderer {
     @Override
     public void render(BufferBuilder builder) {
         if(this.start == null || this.end == null || this.color == null)return;
-        Vec3d camPos = this.mc.gameRenderer.getCamera().getPos();
+        Vec3d camPos = this.mc.gameRenderer.getCamera().getCameraPos();
         this.putVertex(builder, camPos, this.start);
         this.putVertex(builder, camPos, this.end);
     }

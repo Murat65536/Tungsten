@@ -38,7 +38,8 @@ public class BlockSpacePathfinder {
 			try {
 				search(world, target);
 			} catch(Exception e) {
-				e.printStackTrace();
+				Debug.logMessage("Block space pathfinding error: " + e.getMessage());
+				Debug.logInternal("Block space pathfinding exception", e);
 			} finally {
 				active = false;
 			}

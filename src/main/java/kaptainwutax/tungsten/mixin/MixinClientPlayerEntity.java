@@ -35,14 +35,14 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 
 		if(!this.getAbilities().flying) {
 			Agent.INSTANCE = new Agent((ClientPlayerEntity)(Object)this);
-			Agent.INSTANCE.tick(this.getWorld());
+			Agent.INSTANCE.tick(this.getEntityWorld());
 		}
 
 		if(TungstenMod.runKeyBinding.isPressed() && !TungstenMod.PATHFINDER.active.get() && !TungstenMod.EXECUTOR.isRunning()) {
-			TungstenMod.PATHFINDER.find(this.getWorld(), TungstenMod.TARGET);
+			TungstenMod.PATHFINDER.find(this.getEntityWorld(), TungstenMod.TARGET);
 		}
 		if(TungstenMod.runBlockSearchKeyBinding.isPressed() && !TungstenMod.PATHFINDER.active.get()) {
-			BlockSpacePathfinder.find(getWorld(), TungstenMod.TARGET);
+			BlockSpacePathfinder.find(getEntityWorld(), TungstenMod.TARGET);
 		}
 		if (TungstenMod.pauseKeyBinding.isPressed()) {
 			try {
@@ -70,7 +70,7 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 	@Inject(method = "tick", at = @At(value = "RETURN"))
 	public void end(CallbackInfo ci) {
 		if(!this.getAbilities().flying && Agent.INSTANCE != null) {
-			Agent.INSTANCE.compare((ClientPlayerEntity)(Object)this, false);
+			Agent.INSTANCE.compare((ClientPlayerEntity)(Object)this);
 		}
 	}
 

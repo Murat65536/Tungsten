@@ -15,6 +15,13 @@ public class Debug {
         logInternal(String.format(format, args));
     }
 
+    public static void logInternal(String message, Throwable throwable) {
+        System.err.println("Tungsten: " + message);
+        if (throwable != null) {
+            throwable.printStackTrace(System.err);
+        }
+    }
+
     private static String getLogPrefix() {
         if (jankModInstance != null) {
             return TungstenMod.getCommandPrefix();
@@ -24,11 +31,17 @@ public class Debug {
 
     public static void logMessage(String message, boolean prefix) {
         if (TungstenMod.mc != null && TungstenMod.mc.player != null) {
+            String finalMessage;
             if (prefix) {
-                message = "\u00A72\u00A7l\u00A7o" + getLogPrefix() + "\u00A7r" + message;
+                finalMessage = "\u00A72\u00A7l\u00A7o" + getLogPrefix() + "\u00A7r" + message;
+            } else {
+                finalMessage = message;
             }
-            TungstenMod.mc.player.sendMessage(Text.of(message), false);
-            //MinecraftClient.getInstance().player.sendChatMessage(msg);
+            TungstenMod.mc.execute(() -> {
+                if (TungstenMod.mc.player != null) {
+                    TungstenMod.mc.player.sendMessage(Text.of(finalMessage), false);
+                }
+            });
         } else {
             logInternal(message);
         }
@@ -47,8 +60,11 @@ public class Debug {
         if (jankModInstance != null) {
             if (TungstenMod.mc != null && TungstenMod.mc.player != null) {
                 String msg = "\u00A72\u00A7l\u00A7o" + getLogPrefix() + "\u00A7c" + message + "\u00A7r";
-                TungstenMod.mc.player.sendMessage(Text.of(msg), false);
-                //MinecraftClient.getInstance().player.sendChatMessage(msg);
+                TungstenMod.mc.execute(() -> {
+                    if (TungstenMod.mc.player != null) {
+                        TungstenMod.mc.player.sendMessage(Text.of(msg), false);
+                    }
+                });
             }
         }
     }
@@ -64,7 +80,11 @@ public class Debug {
         System.err.println(stacktrace);
         if (TungstenMod.mc != null && TungstenMod.mc.player != null) {
             String msg = "\u00A72\u00A7l\u00A7c" + getLogPrefix() + "[ERROR] " + message + "\nat:\n" + stacktrace + "\u00A7r";
-            TungstenMod.mc.player.sendMessage(Text.of(msg), false);
+            TungstenMod.mc.execute(() -> {
+                if (TungstenMod.mc.player != null) {
+                    TungstenMod.mc.player.sendMessage(Text.of(msg), false);
+                }
+            });
         }
     }
 

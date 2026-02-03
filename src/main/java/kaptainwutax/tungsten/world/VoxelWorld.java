@@ -146,9 +146,13 @@ public class VoxelWorld implements WorldView {
 	}
 
 	@Override
-	public FeatureSet getEnabledFeatures() {
-		// TODO Auto-generated method stub
-		return null;
+	public net.minecraft.world.attribute.EnvironmentAttributeAccess getEnvironmentAttributes() {
+		return this.parent.getEnvironmentAttributes();
 	}
+
+    @Override
+    public net.minecraft.resource.featuretoggle.FeatureSet getEnabledFeatures() {
+        return this.parent.getEnabledFeatures();
+    }
 
 }

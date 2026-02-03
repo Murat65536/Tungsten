@@ -37,8 +37,8 @@ public abstract class Command {
         try {
 			CommandExecutor.dispatch(line);
 		} catch (CommandSyntaxException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Debug.logMessage("Command syntax error: " + e.getMessage());
+			Debug.logInternal("Command execution exception", e);
 		}
     }
 
