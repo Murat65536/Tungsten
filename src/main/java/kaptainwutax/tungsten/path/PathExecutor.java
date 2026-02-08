@@ -88,7 +88,7 @@ public class PathExecutor {
 	    } else {
 		    Node node = this.path.get(this.tick);
 		    if(this.tick != 0) {
-			    this.path.get(this.tick - 1).agent.compare(player);
+			    this.path.get(this.tick - 1).agent.compare(player, true);
 		    }
 
 		    if(node.input != null) {

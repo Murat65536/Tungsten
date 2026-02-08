@@ -66,7 +66,8 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
         }
     }
 
-    @Inject(method = "onEntityTrackerUpdate", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "onEntityTrackerUpdate", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/NetworkThreadUtils;forceMainThread(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/listener/PacketListener;Lnet/minecraft/util/thread/ThreadExecutor;)V",
+        shift = At.Shift.AFTER), cancellable = true)
     public void onEntityTrackerUpdate(EntityTrackerUpdateS2CPacket packet, CallbackInfo ci) {
         if(TungstenMod.EXECUTOR.isRunning()) {
             ClientPlayerEntity player = TungstenMod.mc.player;
@@ -77,7 +78,8 @@ public abstract class MixinClientPlayNetworkHandler extends ClientCommonNetworkH
         }
     }
 
-    @Inject(method = "onPlayerPositionLook", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "onPlayerPositionLook", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/NetworkThreadUtils;forceMainThread(Lnet/minecraft/network/packet/Packet;Lnet/minecraft/network/listener/PacketListener;Lnet/minecraft/util/thread/ThreadExecutor;)V",
+        shift = At.Shift.AFTER), cancellable = true)
     public void onPlayerPositionLook(PlayerPositionLookS2CPacket packet, CallbackInfo ci) {
         if(TungstenMod.EXECUTOR.isRunning()) {
             ci.cancel();

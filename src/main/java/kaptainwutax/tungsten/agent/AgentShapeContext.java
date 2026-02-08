@@ -65,9 +65,4 @@ public class AgentShapeContext implements ShapeContext {
 		return null;
 	}
 
-    @Override
-    public boolean shouldTreatFluidAsCube() {
-        return false;
-    }
-
 }

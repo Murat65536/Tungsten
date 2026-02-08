@@ -22,8 +22,7 @@
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.BufferBuilder;
 	import net.minecraft.client.render.Frustum;
-    import net.minecraft.client.render.RenderLayers;
-    import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.Tessellator;
 	import net.minecraft.client.render.VertexConsumerProvider;
 	import net.minecraft.client.render.VertexFormats;
@@ -40,22 +39,22 @@ import net.minecraft.client.render.Tessellator;
 		@Unique
         private static final int MAX_RENDERERS_PER_CATEGORY = 500;
 	
-			@Inject(method = "render", at = @At("RETURN"))
-			public void render(Frustum frustum, double cameraX, double cameraY, double cameraZ, float tickDelta, CallbackInfo ci) {
-				glDisable(GL_DEPTH_TEST);
-			    glDisable(GL_BLEND);		    
+		@Inject(method = "render", at = @At("RETURN"))
+		public void render(MatrixStack matrices, Frustum frustum, VertexConsumerProvider.Immediate vertexConsumers,
+				double cameraX, double cameraY, double cameraZ, CallbackInfo ci) {
+			glDisable(GL_DEPTH_TEST);
+		    glDisable(GL_BLEND);
+		    
 	
 			Tessellator tessellator = Tessellator.getInstance();
 			BufferBuilder builder;
 	
-			// RenderSystem.lineWidth(2.0F);
-            // glLineWidth(1.0F);
+			RenderSystem.lineWidth(2.0F);
 	
 			builder = tessellator.begin(DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
 			Cuboid goal = new Cuboid(TungstenMod.TARGET.subtract(0.5D, 0D, 0.5D), new Vec3d(1.0D, 2.0D, 1.0D), Color.GREEN);
 			goal.render(builder);
-			// RenderLayer.getDebugLineStrip(2).draw(builder.end());
-            RenderLayers.lines().draw(builder.end());
+			RenderLayer.getDebugLineStrip(2).draw(builder.end());
 	
 			// Batch render each collection with culling and limiting
 			if (!TungstenMod.RUNNING_PATH_RENDERER.isEmpty())
@@ -100,8 +99,7 @@ import net.minecraft.client.render.Tessellator;
 						BufferBuilder builder = tessellator.begin(DrawMode.DEBUG_LINES,
 								VertexFormats.POSITION_COLOR);
 						r.render(builder);
-						// RenderLayer.getDebugLineStrip(2).draw(builder.end());
-                        RenderLayers.lines().draw(builder.end());
+						RenderLayer.getDebugLineStrip(2).draw(builder.end());
 						count++;
 					} catch (Exception e) {
 						// Log the exception rather than silently ignoring it
@@ -119,8 +117,7 @@ import net.minecraft.client.render.Tessellator;
 				BufferBuilder builder = tessellator.begin(DrawMode.DEBUG_LINES,
 						VertexFormats.POSITION_COLOR);
 				r.render(builder);
-				// RenderLayer.getDebugLineStrip(2).draw(builder.end());
-                RenderLayers.lines().draw(builder.end());
+				RenderLayer.getDebugLineStrip(2).draw(builder.end());
 			} catch (Exception e) {
 				// Ignored
 			}
