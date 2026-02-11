@@ -29,7 +29,10 @@
       "sendMovementPackets",
       "sendSprintingPacket",
       "autoJump",
-      "pushOutOfBlocks"
+      "pushOutOfBlocks",
+      "tickNausea",
+      "tickPortalCooldown",
+      "startRidingJump"
     ]
   },
   "net.minecraft.client.network.AbstractClientPlayerEntity": {
@@ -54,7 +57,11 @@
       "resetStat",
       "awardRecipe",
       "unlockRecipes",
-      "spawnItemParticles"
+      "spawnItemParticles",
+      "tickHandSwing",
+      "collideWithEntity",
+      "tickHunger",
+      "updateItems"
     ]
   },
   "net.minecraft.entity.LivingEntity": {
@@ -103,7 +110,13 @@
       "tickCramming",
       "addBubbleParticles",
       "addDeathParticles",
-      "updatePotionVisibility"
+      "updatePotionVisibility",
+      "sendEquipmentChanges",
+      "tickActiveItemStack",
+      "updateLimbs",
+      "tickRiptide",
+      "removePowderSnowSlow",
+      "addPowderSnowSlowIfNeeded"
     ]
   },
   "net.minecraft.entity.Entity": {
@@ -188,7 +201,14 @@
       "addAirTravelEffects",
       "addFlapEffects",
       "applyMoveEffect",
-      "stepOnBlock"
+      "stepOnBlock",
+      "tickPortalTeleportation",
+      "setFireTicks",
+      "damage",
+      "setOnFire",
+      "setOnFireFromLava",
+      "setOnFireFor",
+      "setFrozenTicks"
     ]
   }
 }

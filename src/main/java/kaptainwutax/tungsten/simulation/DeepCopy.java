@@ -74,7 +74,8 @@ public final class DeepCopy {
 		"net.minecraft.block.", // BlockState, Block — registry singletons
 		"net.minecraft.state.", // State — parent of BlockState
 		"net.minecraft.entity.EntityType", // registry singleton
-		"net.minecraft.entity.data.", // DataTracker — complex internal state
+		"net.minecraft.entity.data.TrackedDataHandler", // handler singletons
+		"net.minecraft.entity.data.TrackedDataHandlerRegistry", // handler registry
 		"net.minecraft.entity.EntityCollisionHandler", // collision infrastructure
 		"net.minecraft.entity.TrackedPosition", // tracked position
 		"net.minecraft.entity.effect.", // StatusEffects — registry singletons
