@@ -36,9 +36,8 @@ import net.minecraft.client.render.Tessellator;
 	public class MixinDebugRenderer {
 		
 		// Maximum number of renderers to draw at once to prevent performance issues
-		@Unique
-        private static final int MAX_RENDERERS_PER_CATEGORY = 500;
-	
+			@Unique
+		    private static final int MAX_RENDERERS_PER_CATEGORY = Integer.MAX_VALUE;	
 		@Inject(method = "render", at = @At("RETURN"))
 		public void render(MatrixStack matrices, Frustum frustum, VertexConsumerProvider.Immediate vertexConsumers,
 				double cameraX, double cameraY, double cameraZ, CallbackInfo ci) {

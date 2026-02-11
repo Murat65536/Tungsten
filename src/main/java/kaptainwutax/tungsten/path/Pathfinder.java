@@ -445,9 +445,7 @@ public class Pathfinder {
                 }
                 updateNextClosestBlockNodeIDX(blockPath.get(), next, closed);
 
-                if (numNodesConsidered % PathfindingConstants.NodeEvaluation.NODE_RENDER_INTERVAL == 0) {
-                    RenderHelper.renderPathSoFar(next);
-                }
+                RenderHelper.renderExploredNode(next);
 
                 // Profile node generation
                 long nodeGenStart = System.currentTimeMillis();
@@ -483,7 +481,7 @@ public class Pathfinder {
             taskManager.cancelAll();
         }
 
-        RenderHelper.clearRenderers();
+        // RenderHelper.clearRenderers();
         closed.clear();
         this.blockPath = Optional.empty();
     }

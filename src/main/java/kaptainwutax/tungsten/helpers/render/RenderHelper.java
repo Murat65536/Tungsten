@@ -71,6 +71,20 @@ public class RenderHelper {
 			n = n.parent;
 		}
 	}
+
+	public static void renderExploredNode(BlockNode n) {
+		TungstenMod.RENDERERS.add(new Cuboid(n.getPos(true).subtract(0.1, 0, 0.1), new Vec3d(0.2D, 0.2D, 0.2D), Color.RED));
+		if(n.previous != null) {
+			TungstenMod.RENDERERS.add(new Line(new Vec3d(n.previous.x + 0.5, n.previous.y + 0.1, n.previous.z + 0.5), new Vec3d(n.x + 0.5, n.y + 0.1, n.z + 0.5), Color.WHITE));
+		}
+	}
+
+	public static void renderExploredNode(Node n) {
+		TungstenMod.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), Color.RED));
+		if(n.parent != null) {
+			TungstenMod.RENDERERS.add(new Line(n.agent.getPos(), n.parent.agent.getPos(), n.color));
+		}
+	}
 	
 	public static void renderNode(Node n) {
 		TungstenMod.RENDERERS.add(new Cuboid(n.agent.getPos().subtract(0.05D, 0.05D, 0.05D), new Vec3d(0.1D, 0.1D, 0.1D), n.color));
@@ -94,7 +108,7 @@ public class RenderHelper {
 	
 	public static void clearRenderers() {
 	    TungstenMod.RENDERERS.clear();
-//	    TungstenMod.RUNNING_PATH_RENDERER.clear();
+	    TungstenMod.RUNNING_PATH_RENDERER.clear();
 	    TungstenMod.BLOCK_PATH_RENDERER.clear();
 	    TungstenMod.TEST.clear();
 	}

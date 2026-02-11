@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.commandsystem.Command;
+import kaptainwutax.tungsten.helpers.render.RenderHelper;
 import net.minecraft.command.CommandSource;
 
 public class StopCommand extends Command {
@@ -25,6 +26,7 @@ public class StopCommand extends Command {
 	    		} else {
 					Debug.logMessage("Nothing to stop.");
 	    		}
+	        	RenderHelper.clearRenderers();
 
 			} catch (Exception e) {
 				// TODO: handle exception
