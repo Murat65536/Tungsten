@@ -93,6 +93,10 @@ public class Pathfinder {
 
         // Optionally add the hashcode to the closed set
         if (addToClosed) {
+            // Evict old entries if closed set exceeds limit
+            if (closed.size() >= PathfindingConstants.Limits.MAX_CLOSED_SET_SIZE) {
+                closed.clear();
+            }
             closed.add(hashCode);
         }
 
@@ -451,6 +455,12 @@ public class Pathfinder {
                 nodeGenerationTime += (System.currentTimeMillis() - nodeGenStart);
                 numNodesConsidered++;
                 totalNodesEvaluated++;
+
+                // Periodic trim of open set to prevent unbounded memory growth
+                if ((numNodesConsidered & 15) == 0 && openSet instanceof BinaryHeapOpenSet<?> heap
+                        && heap.size() > PathfindingConstants.Limits.MAX_OPEN_SET_SIZE) {
+                    heap.trimToSize(PathfindingConstants.Limits.MAX_OPEN_SET_SIZE);
+                }
             }
 
             // Print performance metrics
@@ -677,6 +687,9 @@ public class Pathfinder {
                 PathfindingConstants.Timeouts.NODE_FILTER_TIMEOUT_MS
         );
 
+        // Sort by combined cost so best nodes are kept first during proximity pruning
+        preliminaryChildren.sort(Comparator.comparingDouble(n -> n.combinedCost));
+
         // Second pass: filter by distance (single-threaded to avoid race condition)
         for (Node child : preliminaryChildren) {
             if (child == null) continue;
@@ -731,6 +744,15 @@ public class Pathfinder {
                 processingTasks,
                 PathfindingConstants.Timeouts.NODE_UPDATE_TIMEOUT_MS
         );
+
+        // Trim open set if it exceeds the limit to prevent unbounded memory growth
+        synchronized (openSetLock) {
+            if (openSet instanceof BinaryHeapOpenSet<?> heap) {
+                if (heap.size() > PathfindingConstants.Limits.MAX_OPEN_SET_SIZE) {
+                    heap.trimToSize(PathfindingConstants.Limits.MAX_OPEN_SET_SIZE);
+                }
+            }
+        }
 
         return failing.get();
     }

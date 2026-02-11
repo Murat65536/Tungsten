@@ -40,6 +40,39 @@ public final class BinaryHeapOpenSet<T extends HeapNode> implements IOpenSet<T> 
         return size;
     }
 
+    /**
+     * Trims the heap to the specified maximum size by keeping only the lowest-cost nodes.
+     * This is an O(n) operation that rebuilds the heap after removing high-cost entries.
+     */
+    @SuppressWarnings("unchecked")
+    public void trimToSize(int maxSize) {
+        if (size <= maxSize) {
+            return;
+        }
+        // Find the maxSize-th smallest cost using partial sort via selection
+        // Simple approach: just keep the first maxSize elements after re-heapifying
+        // We remove from the top (highest priority = lowest cost), keep those, discard rest
+        T[] kept = (T[]) new HeapNode[maxSize + 1];
+        int keptCount = 0;
+        // Extract the best maxSize nodes
+        while (keptCount < maxSize && size > 0) {
+            T node = removeLowest();
+            keptCount++;
+            kept[keptCount] = node;
+            node.setHeapPosition(keptCount);
+        }
+        // Discard remaining nodes in the old heap
+        for (int i = 1; i <= size; i++) {
+            if (array[i] != null) {
+                array[i].setHeapPosition(-1);
+                array[i] = null;
+            }
+        }
+        // Replace with kept nodes (already in heap order since we extracted in order)
+        this.array = kept.length > INITIAL_CAPACITY ? kept : Arrays.copyOf(kept, INITIAL_CAPACITY);
+        this.size = keptCount;
+    }
+
     @Override
     public void insert(T value) {
         if (size >= array.length - 1) {

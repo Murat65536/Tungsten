@@ -3,11 +3,14 @@ package kaptainwutax.tungsten.simulation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.misc.Unsafe;
 
 /**
@@ -27,6 +30,12 @@ public final class DeepCopy {
 	 *  Non-whitelisted fields are skipped during deep copy (left as default). */
 	private final Map<String, Set<String>> whitelistedFields;
 
+	/** Cached per-class field descriptors to avoid repeated reflection lookups. */
+	private final ConcurrentHashMap<Class<?>, CachedField[]> fieldCache = new ConcurrentHashMap<>();
+
+	/** Pre-computed field descriptor for fast deep copy. */
+	private record CachedField(long offset, Class<?> type, boolean isPrimitive) {}
+
 	/** Types that are inherently immutable or are infrastructure singletons — safe to share. */
 	private static final Set<String> ALWAYS_SHARED = Set.of(
 		"java.lang.Class",
@@ -43,7 +52,8 @@ public final class DeepCopy {
 		"java.security.ProtectionDomain",
 		"java.security.CodeSource",
 		"java.security.AccessControlContext",
-		"sun.misc.Unsafe"
+		"sun.misc.Unsafe",
+		"net.minecraft.util.math.ChunkPos"
 	);
 
 	/** Package prefixes where all types are treated as shared singletons. */
@@ -52,7 +62,7 @@ public final class DeepCopy {
 		"java.util.logging.",
 		"org.slf4j.",
 		"org.apache.logging.",
-		"com.google.common.base.",
+		"com.google.common.",
 		"io.netty.",
 		"com.mojang.serialization.",
 		"com.mojang.datafixers.",
@@ -67,12 +77,18 @@ public final class DeepCopy {
 		"net.minecraft.entity.data.", // DataTracker — complex internal state
 		"net.minecraft.entity.EntityCollisionHandler", // collision infrastructure
 		"net.minecraft.entity.TrackedPosition", // tracked position
+		"net.minecraft.entity.effect.", // StatusEffects — registry singletons
+		"net.minecraft.entity.mob.ElytraFlightController", // controller singleton
+		"net.minecraft.entity.player.PlayerAbilities", // abilities — not mutated during pathfinding
+		"net.minecraft.entity.player.HungerManager", // hunger state — not mutated during pathfinding
+		"net.minecraft.entity.EntityDimensions", // immutable dimensions
 		"net.minecraft.client.MinecraftClient",
 		"net.minecraft.client.option.",
 		"net.minecraft.client.render.",
 		"net.minecraft.client.sound.",
 		"net.minecraft.client.network.ClientPlayNetworkHandler",
 		"net.minecraft.client.tutorial.",
+		"net.minecraft.client.input.", // input objects — we replace with our own via attachInput
 		"net.minecraft.stat.",
 		"net.minecraft.recipe.",
 		"net.minecraft.client.recipebook.",
@@ -82,6 +98,7 @@ public final class DeepCopy {
 		"net.minecraft.fluid.", // FluidState etc.
 		"net.minecraft.text.", // Text components
 		"net.minecraft.nbt.", // NBT data
+		"net.minecraft.util.math.random.", // Random — shared RNG, not worth copying
 	};
 
 	public DeepCopy(SimMetadata metadata) {
@@ -120,32 +137,45 @@ public final class DeepCopy {
 
 		Class<?> currentSource = source.getClass();
 		while (currentSource != null && currentSource != Object.class) {
-			// For hierarchy classes, only copy whitelisted fields
-			Set<String> allowed = whitelistedFields.get(currentSource.getName());
-			for (Field field : currentSource.getDeclaredFields()) {
-				if (Modifier.isStatic(field.getModifiers())) {
-					continue;
-				}
-				if (allowed != null && !allowed.contains(field.getName())) {
-					continue; // skip non-whitelisted fields in hierarchy classes
-				}
-				try {
-					long offset = UNSAFE.objectFieldOffset(field);
-					Class<?> ft = field.getType();
-					if (ft.isPrimitive()) {
-						copyPrimitive(source, target, offset, ft);
-					} else {
-						Object value = UNSAFE.getObject(source, offset);
-						Object copied = deepCopyValue(value, seen);
-						UNSAFE.putObject(target, offset, copied);
-					}
-				} catch (Exception ex) {
-					// Skip fields that can't be copied
+			CachedField[] fields = getCachedFields(currentSource);
+			for (CachedField cf : fields) {
+				if (cf.isPrimitive) {
+					copyPrimitive(source, target, cf.offset, cf.type);
+				} else {
+					Object value = UNSAFE.getObject(source, cf.offset);
+					Object copied = deepCopyValue(value, seen);
+					UNSAFE.putObject(target, cf.offset, copied);
 				}
 			}
 			currentSource = currentSource.getSuperclass();
 		}
 		return target;
+	}
+
+	/**
+	 * Build and cache the list of copyable fields for a given class.
+	 * Filters out static fields and non-whitelisted hierarchy fields.
+	 */
+	private CachedField[] getCachedFields(Class<?> clazz) {
+		return fieldCache.computeIfAbsent(clazz, c -> {
+			Set<String> allowed = whitelistedFields.get(c.getName());
+			List<CachedField> result = new ArrayList<>();
+			for (Field field : c.getDeclaredFields()) {
+				if (Modifier.isStatic(field.getModifiers())) {
+					continue;
+				}
+				if (allowed != null && !allowed.contains(field.getName())) {
+					continue;
+				}
+				try {
+					long offset = UNSAFE.objectFieldOffset(field);
+					result.add(new CachedField(offset, field.getType(), field.getType().isPrimitive()));
+				} catch (Exception ex) {
+					// Skip fields that can't be accessed
+				}
+			}
+			return result.toArray(new CachedField[0]);
+		});
 	}
 
 	/**
@@ -222,8 +252,15 @@ public final class DeepCopy {
 		return copy;
 	}
 
+	/** Cache for isSharedType() results to avoid repeated string operations. */
+	private final ConcurrentHashMap<String, Boolean> sharedTypeCache = new ConcurrentHashMap<>();
+
 	private boolean isSharedType(Class<?> type) {
 		String name = type.getName();
+		return sharedTypeCache.computeIfAbsent(name, n -> isSharedTypeSlow(n));
+	}
+
+	private boolean isSharedTypeSlow(String name) {
 
 		if (ALWAYS_SHARED.contains(name)) {
 			return true;

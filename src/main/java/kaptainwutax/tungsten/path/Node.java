@@ -216,13 +216,14 @@ public class Node implements HeapNode {
             }
         }
 
+        // Try the direct yaw first (most likely to succeed), then offset yaws
+        float increment = PlayerConstants.Inputs.YAW_RANGE * 2 / (PlayerConstants.Inputs.YAW_PRECISION - 1);
+        float directYaw = (float) Math.round(DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true)) / increment) * increment;
+        int inputCount = agent.onGround ? PlayerConstants.Inputs.ALL_INPUTS.length : PlayerConstants.Inputs.NO_JUMP_INPUT_LENGTH;
 
-        for (int i = 0; i < (agent.onGround ? PlayerConstants.Inputs.ALL_INPUTS.length : PlayerConstants.Inputs.NO_JUMP_INPUT_LENGTH); i++) {
-            KeyboardInput input = PlayerConstants.Inputs.ALL_INPUTS[i];
-            float increment = PlayerConstants.Inputs.YAW_RANGE * 2 / (PlayerConstants.Inputs.YAW_PRECISION - 1);
-            // TODO Should we be using target instead of the block position?
-            float directYaw = (float) Math.round(DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true)) / increment) * increment;
-            for (float yaw = directYaw - PlayerConstants.Inputs.YAW_RANGE; yaw <= directYaw + PlayerConstants.Inputs.YAW_RANGE; yaw += increment) {
+        for (float yaw = directYaw - PlayerConstants.Inputs.YAW_RANGE; yaw <= directYaw + PlayerConstants.Inputs.YAW_RANGE; yaw += increment) {
+            for (int i = 0; i < inputCount; i++) {
+                KeyboardInput input = PlayerConstants.Inputs.ALL_INPUTS[i];
                 createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), yaw, isDoingLongJump, isCloseToBlockNode);
             }
         }
@@ -233,20 +234,22 @@ public class Node implements HeapNode {
                                   float yaw, boolean isDoingLongJump, boolean isCloseToBlockNode) {
         try {
             if (jump && sneak) return;
+            // Pre-filter impossible input combinations using parent state to avoid expensive simulation
+            if (!agent.touchingWater && (sneak && sprint)) return;
+            if (!agent.touchingWater && sneak && (right || left) && forward) return;
+            if (!agent.touchingWater && !agent.onGround && sneak) return;
+            if (!agent.touchingWater && sneak && jump) return;
+
             Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
                     new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
             if (newNode.agent.isClimbing(world))
                 jump = this.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY();
 
-            if (!newNode.agent.touchingWater && !newNode.agent.onGround && sneak) return;
-            if (!newNode.agent.touchingWater && sneak && jump) return;
-            if (!newNode.agent.touchingWater && (sneak && sprint)) return;
-            if (!newNode.agent.touchingWater && sneak && (right || left) && forward) return;
-            if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80)
-                return;
             if (newNode.agent.touchingWater && (sneak || jump) && newNode.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY())
                 return;
             if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY())
+                return;
+            if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80)
                 return;
             double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, newNode.agent);
             if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
@@ -260,19 +263,45 @@ public class Node implements HeapNode {
                 boolean isBelowClosedTrapDoor = BlockStateChecker.isClosedBottomTrapdoor(world.getBlockState(nextBlockNode.getBlockPos().down()));
                 boolean shouldAllowWalkingOnLowerBlock = !world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3;
                 double minY = isBelowClosedTrapDoor ? nextBlockNode.getPos(true).y - 1 : nextBlockNode.getBlockPos().getY() - (shouldAllowWalkingOnLowerBlock ? 1.3 : 0.3);
-                for (int j = 0; j < ((!jump) && !newNode.agent.isClimbing(world) ? 1 : 10); j++) {
-//		                if (newNode.agent.getPos().y <= minY && !newNode.agent.isClimbing(world) || !isMoving) break;
-                    if (!isMoving) break;
-                    Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
-                    Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
-                    if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
-                    newNode = new Node(newNode, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
-                            jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost + addNodeCost);
-                    if (!isDoingLongJump && jump && j > 1) break;
+                int maxTicks = ((!jump) && !newNode.agent.isClimbing(world) ? 1 : 10);
+                if (maxTicks > 1 && isMoving) {
+                    // Multi-tick simulation: tick in place to avoid creating intermediate deep copies.
+                    // We re-tick the same SimulatedPlayer and only keep the final result.
+                    PathInput tickInput = new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw);
+                    Color tickColor = jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0);
+                    double prevDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
+                    double accumulatedCost = 0;
+                    for (int j = 0; j < maxTicks; j++) {
+                        Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
+                        Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
+                        if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
+                        // Tick the existing agent in place instead of creating a new Node + deep copy
+                        tickInput = new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw);
+                        newNode.agent.tick(world, tickInput);
+                        newNode.input = tickInput;
+                        newNode.color = jump ? new Color(0, 255, 255) : tickColor;
+                        accumulatedCost += addNodeCost;
+                        if (!isDoingLongJump && jump && j > 1) break;
+                        double curDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
+                        if (j > 1 && curDist > prevDist) break;
+                        prevDist = curDist;
+                    }
+                    newNode.cost = this.cost + accumulatedCost;
                 }
             }
 
-            nodes.add(newNode);
+            // Deduplicate: skip if a node at a very similar position already exists in this batch
+            Vec3d newPos = newNode.agent.getPos();
+            boolean duplicate = false;
+            for (int k = nodes.size() - 1; k >= 0; k--) {
+                if (nodes.get(k).agent.getPos().squaredDistanceTo(newPos) < 0.005) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (!duplicate) {
+                nodes.add(newNode);
+            }
         } catch (ConcurrentModificationException e) {
             try {
                 Thread.sleep(2);

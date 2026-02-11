@@ -17,6 +17,8 @@ public final class SimulatedPlayerFactory {
 	private static final String METADATA_RESOURCE = "/tungsten/simulated-metadata.json";
 	private static volatile SimMetadata metadata;
 	private static volatile SimulatedPlayerAccess cachedAccess;
+	private static volatile DeepCopy cachedCopier;
+	private static volatile Field cachedChangeListenerField;
 
 	private SimulatedPlayerFactory() {
 	}
@@ -29,12 +31,9 @@ public final class SimulatedPlayerFactory {
 				throw new IllegalStateException("No simulated class mapping for ClientPlayerEntity");
 			}
 			Class<?> simClass = Class.forName(simClassName);
-			DeepCopy copier = new DeepCopy(data);
+			DeepCopy copier = getCopier(data);
 			Object instance = copier.copyToSimulated(player, simClass);
-			// Replace changeListener with NONE to avoid side effects on the real world
-			Field changeListenerField = net.minecraft.entity.Entity.class.getDeclaredField("changeListener");
-			changeListenerField.setAccessible(true);
-			changeListenerField.set(instance, EntityChangeListener.NONE);
+			setChangeListener(instance);
 			return new SimulatedPlayerHandle(instance, getAccess(simClass));
 		} catch (Exception ex) {
 			throw new IllegalStateException("Failed to create simulated player", ex);
@@ -44,16 +43,36 @@ public final class SimulatedPlayerFactory {
 	public static SimulatedPlayerHandle copyFrom(SimulatedPlayerHandle source) {
 		SimMetadata data = loadMetadata();
 		try {
-			DeepCopy copier = new DeepCopy(data);
+			DeepCopy copier = getCopier(data);
 			Object instance = copier.copyToSimulated(source.getRaw(), source.getRaw().getClass());
-			// Replace changeListener with NONE to avoid side effects on the real world
-			Field changeListenerField = net.minecraft.entity.Entity.class.getDeclaredField("changeListener");
-			changeListenerField.setAccessible(true);
-			changeListenerField.set(instance, EntityChangeListener.NONE);
+			setChangeListener(instance);
 			return new SimulatedPlayerHandle(instance, source.access);
 		} catch (Exception ex) {
 			throw new IllegalStateException("Failed to copy simulated player", ex);
 		}
+	}
+
+	private static DeepCopy getCopier(SimMetadata data) {
+		if (cachedCopier == null) {
+			synchronized (SimulatedPlayerFactory.class) {
+				if (cachedCopier == null) {
+					cachedCopier = new DeepCopy(data);
+				}
+			}
+		}
+		return cachedCopier;
+	}
+
+	private static void setChangeListener(Object instance) throws ReflectiveOperationException {
+		if (cachedChangeListenerField == null) {
+			synchronized (SimulatedPlayerFactory.class) {
+				if (cachedChangeListenerField == null) {
+					cachedChangeListenerField = net.minecraft.entity.Entity.class.getDeclaredField("changeListener");
+					cachedChangeListenerField.setAccessible(true);
+				}
+			}
+		}
+		cachedChangeListenerField.set(instance, EntityChangeListener.NONE);
 	}
 
 	public static void attachInput(SimulatedPlayerHandle handle, Input input) {

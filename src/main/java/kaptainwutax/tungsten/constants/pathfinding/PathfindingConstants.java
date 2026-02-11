@@ -34,6 +34,19 @@ public final class PathfindingConstants {
     }
 
     /**
+     * Limits for pathfinding data structures to prevent unbounded memory growth.
+     */
+    public static final class Limits {
+        private Limits() {}
+
+        /** Maximum number of entries in the closed set before oldest entries are dropped */
+        public static final int MAX_CLOSED_SET_SIZE = 25_000;
+
+        /** Maximum number of entries in the open set before lowest-priority entries are pruned */
+        public static final int MAX_OPEN_SET_SIZE = 5_000;
+    }
+
+    /**
      * Node evaluation and iteration parameters.
      */
     public static final class NodeEvaluation {
