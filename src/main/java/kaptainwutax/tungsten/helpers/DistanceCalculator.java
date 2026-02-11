@@ -1,6 +1,6 @@
 package kaptainwutax.tungsten.helpers;
 
-import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.simulation.SimulatedPlayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -64,7 +64,7 @@ public class DistanceCalculator {
      * @param agent The simulated player
      * @return distance to the edge of the block in the look direction
      */
-    public static double getDistanceToEdge(Agent agent) {
+    public static double getDistanceToEdge(SimulatedPlayer agent) {
         Vec3d position = agent.getPos(); // Get player's position
         BlockPos blockPos = agent.getBlockPos(); // Block the player is standing on
 		float f = agent.pitch * (float) (Math.PI / 180.0);

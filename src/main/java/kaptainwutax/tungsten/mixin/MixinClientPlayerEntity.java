@@ -11,7 +11,7 @@ import com.mojang.authlib.GameProfile;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.simulation.SimulatedPlayer;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockSpacePathfinder;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -34,8 +34,8 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 		}
 
 		if(!this.getAbilities().flying) {
-			Agent.INSTANCE = new Agent((ClientPlayerEntity)(Object)this);
-			Agent.INSTANCE.tick(this.getWorld());
+			SimulatedPlayer.INSTANCE = new SimulatedPlayer((ClientPlayerEntity)(Object)this);
+			SimulatedPlayer.INSTANCE.tick(this.getWorld());
 		}
 
 		if(TungstenMod.runKeyBinding.isPressed() && !TungstenMod.PATHFINDER.active.get() && !TungstenMod.EXECUTOR.isRunning()) {
@@ -69,8 +69,8 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 
 	@Inject(method = "tick", at = @At(value = "RETURN"))
 	public void end(CallbackInfo ci) {
-		if(!this.getAbilities().flying && Agent.INSTANCE != null) {
-			Agent.INSTANCE.compare((ClientPlayerEntity)(Object)this, false);
+		if(!this.getAbilities().flying && SimulatedPlayer.INSTANCE != null) {
+			SimulatedPlayer.INSTANCE.compare((ClientPlayerEntity)(Object)this, false);
 		}
 	}
 

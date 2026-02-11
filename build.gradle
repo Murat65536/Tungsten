@@ -27,6 +27,11 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fapi_version}"
 
+	implementation "org.ow2.asm:asm:9.7.1"
+	implementation "org.ow2.asm:asm-tree:9.7.1"
+	implementation "org.ow2.asm:asm-commons:9.7.1"
+	implementation "org.ow2.asm:asm-analysis:9.7.1"
+
 	// Uncomment the following line to enable the deprecated Fabric API modules. 
 	// These are included in the Fabric API production distribution and allow you to update your mod to the latest modules at a later more convenient time.
 
@@ -55,6 +60,38 @@ java {
 	// if it is present.
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
+}
+
+loom {
+	accessWidenerPath = file("src/main/resources/tungsten.accesswidener")
+	runs {
+		client {
+			vmArgs "-noverify"
+		}
+	}
+}
+
+def simGenOutputDir = layout.buildDirectory.dir("generated/simulated-classes")
+def simGenResourceDir = layout.buildDirectory.dir("generated/resources")
+
+tasks.register("generateSimulatedClasses", JavaExec) {
+	classpath = sourceSets.main.compileClasspath + files(sourceSets.main.output.classesDirs)
+	mainClass = "kaptainwutax.tungsten.simulation.tools.SimClassGenerator"
+	args "--whitelist", file("src/main/resources/tungsten/sim-whitelist.json").absolutePath,
+		"--output-dir", simGenOutputDir.get().asFile.absolutePath,
+		"--metadata", new File(simGenResourceDir.get().asFile, "tungsten/simulated-metadata.json").absolutePath,
+		"--sim-prefix", "kaptainwutax/tungsten/simulation/simulated"
+}
+
+sourceSets.main.resources.srcDir(simGenResourceDir)
+sourceSets.main.output.dir(simGenOutputDir, builtBy: 'generateSimulatedClasses')
+
+tasks.named("classes") {
+	dependsOn tasks.named("generateSimulatedClasses")
+}
+
+tasks.named("processResources") {
+	dependsOn tasks.named("generateSimulatedClasses")
 }
 
 jar {

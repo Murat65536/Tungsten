@@ -11,7 +11,7 @@ import com.google.common.collect.Streams;
 
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.simulation.SimulatedPlayer;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
 import kaptainwutax.tungsten.constants.physics.PlayerConstants;
 import kaptainwutax.tungsten.path.common.HeapNode;
@@ -32,7 +32,7 @@ import net.minecraft.world.WorldView;
 
 public class Node implements HeapNode {
     public Node parent;
-    public Agent agent;
+    public SimulatedPlayer agent;
     public PathInput input;
     public double cost;
     public double estimatedCostToGoal = 0;
@@ -56,7 +56,7 @@ public class Node implements HeapNode {
         return combinedCost;
     }
 
-    public Node(Node parent, Agent agent, Color color, double pathCost) {
+    public Node(Node parent, SimulatedPlayer agent, Color color, double pathCost) {
         this.parent = parent;
         this.agent = agent;
         this.color = color;
@@ -67,7 +67,7 @@ public class Node implements HeapNode {
 
     public Node(Node parent, WorldView world, PathInput input, Color color, double pathCost) {
         this.parent = parent;
-        this.agent = new Agent(parent.agent, input).tick(world);
+        this.agent = new SimulatedPlayer(parent.agent, input).tick(world);
         this.input = input;
         this.color = color;
         this.cost = pathCost;
@@ -283,7 +283,7 @@ public class Node implements HeapNode {
         }
     }
 
-    private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, Agent agent) {
+    private double calculateNodeCost(boolean forward, boolean sprint, boolean jump, boolean sneak, SimulatedPlayer agent) {
         double addNodeCost = 1;
 
         if (forward && sprint && jump && !sneak) {

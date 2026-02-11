@@ -3,7 +3,7 @@ package kaptainwutax.tungsten.path;
 import com.google.common.util.concurrent.AtomicDoubleArray;
 import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.TungstenMod;
-import kaptainwutax.tungsten.agent.Agent;
+import kaptainwutax.tungsten.simulation.SimulatedPlayer;
 import kaptainwutax.tungsten.concurrent.TaskManager;
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
@@ -503,7 +503,7 @@ public class Pathfinder {
     }
 
     private Node initializeStartNode(ClientPlayerEntity player, Vec3d target) {
-        Node start = new Node(null, new Agent(player), Color.GREEN, 0);
+        Node start = new Node(null, new SimulatedPlayer(player), Color.GREEN, 0);
         start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
         return start;
     }

@@ -1,9 +1,7 @@
-package kaptainwutax.tungsten.agent;
+package kaptainwutax.tungsten.simulation;
 
 import net.minecraft.block.BlockState;
-import net.minecraft.block.EntityShapeContext;
 import net.minecraft.block.ShapeContext;
-
 import net.minecraft.fluid.FluidState;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -14,9 +12,9 @@ import net.minecraft.world.CollisionView;
 
 import java.util.function.Predicate;
 
-public class AgentShapeContext implements ShapeContext {
+public class SimulatedShapeContext implements ShapeContext {
 
-    protected static final ShapeContext ABSENT = new AgentShapeContext(false, -1.7976931348623157E308, ItemStack.EMPTY, fluidState -> false) {
+    protected static final ShapeContext ABSENT = new SimulatedShapeContext(false, -1.7976931348623157E308, ItemStack.EMPTY, fluidState -> false) {
         @Override
         public boolean isAbove(VoxelShape shape, BlockPos pos, boolean defaultValue) {
             return defaultValue;
@@ -28,15 +26,15 @@ public class AgentShapeContext implements ShapeContext {
     private final ItemStack heldItem;
     private final Predicate<FluidState> walkOnFluidPredicate;
 
-    protected AgentShapeContext(boolean descending, double minY, ItemStack heldItem, Predicate<FluidState> walkOnFluidPredicate) {
+    protected SimulatedShapeContext(boolean descending, double minY, ItemStack heldItem, Predicate<FluidState> walkOnFluidPredicate) {
         this.descending = descending;
         this.minY = minY;
         this.heldItem = heldItem;
         this.walkOnFluidPredicate = walkOnFluidPredicate;
     }
 
-    protected AgentShapeContext(Agent agent) {
-        this(agent.input.playerInput.sneak(), agent.box.minY, ItemStack.EMPTY, fluidState -> false);
+    protected SimulatedShapeContext(SimulatedPlayer player) {
+        this(player.input.playerInput.sneak(), player.box.minY, ItemStack.EMPTY, fluidState -> false);
     }
 
     @Override
@@ -56,13 +54,11 @@ public class AgentShapeContext implements ShapeContext {
 
     @Override
     public boolean isAbove(VoxelShape shape, BlockPos pos, boolean defaultValue) {
-        return this.minY > (double)pos.getY() + shape.getMax(Direction.Axis.Y) - (double)1.0E-5f;
+        return this.minY > (double) pos.getY() + shape.getMax(Direction.Axis.Y) - (double) 1.0E-5f;
     }
 
-	@Override
-	public VoxelShape getCollisionShape(BlockState state, CollisionView world, BlockPos pos) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, CollisionView world, BlockPos pos) {
+        return null;
+    }
 }
