@@ -34,19 +34,6 @@ public final class PathfindingConstants {
     }
 
     /**
-     * Limits for pathfinding data structures to prevent unbounded memory growth.
-     */
-    public static final class Limits {
-        private Limits() {}
-
-        /** Maximum number of entries in the closed set before oldest entries are dropped */
-        public static final int MAX_CLOSED_SET_SIZE = 25_000;
-
-        /** Maximum number of entries in the open set before lowest-priority entries are pruned */
-        public static final int MAX_OPEN_SET_SIZE = 5_000;
-    }
-
-    /**
      * Node evaluation and iteration parameters.
      */
     public static final class NodeEvaluation {
@@ -54,8 +41,6 @@ public final class PathfindingConstants {
 
         /** Interval for time checks (power of 2 for efficient bitwise operations) */
         public static final int TIME_CHECK_INTERVAL = 8;
-        /** Interval for rendering node updates */
-        public static final int NODE_RENDER_INTERVAL = 20;
         /** Minimum improvement required to continue pathfinding */
         public static final double MINIMUM_IMPROVEMENT = 0.21;
         /** Thread priority for pathfinding */
@@ -79,7 +64,7 @@ public final class PathfindingConstants {
     public static final class ClosedSetScale {
         private ClosedSetScale() {}
 
-        /** Position rounding factor */
+        /** Position rounding factor (lower = coarser grid, more deduplication) */
         public static final double POSITION_ROUNDING = 10.0;
 
         /** Velocity rounding factor */

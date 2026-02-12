@@ -94,6 +94,8 @@ public class PathExecutor {
 		    if(node.input != null) {
 			    player.setYaw(node.input.yaw());
 			    player.setPitch(node.input.pitch());
+			    player.lastYaw = node.input.yaw();
+			    player.lastPitch = node.input.pitch();
 			    if (player.isCreative()) player.stopGliding();
 			    options.forwardKey.setPressed(node.input.forward());
 			    options.backKey.setPressed(node.input.back());

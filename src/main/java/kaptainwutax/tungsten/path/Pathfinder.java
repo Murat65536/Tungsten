@@ -84,7 +84,7 @@ public class Pathfinder {
 
     private boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Integer> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
 
-        int hashCode = n.hashCode(shouldAddYaw);
+        int hashCode = n.closedSetHashCode();
 
         // Check if the hashcode is in the closed set
         if (closed.contains(hashCode)) {
@@ -93,10 +93,6 @@ public class Pathfinder {
 
         // Optionally add the hashcode to the closed set
         if (addToClosed) {
-            // Evict old entries if closed set exceeds limit
-            if (closed.size() >= PathfindingConstants.Limits.MAX_CLOSED_SET_SIZE) {
-                closed.clear();
-            }
             closed.add(hashCode);
         }
 
@@ -454,11 +450,6 @@ public class Pathfinder {
                 numNodesConsidered++;
                 totalNodesEvaluated++;
 
-                // Periodic trim of open set to prevent unbounded memory growth
-                if ((numNodesConsidered & 15) == 0 && openSet instanceof BinaryHeapOpenSet<?> heap
-                        && heap.size() > PathfindingConstants.Limits.MAX_OPEN_SET_SIZE) {
-                    heap.trimToSize(PathfindingConstants.Limits.MAX_OPEN_SET_SIZE);
-                }
             }
 
             // Print performance metrics
@@ -698,7 +689,7 @@ public class Pathfinder {
                 boolean bothClimbing = other.agent.isClimbing(world) && child.agent.isClimbing(world);
                 boolean bothNotClimbing = !other.agent.isClimbing(world) && !child.agent.isClimbing(world);
 
-                if ((bothClimbing && distance < 0.03) || (bothNotClimbing && distance < 0.094) || (isSmallBlock && distance < 0.2)) {
+                if ((bothClimbing && distance < 0.06) || (bothNotClimbing && distance < 0.2) || (isSmallBlock && distance < 0.3)) {
                     tooClose = true;
                     break;
                 }
@@ -718,6 +709,8 @@ public class Pathfinder {
                 .map(child -> (Runnable) () -> {
                     if (stop.get()) return;
                     if (Thread.currentThread().isInterrupted()) return;
+                    // Skip children already in the closed set before computing costs and inserting
+                    if (closed.contains(child.closedSetHashCode())) return;
                     updateNode(world, parent, child, target, blockPath.get(), closed);
 
                     synchronized (openSetLock) {
@@ -743,14 +736,6 @@ public class Pathfinder {
                 PathfindingConstants.Timeouts.NODE_UPDATE_TIMEOUT_MS
         );
 
-        // Trim open set if it exceeds the limit to prevent unbounded memory growth
-        synchronized (openSetLock) {
-            if (openSet instanceof BinaryHeapOpenSet<?> heap) {
-                if (heap.size() > PathfindingConstants.Limits.MAX_OPEN_SET_SIZE) {
-                    heap.trimToSize(PathfindingConstants.Limits.MAX_OPEN_SET_SIZE);
-                }
-            }
-        }
 
         return failing.get();
     }

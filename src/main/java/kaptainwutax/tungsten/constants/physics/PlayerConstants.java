@@ -45,7 +45,7 @@ public final class PlayerConstants {
                 for (boolean sprint : new boolean[]{false, true}) {
                     for (boolean sneak : new boolean[]{false, true}) {
                         if (!(sprint && sneak)) {
-                            for (boolean forward : new boolean[]{false, true}) {
+                            for (boolean forward : new boolean[]{true, false}) {
                                 if (!(sprint && !forward)) {
                                     for (boolean back : new boolean[]{false, true}) {
                                         if (!(forward && back)) {
@@ -53,7 +53,7 @@ public final class PlayerConstants {
                                                 for (boolean right : new boolean[]{false, true}) {
                                                     if (!(left && right)) {
                                                         if (forward || back || left || right || jump || sneak) {
-                                                            ALL_INPUTS[index++] = new KeyboardInput(forward, back, right, left, jump, sneak, sprint);
+                                                            ALL_INPUTS[index++] = new KeyboardInput(forward, back, left, right, jump, sneak, sprint);
                                                         }
                                                     }
                                                 }

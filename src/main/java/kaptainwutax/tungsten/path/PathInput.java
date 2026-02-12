@@ -1,6 +1,6 @@
 package kaptainwutax.tungsten.path;
 
-public record PathInput(boolean forward, boolean back, boolean right, boolean left, boolean jump, boolean sneak,
+public record PathInput(boolean forward, boolean back, boolean left, boolean right, boolean jump, boolean sneak,
                         boolean sprint, float pitch, float yaw) {
 
 	@Override

@@ -127,6 +127,42 @@ public class Node implements HeapNode {
         }
     }
 
+    /**
+     * Hash based only on physical state (position + velocity) for the closed set.
+     * Input state is excluded because the same position+velocity leads to the same
+     * future possibilities regardless of which inputs were used to reach it.
+     */
+    public int closedSetHashCode() {
+        int quantizedPosX = 0, quantizedPosY = 0, quantizedPosZ = 0;
+        int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
+        int flags = 0;
+
+        if (this.agent != null) {
+            // Use rounding (not truncation) to avoid collapsing distinct motion states into the same closed-set bucket.
+            quantizedVelX = (int) Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            quantizedVelY = (int) Math.round(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            quantizedVelZ = (int) Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+
+            Vec3d pos = this.agent.getPos();
+            if (pos != null) {
+                quantizedPosX = (int) Math.round(pos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosY = (int) Math.round(pos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosZ = (int) Math.round(pos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+            }
+
+            // Include movement-relevant discrete state to prevent over-deduplication (which can starve the open set).
+            if (this.agent.onGround) flags |= 1;
+            if (this.agent.touchingWater) flags |= 2;
+            if (this.agent.isSubmergedInWater) flags |= 4;
+            if (this.agent.swimming) flags |= 8;
+            if (this.agent.sprinting) flags |= 16;
+        }
+
+        return Objects.hash(flags,
+                           quantizedVelX, quantizedVelY, quantizedVelZ,
+                           quantizedPosX, quantizedPosY, quantizedPosZ);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
@@ -197,7 +233,6 @@ public class Node implements HeapNode {
 
     private void generateNodes(WorldView world, Vec3d target, BlockNode nextBlockNode, List<Node> nodes) {
         boolean isDoingLongJump = nextBlockNode.isDoingLongJump() || nextBlockNode.isDoingNeo();
-        boolean isCloseToBlockNode = DistanceCalculator.getHorizontalEuclideanDistance(agent.getPos(), nextBlockNode.getPos(true)) < 1;
         BlockState state = world.getBlockState(nextBlockNode.getBlockPos());
 
         if (agent.isClimbing(world)
@@ -207,31 +242,40 @@ public class Node implements HeapNode {
             Direction dir = state.get(Properties.HORIZONTAL_FACING);
             double desiredYaw = DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true).offset(dir.getOpposite(), 1)) + MathHelper.roundToPrecision(Math.random(), 2) / 1000000;
             if (nextBlockNode.getBlockPos().getY() > agent.blockY) {
-                createAndAddNode(world, nextBlockNode, nodes, true, false, false, false, false, true, (float) desiredYaw, isDoingLongJump, isCloseToBlockNode);
+                createAndAddNode(world, nextBlockNode, nodes, true, false, false, false, false, true, (float) desiredYaw, isDoingLongJump);
                 return;
             }
             if (nextBlockNode.getBlockPos().getY() < agent.blockY) {
-                createAndAddNode(world, nextBlockNode, nodes, true, false, false, false, false, false, (float) desiredYaw, isDoingLongJump, isCloseToBlockNode);
+                createAndAddNode(world, nextBlockNode, nodes, true, false, false, false, false, false, (float) desiredYaw, isDoingLongJump);
                 return;
             }
         }
 
         // Try the direct yaw first (most likely to succeed), then offset yaws
         float increment = PlayerConstants.Inputs.YAW_RANGE * 2 / (PlayerConstants.Inputs.YAW_PRECISION - 1);
-        float directYaw = (float) Math.round(DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true)) / increment) * increment;
+        float directYaw = (float) DirectionHelper.calcYawFromVec3d(agent.getPos(), nextBlockNode.getPos(true));
         int inputCount = agent.onGround ? PlayerConstants.Inputs.ALL_INPUTS.length : PlayerConstants.Inputs.NO_JUMP_INPUT_LENGTH;
 
-        for (float yaw = directYaw - PlayerConstants.Inputs.YAW_RANGE; yaw <= directYaw + PlayerConstants.Inputs.YAW_RANGE; yaw += increment) {
+        // Generate direct yaw first, then offsets, to avoid left/right bias from deduplication
+        for (int yi = 0; yi < PlayerConstants.Inputs.YAW_PRECISION; yi++) {
+            float yaw;
+            if (yi == 0) {
+                yaw = directYaw;
+            } else if (yi % 2 == 1) {
+                yaw = directYaw - increment * ((yi + 1) / 2);
+            } else {
+                yaw = directYaw + increment * (yi / 2);
+            }
             for (int i = 0; i < inputCount; i++) {
                 KeyboardInput input = PlayerConstants.Inputs.ALL_INPUTS[i];
-                createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), yaw, isDoingLongJump, isCloseToBlockNode);
+                createAndAddNode(world, nextBlockNode, nodes, input.forward(), input.right(), input.left(), input.sneak(), input.sprint(), input.jump(), yaw, isDoingLongJump);
             }
         }
     }
 
     private void createAndAddNode(WorldView world, BlockNode nextBlockNode, List<Node> nodes,
                                   boolean forward, boolean right, boolean left, boolean sneak, boolean sprint, boolean jump,
-                                  float yaw, boolean isDoingLongJump, boolean isCloseToBlockNode) {
+                                  float yaw, boolean isDoingLongJump) {
         try {
             if (jump && sneak) return;
             // Pre-filter impossible input combinations using parent state to avoid expensive simulation
@@ -240,7 +284,7 @@ public class Node implements HeapNode {
             if (!agent.touchingWater && !agent.onGround && sneak) return;
             if (!agent.touchingWater && sneak && jump) return;
 
-            Node newNode = new Node(this, world, new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw),
+            Node newNode = new Node(this, world, new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw),
                     new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
             if (newNode.agent.isClimbing(world))
                 jump = this.agent.getBlockPos().getY() < nextBlockNode.getBlockPos().getY();
@@ -252,11 +296,8 @@ public class Node implements HeapNode {
             if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80)
                 return;
             double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, newNode.agent);
-            if (newNode.agent.getPos().isWithinRangeOf(nextBlockNode.getPos(true), 0.1, 0.4)) return;
             double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
             double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
-
-            if (newNodeDistanceToBlockNode >= parentNodeDistanceToBlockNode) return;
 
             boolean isMoving = (forward || right || left);
             if (!sneak) {
@@ -267,7 +308,7 @@ public class Node implements HeapNode {
                 if (maxTicks > 1 && isMoving) {
                     // Multi-tick simulation: tick in place to avoid creating intermediate deep copies.
                     // We re-tick the same SimulatedPlayer and only keep the final result.
-                    PathInput tickInput = new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw);
+                    PathInput tickInput = new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw);
                     Color tickColor = jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0);
                     double prevDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
                     double accumulatedCost = 0;
@@ -276,7 +317,7 @@ public class Node implements HeapNode {
                         Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
                         if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
                         // Tick the existing agent in place instead of creating a new Node + deep copy
-                        tickInput = new PathInput(forward, false, right, left, jump, sneak, sprint, agent.pitch, yaw);
+                        tickInput = new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw);
                         newNode.agent.tick(world, tickInput);
                         newNode.input = tickInput;
                         newNode.color = jump ? new Color(0, 255, 255) : tickColor;
@@ -294,7 +335,7 @@ public class Node implements HeapNode {
             Vec3d newPos = newNode.agent.getPos();
             boolean duplicate = false;
             for (int k = nodes.size() - 1; k >= 0; k--) {
-                if (nodes.get(k).agent.getPos().squaredDistanceTo(newPos) < 0.005) {
+                if (nodes.get(k).agent.getPos().squaredDistanceTo(newPos) < 0.04) {
                     duplicate = true;
                     break;
                 }

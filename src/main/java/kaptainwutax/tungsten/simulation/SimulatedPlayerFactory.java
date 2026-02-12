@@ -226,10 +226,12 @@ public final class SimulatedPlayerFactory {
 
 		public void setYaw(float yaw) {
 			invokeSetter(access.setYaw, access.yawField, yaw);
+			writeFloatField(access.lastYawField, yaw);
 		}
 
 		public void setPitch(float pitch) {
 			invokeSetter(access.setPitch, access.pitchField, pitch);
+			writeFloatField(access.lastPitchField, pitch);
 		}
 
 		public boolean getHorizontalCollision() {
@@ -346,6 +348,15 @@ public final class SimulatedPlayerFactory {
 				return fallback;
 			}
 		}
+
+		private void writeFloatField(Field field, float value) {
+			if (field == null) return;
+			try {
+				field.setAccessible(true);
+				field.setFloat(instance, value);
+			} catch (ReflectiveOperationException ignored) {
+			}
+		}
 	}
 
 	static final class SimulatedPlayerAccess {
@@ -371,6 +382,8 @@ public final class SimulatedPlayerFactory {
 		final Method setPitch;
 		final Field yawField;
 		final Field pitchField;
+		final Field lastYawField;
+		final Field lastPitchField;
 		final Field horizontalCollisionField;
 		final Field verticalCollisionField;
 		final Field collidedSoftlyField;
@@ -401,6 +414,8 @@ public final class SimulatedPlayerFactory {
 			this.setPitch = findMethod(type, "setPitch", float.class);
 			this.yawField = findField(type, "yaw");
 			this.pitchField = findField(type, "pitch");
+			this.lastYawField = findField(type, "lastYaw");
+			this.lastPitchField = findField(type, "lastPitch");
 			this.horizontalCollisionField = findField(type, "horizontalCollision");
 			this.verticalCollisionField = findField(type, "verticalCollision");
 			this.collidedSoftlyField = findField(type, "collidedSoftly");
