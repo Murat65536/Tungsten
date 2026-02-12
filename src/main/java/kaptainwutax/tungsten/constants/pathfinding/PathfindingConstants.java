@@ -64,7 +64,7 @@ public final class PathfindingConstants {
     public static final class ClosedSetScale {
         private ClosedSetScale() {}
 
-        /** Position rounding factor (lower = coarser grid, more deduplication) */
+        /** Position rounding factor */
         public static final double POSITION_ROUNDING = 10.0;
 
         /** Velocity rounding factor */

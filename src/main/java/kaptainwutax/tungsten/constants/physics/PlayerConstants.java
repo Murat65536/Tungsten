@@ -37,27 +37,19 @@ public final class PlayerConstants {
         public static final int YAW_PRECISION = 3;
 
         /** Every valid movement input */
-        public static final KeyboardInput[] ALL_INPUTS = new KeyboardInput[41]; // Pre-computed capacity
+        public static final KeyboardInput[] ALL_INPUTS = new KeyboardInput[17]; // Pre-computed capacity
 
         static {
             int index = 0;
             for (boolean jump : new boolean[] {false, true}) {
-                for (boolean sprint : new boolean[]{false, true}) {
-                    for (boolean sneak : new boolean[]{false, true}) {
-                        if (!(sprint && sneak)) {
-                            for (boolean forward : new boolean[]{true, false}) {
-                                if (!(sprint && !forward)) {
-                                    for (boolean back : new boolean[]{false, true}) {
-                                        if (!(forward && back)) {
-                                            for (boolean left : new boolean[]{false, true}) {
-                                                for (boolean right : new boolean[]{false, true}) {
-                                                    if (!(left && right)) {
-                                                        if (forward || back || left || right || jump || sneak) {
-                                                            ALL_INPUTS[index++] = new KeyboardInput(forward, back, left, right, jump, sneak, sprint);
-                                                        }
-                                                    }
-                                                }
-                                            }
+                for (boolean forward : new boolean[]{true, false}) {
+                    for (boolean back : new boolean[]{false, true}) {
+                        if (!(forward && back)) {
+                            for (boolean left : new boolean[]{false, true}) {
+                                for (boolean right : new boolean[]{false, true}) {
+                                    if (!(left && right)) {
+                                        if (forward || back || left || right || jump) {
+                                            ALL_INPUTS[index++] = new KeyboardInput(forward, back, left, right, jump, false, true);
                                         }
                                     }
                                 }

@@ -62,11 +62,11 @@ public class BlockSpacePathfinder {
 		if (!world.getBlockState(startPos).isAir() && BlockShapeChecker.getShapeVolume(startPos) != 0) {
 			startPos = startPos.up();
 		}
-		return search(world, new BlockNode(startPos, new Goal((int) target.x, (int) target.y, (int) target.z)), target, generateDeep);
+		return search(world, new BlockNode(startPos, new Goal((int)Math.floor(target.x), (int)Math.floor(target.y), (int)Math.floor(target.z))), target, generateDeep);
 	}
 	
 	private static Optional<List<BlockNode>> search(WorldView world, BlockNode start, Vec3d target, boolean generateDeep) {
-		Goal goal = new Goal((int) target.x, (int) target.y, (int) target.z);
+		Goal goal = new Goal((int)Math.floor(target.x), (int)Math.floor(target.y), (int)Math.floor(target.z));
 		
         int numNodes = 0;
         long startTime = System.currentTimeMillis();
@@ -235,7 +235,13 @@ public class BlockSpacePathfinder {
     }
 
 	private static boolean isPathComplete(BlockNode node, Vec3d target) {
-        return node.getPos().squaredDistanceTo(target) < 1.5D; // Increased slightly tolerance
+		// Only finish when we're in the same goal block column (x/z). The old distance-based
+		// check would often stop 1 block early because adjacent block corners are within
+		// the same radius to the target center.
+		int goalX = (int)Math.floor(target.x);
+		int goalZ = (int)Math.floor(target.z);
+		if (node.x != goalX || node.z != goalZ) return false;
+        return node.getPos().squaredDistanceTo(target) < 1.5D; // Keep original Y tolerance
     }
 	
 	private static List<BlockNode> generatePath(BlockNode node) {
@@ -251,4 +257,3 @@ public class BlockSpacePathfinder {
 		return path;
 	}
 }
-
