@@ -73,14 +73,24 @@ loom {
 
 def simGenOutputDir = layout.buildDirectory.dir("generated/simulated-classes")
 def simGenResourceDir = layout.buildDirectory.dir("generated/resources")
+def generatedWhitelist = new File(layout.buildDirectory.dir("generated").get().asFile, "sim-whitelist.json")
+
+tasks.register("analyzeFieldDependencies", JavaExec) {
+	classpath = sourceSets.main.compileClasspath + files(sourceSets.main.output.classesDirs)
+	mainClass = "kaptainwutax.tungsten.simulation.tools.FieldDependencyAnalyzer"
+	args "--seeds", file("src/main/resources/tungsten/sim-seeds.json").absolutePath,
+		"--output", generatedWhitelist.absolutePath
+	dependsOn "compileJava"
+}
 
 tasks.register("generateSimulatedClasses", JavaExec) {
 	classpath = sourceSets.main.compileClasspath + files(sourceSets.main.output.classesDirs)
 	mainClass = "kaptainwutax.tungsten.simulation.tools.SimClassGenerator"
-	args "--whitelist", file("src/main/resources/tungsten/sim-whitelist.json").absolutePath,
+	args "--whitelist", generatedWhitelist.absolutePath,
 		"--output-dir", simGenOutputDir.get().asFile.absolutePath,
 		"--metadata", new File(simGenResourceDir.get().asFile, "tungsten/simulated-metadata.json").absolutePath,
 		"--sim-prefix", "kaptainwutax/tungsten/simulation/simulated"
+	dependsOn "analyzeFieldDependencies"
 }
 
 sourceSets.main.resources.srcDir(simGenResourceDir)

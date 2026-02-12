@@ -1,0 +1,21 @@
+{
+  "seedFields": {
+    "net.minecraft.entity.Entity": ["pos", "velocity"]
+  },
+  "immutableTypes": [
+    "java.lang.String",
+    "java.util.UUID",
+    "java.lang.Boolean",
+    "java.lang.Byte",
+    "java.lang.Short",
+    "java.lang.Integer",
+    "java.lang.Long",
+    "java.lang.Float",
+    "java.lang.Double",
+    "java.lang.Character",
+    "net.minecraft.util.math.Vec3d",
+    "net.minecraft.util.math.Vec2f",
+    "net.minecraft.util.math.BlockPos",
+    "net.minecraft.util.PlayerInput"
+  ]
+}

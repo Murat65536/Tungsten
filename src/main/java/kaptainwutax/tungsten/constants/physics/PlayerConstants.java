@@ -37,7 +37,7 @@ public final class PlayerConstants {
         public static final int YAW_PRECISION = 3;
 
         /** Every valid movement input */
-        public static final KeyboardInput[] ALL_INPUTS = new KeyboardInput[42]; // Pre-computed capacity
+        public static final KeyboardInput[] ALL_INPUTS = new KeyboardInput[41]; // Pre-computed capacity
 
         static {
             int index = 0;
@@ -52,7 +52,9 @@ public final class PlayerConstants {
                                             for (boolean left : new boolean[]{false, true}) {
                                                 for (boolean right : new boolean[]{false, true}) {
                                                     if (!(left && right)) {
-                                                        ALL_INPUTS[index++] = new KeyboardInput(forward, back, right, left, jump, sneak, sprint);
+                                                        if (forward || back || left || right || jump || sneak) {
+                                                            ALL_INPUTS[index++] = new KeyboardInput(forward, back, right, left, jump, sneak, sprint);
+                                                        }
                                                     }
                                                 }
                                             }
