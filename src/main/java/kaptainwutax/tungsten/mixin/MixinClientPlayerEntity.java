@@ -33,10 +33,8 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 			TungstenMod.EXECUTOR.tick((ClientPlayerEntity)(Object)this, TungstenMod.mc.options);
 		}
 
-		if(!this.getAbilities().flying) {
-			SimulatedPlayer.INSTANCE = new SimulatedPlayer((ClientPlayerEntity)(Object)this);
-			SimulatedPlayer.INSTANCE.tick(this.getWorld());
-		}
+		SimulatedPlayer.INSTANCE = new SimulatedPlayer((ClientPlayerEntity)(Object)this);
+		SimulatedPlayer.INSTANCE.tick(this.getWorld());
 
 		if(TungstenMod.runKeyBinding.isPressed() && !TungstenMod.PATHFINDER.active.get() && !TungstenMod.EXECUTOR.isRunning()) {
 			TungstenMod.PATHFINDER.find(this.getWorld(), TungstenMod.TARGET);
@@ -45,19 +43,12 @@ public abstract class MixinClientPlayerEntity extends AbstractClientPlayerEntity
 			BlockSpacePathfinder.find(getWorld(), TungstenMod.TARGET);
 		}
 		if (TungstenMod.pauseKeyBinding.isPressed()) {
-			try {
-				
-	        	if((TungstenMod.PATHFINDER.active.get() || TungstenMod.EXECUTOR.isRunning())) {
-	        		TungstenMod.PATHFINDER.stop.set(true);
-	        		TungstenMod.EXECUTOR.stop = true;
-					Debug.logMessage("Stopped!");
-	    		} else {
-					Debug.logMessage("Nothing to stop.");
-	    		}
-
-	
-			} catch (Exception e) {
-				// TODO: handle exception
+			if (TungstenMod.PATHFINDER.active.get() || TungstenMod.EXECUTOR.isRunning()) {
+				TungstenMod.PATHFINDER.stop.set(true);
+				TungstenMod.EXECUTOR.stop = true;
+				Debug.logMessage("Stopped!");
+			} else {
+				Debug.logMessage("Nothing to stop.");
 			}
 		}
 		

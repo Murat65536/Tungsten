@@ -10,20 +10,10 @@ public class PathExecutor {
 
     protected List<Node> path;
     protected int tick = 0;
-    protected boolean allowedFlying = false;
     public boolean stop = false;
     public Runnable cb = null;
 
-    public PathExecutor() {
-    	try {
-        	this.allowedFlying = TungstenMod.mc.player.getAbilities().allowFlying;
-		} catch (Exception e) {
-			this.allowedFlying = true;
-		}
-	}
-
 	public void setPath(List<Node> path) {
-    	this.allowedFlying = TungstenMod.mc.player.getAbilities().allowFlying;
 	    stop = false;
     	this.path = path;
         this.tick = 0;
@@ -64,7 +54,6 @@ public class PathExecutor {
 
     private void finishExecution(GameOptions options, ClientPlayerEntity player) {
         releaseAllKeys(options);
-        player.getAbilities().allowFlying = allowedFlying;
         this.path = null;
         stop = false;
         TungstenMod.RUNNING_PATH_RENDERER.clear();
@@ -72,7 +61,6 @@ public class PathExecutor {
     }
 
     public void tick(ClientPlayerEntity player, GameOptions options) {
-    	player.getAbilities().allowFlying = false;
     	if(TungstenMod.pauseKeyBinding.isPressed() || stop) {
     		this.tick = this.path.size();
     		finishExecution(options, player);

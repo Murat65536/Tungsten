@@ -1,12 +1,14 @@
 package kaptainwutax.tungsten.path;
 
+import org.jetbrains.annotations.NotNull;
+
 public record PathInput(boolean forward, boolean back, boolean left, boolean right, boolean jump, boolean sneak,
                         boolean sprint, float pitch, float yaw) {
 
 	@Override
-	public String toString() {
+	public @NotNull String toString() {
 
-        String string = "{\n" +
+        return "{\n" +
                 "forward: " +
                 forward +
                 "\n" +
@@ -35,8 +37,6 @@ public record PathInput(boolean forward, boolean back, boolean left, boolean rig
                 yaw +
                 "\n" +
                 "}";
-
-		return string;
 	}
 
 }
