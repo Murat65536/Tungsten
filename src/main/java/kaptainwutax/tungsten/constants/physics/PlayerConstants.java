@@ -41,10 +41,9 @@ public final class PlayerConstants {
 
         static {
             int index = 0;
-            boolean[] toggle = {false, true};
-            for (boolean jump : toggle) {
-                for (boolean left : toggle) {
-                    for (boolean right : toggle) {
+            for (boolean jump : new boolean[] {true, false}) {
+                for (boolean left : new boolean[] {false, true}) {
+                    for (boolean right : new boolean[] {false, true}) {
                         if (!(left && right)) {
                             ALL_INPUTS[index++] = new KeyboardInput(true, false, left, right, jump, false, true);
                         }

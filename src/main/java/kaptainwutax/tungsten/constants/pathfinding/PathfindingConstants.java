@@ -80,6 +80,19 @@ public final class PathfindingConstants {
     }
 
     /**
+     * Greedy pathfinder with backtracking parameters.
+     */
+    public static final class Greedy {
+        private Greedy() {}
+
+        /** Maximum number of ticks (depth) to simulate before declaring failure */
+        public static final int MAX_DEPTH = 50_000;
+
+        /** Maximum number of backtracks before declaring failure */
+        public static final int MAX_BACKTRACKS = 100_000;
+    }
+
+    /**
      * Proximity thresholds for advancing the block-path waypoint index.
      * Used in updateNextClosestBlockNodeIDX to determine when the agent is close
      * enough to the current waypoint to advance to the next one.

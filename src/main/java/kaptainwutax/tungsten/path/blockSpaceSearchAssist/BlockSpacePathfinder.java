@@ -15,6 +15,7 @@ import kaptainwutax.tungsten.constants.pathfinding.BlockSpacePathfindingConstant
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
 import kaptainwutax.tungsten.helpers.DistanceCalculator;
+import kaptainwutax.tungsten.helpers.movement.StraightMovementHelper;
 import kaptainwutax.tungsten.path.common.BinaryHeapOpenSet;
 import kaptainwutax.tungsten.path.common.IOpenSet;
 import kaptainwutax.tungsten.TungstenMod;
@@ -117,7 +118,7 @@ public class BlockSpacePathfinder {
 			
 			if(isPathComplete(next, target)) {
 				TungstenMod.RENDERERS.clear();
-				List<BlockNode> path = generatePath(next);
+				List<BlockNode> path = simplifyPath(generatePath(next), world);
 				Debug.logMessage("Path found! Length: " + path.size());
 				return Optional.of(path);
 			}
@@ -148,10 +149,10 @@ public class BlockSpacePathfinder {
 			Debug.logWarning("Ran out of nodes");
 		}
 		
-        return bestSoFar(bestSoFar, start);
+        return bestSoFar(bestSoFar, start, world);
 	}
 	
-	private static Optional<List<BlockNode>> bestSoFar(BlockNode[] bestSoFar, BlockNode startNode) {
+	private static Optional<List<BlockNode>> bestSoFar(BlockNode[] bestSoFar, BlockNode startNode, WorldView world) {
         if (startNode == null) {
             return Optional.empty();
         }
@@ -174,7 +175,7 @@ public class BlockSpacePathfinder {
         if (bestNode != null) {
         	// Only return if it's somewhat far from start, otherwise it's useless
         	if (bestDist > BlockSpacePathfindingConstants.MIN_PATH_LENGTH * BlockSpacePathfindingConstants.MIN_PATH_LENGTH) {
-        		return Optional.of(generatePath(bestNode));
+        		return Optional.of(simplifyPath(generatePath(bestNode), world));
         	}
         }
         
@@ -252,5 +253,33 @@ public class BlockSpacePathfinder {
 		
 		Collections.reverse(path);
 		return path;
+	}
+
+	/**
+	 * Removes intermediate waypoints that lie on a straight walkable line.
+	 * Keeps the first and last nodes, and only retains intermediate nodes
+	 * where the straight-line check fails (i.e., direction changes or obstacles).
+	 */
+	private static List<BlockNode> simplifyPath(List<BlockNode> path, WorldView world) {
+		if (path.size() <= 2) return path;
+
+		List<BlockNode> simplified = new ArrayList<>();
+		simplified.add(path.get(0));
+
+		int anchor = 0;
+		while (anchor < path.size() - 1) {
+			int farthest = anchor + 1;
+			for (int i = anchor + 2; i < path.size(); i++) {
+				if (StraightMovementHelper.isPossible(world, path.get(anchor).getBlockPos(), path.get(i).getBlockPos())) {
+					farthest = i;
+				} else {
+					break;
+				}
+			}
+			simplified.add(path.get(farthest));
+			anchor = farthest;
+		}
+
+		return simplified;
 	}
 }

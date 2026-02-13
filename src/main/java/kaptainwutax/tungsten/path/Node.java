@@ -192,11 +192,7 @@ public class Node implements HeapNode {
 
     private boolean shouldSkipNodeGeneration(BlockNode nextBlockNode) {
         Node n = this.parent;
-        return n != null && (n.agent.isInLava() || agent.isInLava() || (agent.fallDistance >
-                this.agent.getPos().y - nextBlockNode.getBlockPos().getY() + 2
-                && !agent.slimeBounce
-                && !agent.touchingWater
-        ));
+        return n != null && (n.agent.isInLava() || agent.isInLava());
     }
 
     private void generateNodes(WorldView world, Vec3d target, BlockNode nextBlockNode, List<Node> nodes) {
