@@ -72,6 +72,7 @@ public class SimulatedPlayer {
 
     public SimulatedPlayer tick(WorldView world) {
         this.handle.tickMovement();
+        this.handle.clearCollisionAccumulation();
         this.syncFromHandle();
         return this;
     }

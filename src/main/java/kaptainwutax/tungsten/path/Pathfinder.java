@@ -394,8 +394,7 @@ public class Pathfinder {
         double desiredYaw = DirectionHelper.calcYawFromVec3d(parent.agent.getPos(), waypointPos);
         double parentDist = parent.agent.getPos().squaredDistanceTo(waypointPos);
 
-        List<Node> closer = new ArrayList<>();
-        List<Node> farther = new ArrayList<>();
+        List<Node> valid = new ArrayList<>();
 
         for (Node child : children) {
             if (stop.get()) break;
@@ -404,14 +403,11 @@ public class Pathfinder {
             updateNode(world, child, target, blockPath.get());
 
             if (child.agent.getPos().squaredDistanceTo(waypointPos) <= parentDist) {
-                closer.add(child);
+                valid.add(child);
             } else {
-                farther.add(child);
+                blacklisted.add(child.closedSetHashCode());
             }
         }
-
-        // Prefer children that move closer; fall back to farther ones if none do
-        List<Node> valid = closer.isEmpty() ? farther : closer;
 
         // Sort by combinedCost, breaking ties with yaw proximity to waypoint
         valid.sort(Comparator.comparingDouble((Node n) -> n.combinedCost)

@@ -114,9 +114,9 @@ public class BlockSpacePathfinder {
 			closed.add(next);
 			numNodes++;
 			
-			if(TungstenMod.pauseKeyBinding.isPressed()) break;
+			if (TungstenMod.pauseKeyBinding.isPressed()) break;
 			
-			if(isPathComplete(next, target)) {
+			if (isPathComplete(next, target)) {
 				TungstenMod.RENDERERS.clear();
 				List<BlockNode> path = simplifyPath(generatePath(next), world);
 				Debug.logMessage("Path found! Length: " + path.size());
@@ -125,7 +125,7 @@ public class BlockSpacePathfinder {
 			
 			RenderHelper.renderExploredNode(next);
 
-			for(BlockNode child : next.getChildren(world, goal, generateDeep)) {
+			for (BlockNode child : next.getChildren(world, goal, generateDeep)) {
 				if (TungstenMod.PATHFINDER.stop.get()) return Optional.empty();
 				if (closed.contains(child)) continue;
 
@@ -264,7 +264,7 @@ public class BlockSpacePathfinder {
 		if (path.size() <= 2) return path;
 
 		List<BlockNode> simplified = new ArrayList<>();
-		simplified.add(path.get(0));
+		simplified.add(path.getFirst());
 
 		int anchor = 0;
 		while (anchor < path.size() - 1) {

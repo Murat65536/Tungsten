@@ -254,6 +254,32 @@ public final class SimulatedPlayerFactory {
 			return readBooleanField(access.slimeBounceField, false);
 		}
 
+		/**
+		 * Clears collision tracking collections that accumulate during simulation.
+		 * Entity.move() queues collision checks, but the consuming methods
+		 * (checkBlockCollision, popQueuedCollisionCheck) are stubbed as no-ops,
+		 * so these collections grow unboundedly. Clearing them after each tick
+		 * prevents O(N²) deep-copy cost over N simulation steps.
+		 */
+		public void clearCollisionAccumulation() {
+			clearCollectionField(access.queuedCollisionChecksField);
+			clearCollectionField(access.currentlyCheckedCollisionsField);
+			clearCollectionField(access.collidedBlockPositionsField);
+		}
+
+		private void clearCollectionField(Field field) {
+			if (field == null) return;
+			try {
+				Object obj = field.get(instance);
+				if (obj instanceof java.util.Collection<?> c) {
+					c.clear();
+				} else if (obj instanceof it.unimi.dsi.fastutil.longs.LongSet s) {
+					s.clear();
+				}
+			} catch (ReflectiveOperationException ignored) {
+			}
+		}
+
 		private <T> T invoke(Method method, T fallback) {
 			if (method == null) {
 				return fallback;
@@ -390,6 +416,11 @@ public final class SimulatedPlayerFactory {
 		final Field fallDistanceField;
 		final Field slimeBounceField;
 		final Field inputField;
+		// Collision tracking fields that accumulate during simulation because their
+		// consuming methods (checkBlockCollision, popQueuedCollisionCheck) are stubbed.
+		final Field queuedCollisionChecksField;
+		final Field currentlyCheckedCollisionsField;
+		final Field collidedBlockPositionsField;
 
 		SimulatedPlayerAccess(Class<?> type) {
 			this.movementTick = findMethod(type, "movementTick");
@@ -422,6 +453,9 @@ public final class SimulatedPlayerFactory {
 			this.fallDistanceField = findField(type, "fallDistance");
 			this.slimeBounceField = findField(type, "slimeBounce");
 			this.inputField = findField(type, "input");
+			this.queuedCollisionChecksField = findField(type, "queuedCollisionChecks");
+			this.currentlyCheckedCollisionsField = findField(type, "currentlyCheckedCollisions");
+			this.collidedBlockPositionsField = findField(type, "collidedBlockPositions");
 		}
 
 		private Method findMethod(Class<?> type, String name, Class<?>... params) {
