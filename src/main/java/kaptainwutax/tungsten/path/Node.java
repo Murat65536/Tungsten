@@ -5,29 +5,22 @@ import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
-
-import com.google.common.collect.Streams;
 
 import kaptainwutax.tungsten.Debug;
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.simulation.SimulatedPlayer;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
 import kaptainwutax.tungsten.constants.physics.PlayerConstants;
 import kaptainwutax.tungsten.path.common.HeapNode;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
-import kaptainwutax.tungsten.helpers.DistanceCalculator;
 import kaptainwutax.tungsten.helpers.MathHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LadderBlock;
 import net.minecraft.state.property.Properties;
-import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.WorldView;
 
 public class Node implements HeapNode {
@@ -39,7 +32,6 @@ public class Node implements HeapNode {
     public int heapPosition;
     public double combinedCost;
     public Color color;
-    public int simulatedTicks;
 
     // HeapNode interface implementation
     @Override
@@ -64,7 +56,6 @@ public class Node implements HeapNode {
         this.cost = pathCost;
         this.combinedCost = 0;
         this.heapPosition = -1;
-        this.simulatedTicks = 1;
     }
 
     public Node(Node parent, WorldView world, PathInput input, Color color, double pathCost) {
@@ -75,7 +66,6 @@ public class Node implements HeapNode {
         this.cost = pathCost;
         this.combinedCost = 0;
         this.heapPosition = -1;
-        this.simulatedTicks = 1;
     }
 
     public boolean isOpen() {
@@ -297,66 +287,13 @@ public class Node implements HeapNode {
 
             if (newNode.agent.touchingWater && (sneak || jump) && newNode.agent.getBlockPos().getY() == nextBlockNode.getBlockPos().getY())
                 return;
-            if (newNode.agent.touchingWater && jump && newNode.agent.getBlockPos().getY() > nextBlockNode.getBlockPos().getY())
-                return;
-            if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80)
-                return;
             double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, newNode.agent);
-            // Apply single-tick cost (multi-tick cost is accumulated in the loop below)
             newNode.cost = this.cost + addNodeCost;
-            double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
-            double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
-
-            boolean isMoving = (forward || right || left);
-            if (!sneak) {
-                boolean isBelowClosedTrapDoor = BlockStateChecker.isClosedBottomTrapdoor(world.getBlockState(nextBlockNode.getBlockPos().down()));
-                boolean shouldAllowWalkingOnLowerBlock = !world.getBlockState(agent.getBlockPos().up(2)).isAir() && nextBlockNode.getPos(true).distanceTo(agent.getPos()) < 3;
-                double minY = isBelowClosedTrapDoor ? nextBlockNode.getPos(true).y - 1 : nextBlockNode.getBlockPos().getY() - (shouldAllowWalkingOnLowerBlock ? 1.3 : 0.3);
-                int maxTicks = ((!jump) && !newNode.agent.isClimbing(world) ? 1 : 10);
-                if (maxTicks > 1 && isMoving) {
-                    // Multi-tick simulation: tick in place to avoid creating intermediate deep copies.
-                    // We re-tick the same SimulatedPlayer and only keep the final result.
-                    PathInput tickInput = new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw);
-                    Color tickColor = jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0);
-                    double prevDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
-                    double accumulatedCost = addNodeCost;
-                    int totalTicks = 1;
-                    for (int j = 0; j < maxTicks; j++) {
-                        Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
-                        Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
-                        if (blockCollisions.findAny().isEmpty() && isDoingLongJump) jump = true;
-                        // Tick the existing agent in place instead of creating a new Node + deep copy
-                        tickInput = new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw);
-                        newNode.agent.tick(world, tickInput);
-                        newNode.input = tickInput;
-                        newNode.color = jump ? new Color(0, 255, 255) : tickColor;
-                        accumulatedCost += addNodeCost;
-                        totalTicks++;
-                        if (!isDoingLongJump && jump && j > 1) break;
-                        double curDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
-                        if (j > 1 && curDist > prevDist) break;
-                        prevDist = curDist;
-                    }
-                    newNode.simulatedTicks = totalTicks;
-                    newNode.cost = this.cost + accumulatedCost;
-                }
-            }
-
-            // Deduplicate: skip if a node at a very similar position already exists in this batch
-            Vec3d newPos = newNode.agent.getPos();
-            boolean duplicate = false;
-            for (int k = nodes.size() - 1; k >= 0; k--) {
-                if (nodes.get(k).agent.getPos().squaredDistanceTo(newPos) < 0.04) {
-                    duplicate = true;
-                    break;
-                }
-            }
-            if (!duplicate) {
-                nodes.add(newNode);
-            }
+            nodes.add(newNode);
         } catch (ConcurrentModificationException e) {
             try {
                 Thread.sleep(2);
+                System.out.println("Thread interrupted");
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 Debug.logWarning("Thread interrupted: " + ie.getMessage());
