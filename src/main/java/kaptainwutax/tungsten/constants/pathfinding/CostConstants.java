@@ -49,10 +49,6 @@ public final class CostConstants {
     public static final class Heuristics {
         private Heuristics() {}
 
-        /** Horizontal distance heuristic multiplier */
-        public static final double XZ_HEURISTIC_MULTIPLIER = 1.3;
-        /** Vertical distance heuristic multiplier */
-        public static final double Y_HEURISTIC_MULTIPLIER = 1.6;
         /** Block path distance weight */
         public static final double BLOCK_PATH_DISTANCE_WEIGHT = 40.0;
     }

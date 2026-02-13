@@ -18,24 +18,24 @@ import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 
 public class BlockTarget implements ArgumentType<BlockTarget> {
-	private final int _x;
-    private final int _y;
-    private final int _z;
-    private final Dimension _dimension;
-    private final BlockTargetCoordType _type;
+	private final int x;
+    private final int y;
+    private final int z;
+    private final Dimension dimension;
+    private final BlockTargetCoordType type;
     static final DynamicCommandExceptionType INVALID_NUM_OF_COORD_ARGS = new DynamicCommandExceptionType(
 	    numbers -> Text.literal("Unexpected number of integers passed to coordinate: " + numbers));
 
     public BlockTarget(int x, int y, int z, Dimension dimension, BlockTargetCoordType type) {
-	_x = x;
-	_y = y;
-	_z = z;
-	_dimension = dimension;
-	_type = type;
+	this.x = x;
+	this.y = y;
+	this.z = z;
+	this.dimension = dimension;
+	this.type = type;
     }
     
     public Vec3d getVec3d() {
-    	return new Vec3d(_x, _y, _z);
+    	return new Vec3d(x, y, z);
     }
 
     public static BlockTarget parseRemainder(String line) throws CommandException {
@@ -80,27 +80,27 @@ public class BlockTarget implements ArgumentType<BlockTarget> {
     }
 
     public int getX() {
-	return _x;
+	return x;
     }
 
     public int getY() {
-	return _y;
+	return y;
     }
 
     public int getZ() {
-	return _z;
+	return z;
     }
 
     public Dimension getDimension() {
-	return _dimension;
+	return dimension;
     }
 
     public boolean hasDimension() {
-	return _dimension != null;
+	return dimension != null;
     }
 
     public BlockTargetCoordType getType() {
-	return _type;
+	return type;
     }
 
     // Combination of types we can have

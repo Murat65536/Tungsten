@@ -59,7 +59,7 @@ public class Pathfinder {
             }
             if (!n.agent.onGround) continue;
 
-            double dist = computeHeuristic(startNode.agent.getPos(), startNode.agent.onGround || startNode.agent.slimeBounce, n.agent.getPos());
+            double dist = computeHeuristic(startNode.agent.getPos(), n.agent.getPos());
             if (dist > bestDist) {
                 bestDist = dist;
                 bestNode = n;
@@ -92,17 +92,12 @@ public class Pathfinder {
         return closed.contains(hashCode);
     }
 
-    private double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
-        double xzMultiplier = CostConstants.Heuristics.XZ_HEURISTIC_MULTIPLIER;
-        double dx = (position.x - target.x) * xzMultiplier;
-        double dy = 0;
-        if (target.y != Double.MIN_VALUE) {
-            dy = (position.y - target.y) * CostConstants.Heuristics.Y_HEURISTIC_MULTIPLIER;
-            if (!onGround || (dy < CostConstants.Heuristics.Y_HEURISTIC_MULTIPLIER && dy > -CostConstants.Heuristics.Y_HEURISTIC_MULTIPLIER))
-                dy = 0;
-        }
-        double dz = (position.z - target.z) * xzMultiplier;
-        return (Math.sqrt(dx * dx + dy * dy + dz * dz) + (((blockPath.map(List::size).orElse(0)) - NEXT_CLOSEST_BLOCKNODE_IDX.get()) * CostConstants.Heuristics.BLOCK_PATH_DISTANCE_WEIGHT));
+    private double computeHeuristic(Vec3d position, Vec3d target) {
+        double dx = position.x - target.x;
+        double dy = target.y != Double.MIN_VALUE ? position.y - target.y : 0;
+        double dz = position.z - target.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz)
+                + ((blockPath.map(List::size).orElse(0) - NEXT_CLOSEST_BLOCKNODE_IDX.get()) * CostConstants.Heuristics.BLOCK_PATH_DISTANCE_WEIGHT);
     }
 
     private void updateNode(WorldView world, Node current, Node child, Vec3d target, List<BlockNode> blockPath, Set<Long> closed) {
@@ -136,7 +131,7 @@ public class Pathfinder {
                 posToGetTo = target;
             }
 
-            estimatedCostToGoal += computeHeuristic(childPos, child.agent.onGround || child.agent.slimeBounce, posToGetTo);
+            estimatedCostToGoal += computeHeuristic(childPos, posToGetTo);
         }
 
         child.cost = tentativeCost;
@@ -475,7 +470,7 @@ public class Pathfinder {
 
     private Node initializeStartNode(SimulatedPlayer agent, Vec3d target) {
         Node start = new Node(null, agent, Color.GREEN, 0);
-        start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
+        start.combinedCost = computeHeuristic(start.agent.getPos(), target);
         return start;
     }
 
