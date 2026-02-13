@@ -3,6 +3,7 @@ package kaptainwutax.tungsten.path.blockSpaceSearchAssist.generation;
 import java.util.ArrayList;
 import java.util.List;
 
+import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.constants.pathfinding.CostConstants;
 import kaptainwutax.tungsten.constants.physics.GravityConstants;
 import kaptainwutax.tungsten.constants.physics.MovementConstants;
@@ -84,7 +85,8 @@ public class BlockNodeGenerator {
      * @return true if the node is valid
      */
     private boolean isValidNode(WorldView world, BlockNode parent, BlockNode child) {
-        ValidationContext context = ValidationContext.from(world, parent, child);
+        ValidationContext context = ValidationContext.from(world, parent, child,
+            TungstenMod.ignoreFallDamage, TungstenMod.PATHFINDER.stop);
         return validator.isValid(context);
     }
 

@@ -11,9 +11,9 @@ import kaptainwutax.tungsten.simulation.SimulatedPlayer;
 import kaptainwutax.tungsten.constants.pathfinding.PathfindingConstants;
 import kaptainwutax.tungsten.constants.physics.PlayerConstants;
 import kaptainwutax.tungsten.path.common.HeapNode;
-import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import kaptainwutax.tungsten.helpers.DirectionHelper;
 import kaptainwutax.tungsten.helpers.MathHelper;
+import kaptainwutax.tungsten.helpers.QuantizationHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.BlockNode;
 import kaptainwutax.tungsten.render.Color;
 import net.minecraft.block.BlockState;
@@ -78,45 +78,33 @@ public class Node implements HeapNode {
     }
 
     public int hashCode(boolean shouldAddYaw) {
-        // Initialize quantized values
-        int quantizedPosX = 0, quantizedPosY = 0, quantizedPosZ = 0;
-        int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
+        int[] qPos = {0, 0, 0};
+        int[] qVel = {0, 0, 0};
 
         if (this.agent != null) {
-            // Quantize velocities to 0.1 blocks/tick (use rounding for consistency with closedSetHashCode)
-            quantizedVelX = (int) Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-            quantizedVelY = (int) Math.round(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-            quantizedVelZ = (int) Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-
-            Vec3d pos = this.agent.getPos();
-            if (pos != null) {
-                // Quantize positions to 0.01 blocks
-                quantizedPosX = (int) Math.round(pos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-                quantizedPosY = (int) Math.round(pos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-                quantizedPosZ = (int) Math.round(pos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-            }
+            qVel = QuantizationHelper.quantizeVelocity(this.agent.velX, this.agent.velY, this.agent.velZ);
+            qPos = QuantizationHelper.quantizePosition(this.agent.getPos());
         }
 
-        // Build hash with quantized values
         if (shouldAddYaw && this.input != null) {
             return Objects.hash(
                 this.input.forward(), this.input.back(), this.input.right(), this.input.left(),
                 this.input.jump(), this.input.sneak(), this.input.sprint(),
                 this.input.pitch(), this.input.yaw(),
-                quantizedVelX, quantizedVelY, quantizedVelZ,
-                quantizedPosX, quantizedPosY, quantizedPosZ
+                qVel[0], qVel[1], qVel[2],
+                qPos[0], qPos[1], qPos[2]
             );
         } else if (this.input != null) {
             return Objects.hash(
                 this.input.forward(), this.input.back(), this.input.right(), this.input.left(),
                 this.input.jump(), this.input.sneak(), this.input.sprint(),
                 this.input.pitch(),
-                quantizedVelX, quantizedVelY, quantizedVelZ,
-                quantizedPosX, quantizedPosY, quantizedPosZ
+                qVel[0], qVel[1], qVel[2],
+                qPos[0], qPos[1], qPos[2]
             );
         } else {
-            return Objects.hash(quantizedVelX, quantizedVelZ,
-                              quantizedPosX, quantizedPosY, quantizedPosZ);
+            return Objects.hash(qVel[0], qVel[2],
+                              qPos[0], qPos[1], qPos[2]);
         }
     }
 
@@ -127,22 +115,13 @@ public class Node implements HeapNode {
      * Returns a 64-bit hash to minimize collision probability in the closed set.
      */
     public long closedSetHashCode() {
-        int quantizedPosX = 0, quantizedPosY = 0, quantizedPosZ = 0;
-        int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
+        int[] qPos = {0, 0, 0};
+        int[] qVel = {0, 0, 0};
         int flags = 0;
 
         if (this.agent != null) {
-            // Use rounding (not truncation) to avoid collapsing distinct motion states into the same closed-set bucket.
-            quantizedVelX = (int) Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-            quantizedVelY = (int) Math.round(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-            quantizedVelZ = (int) Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-
-            Vec3d pos = this.agent.getPos();
-            if (pos != null) {
-                quantizedPosX = (int) Math.round(pos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-                quantizedPosY = (int) Math.round(pos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-                quantizedPosZ = (int) Math.round(pos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-            }
+            qVel = QuantizationHelper.quantizeVelocity(this.agent.velX, this.agent.velY, this.agent.velZ);
+            qPos = QuantizationHelper.quantizePosition(this.agent.getPos());
 
             // Include movement-relevant discrete state to prevent over-deduplication (which can starve the open set).
             if (this.agent.onGround) flags |= 1;
@@ -153,8 +132,8 @@ public class Node implements HeapNode {
         }
 
         // 64-bit hash: pack position into upper bits, velocity+flags into lower bits
-        long h = ((long) quantizedPosX * 73856093L) ^ ((long) quantizedPosY * 19349669L) ^ ((long) quantizedPosZ * 83492791L);
-        h = h * 31L + ((long) quantizedVelX * 48611L) ^ ((long) quantizedVelY * 96857L) ^ ((long) quantizedVelZ * 27644437L);
+        long h = ((long) qPos[0] * 73856093L) ^ ((long) qPos[1] * 19349669L) ^ ((long) qPos[2] * 83492791L);
+        h = h * 31L + ((long) qVel[0] * 48611L) ^ ((long) qVel[1] * 96857L) ^ ((long) qVel[2] * 27644437L);
         h = h * 31L + flags;
         return h;
     }
@@ -166,24 +145,17 @@ public class Node implements HeapNode {
 
         Node other = (Node) obj;
 
-        // Compare quantized values for equality
         if (this.agent == null || other.agent == null) {
             return this.agent == other.agent;
         }
 
-        // Quantize positions (0.01 block precision)
-        Vec3d thisPos = this.agent.getPos();
-        Vec3d otherPos = other.agent.getPos();
-        if (thisPos == null || otherPos == null) {
-            return thisPos == otherPos;
+        if (!QuantizationHelper.positionsEqual(this.agent.getPos(), other.agent.getPos())) {
+            return false;
         }
 
-        if (!((int) Math.round(thisPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int) Math.round(otherPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
-                (int) Math.round(thisPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int) Math.round(otherPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
-                (int) Math.round(thisPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int) Math.round(otherPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
-                (int) Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int) Math.round(other.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
-                (int) Math.round(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int) Math.round(other.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
-                (int) Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int) Math.round(other.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING))) {
+        if (!QuantizationHelper.velocitiesEqual(
+                this.agent.velX, this.agent.velY, this.agent.velZ,
+                other.agent.velX, other.agent.velY, other.agent.velZ)) {
             return false;
         }
 
@@ -272,14 +244,14 @@ public class Node implements HeapNode {
     private void createAndAddNode(WorldView world, BlockNode nextBlockNode, List<Node> nodes,
                                   boolean forward, boolean right, boolean left, boolean sneak, boolean sprint, boolean jump,
                                   float yaw, boolean isDoingLongJump) {
-        try {
-            if (jump && sneak) return;
-            // Pre-filter impossible input combinations using parent state to avoid expensive simulation
-            if (!agent.touchingWater && (sneak && sprint)) return;
-            if (!agent.touchingWater && sneak && (right || left) && forward) return;
-            if (!agent.touchingWater && !agent.onGround && sneak) return;
-            if (!agent.touchingWater && sneak && jump) return;
+        if (jump && sneak) return;
+        // Pre-filter impossible input combinations using parent state to avoid expensive simulation
+        if (!agent.touchingWater && (sneak && sprint)) return;
+        if (!agent.touchingWater && sneak && (right || left) && forward) return;
+        if (!agent.touchingWater && !agent.onGround && sneak) return;
+        if (!agent.touchingWater && sneak && jump) return;
 
+        try {
             Node newNode = new Node(this, world, new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw),
                     new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0), this.cost);
             if (newNode.agent.isClimbing(world))
@@ -291,13 +263,7 @@ public class Node implements HeapNode {
             newNode.cost = this.cost + addNodeCost;
             nodes.add(newNode);
         } catch (ConcurrentModificationException e) {
-            try {
-                Thread.sleep(2);
-                System.out.println("Thread interrupted");
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                Debug.logWarning("Thread interrupted: " + ie.getMessage());
-            }
+            Debug.logWarning("Skipping node due to concurrent world modification: " + e.getMessage());
         }
     }
 

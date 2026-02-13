@@ -12,7 +12,6 @@ import kaptainwutax.tungsten.helpers.movement.NeoMovementHelper;
 import kaptainwutax.tungsten.helpers.movement.StraightMovementHelper;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.movement.MovementState;
 import kaptainwutax.tungsten.world.BetterBlockPos;
-import net.minecraft.entity.ai.pathing.PathNode;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
@@ -113,12 +112,6 @@ public class BlockNode implements HeapNode {
 		return combinedCost;
 	}
 
-	/**
-	 * TODO: Possibly reimplement hashCode and equals. They are necessary for this
-	 * class to function but they could be done better
-	 *
-	 * @return The hash code value for this {@link PathNode}
-	 */
 	@Override
 	public int hashCode() {
 		return (int) BetterBlockPos.longHash(x, y, z);
@@ -172,9 +165,8 @@ public class BlockNode implements HeapNode {
 
 	@Override
 	public boolean equals(Object obj) {
-
-		final BlockNode other = (BlockNode) obj;
-
+		if (this == obj) return true;
+		if (!(obj instanceof BlockNode other)) return false;
 		return x == other.x && y == other.y && z == other.z;
 	}
 

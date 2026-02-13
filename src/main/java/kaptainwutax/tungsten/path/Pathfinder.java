@@ -41,7 +41,7 @@ public class Pathfinder {
     private final Set<Long> closed = Collections.synchronizedSet(new HashSet<>());
     public AtomicBoolean active = new AtomicBoolean(false);
     public AtomicBoolean stop = new AtomicBoolean(false);
-    public Thread thread = null;
+    public volatile Thread thread = null;
     private AtomicDoubleArray bestHeuristicSoFar;
     private IOpenSet<Node> openSet = new BinaryHeapOpenSet<>();
 
@@ -81,21 +81,15 @@ public class Pathfinder {
         return Optional.empty();
     }
 
-    private boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Long> closed, boolean addToClosed, boolean isDoingLongJump, boolean shouldAddYaw) {
-
+    private boolean shouldNodeBeSkipped(Node n, Vec3d target, Set<Long> closed, boolean addToClosed) {
         long hashCode = n.closedSetHashCode();
 
-        // Check if the hashcode is in the closed set
-        if (closed.contains(hashCode)) {
-            return true;
-        }
-
-        // Optionally add the hashcode to the closed set
         if (addToClosed) {
-            closed.add(hashCode);
+            // add() returns false if already present — atomic check-then-act for synchronized set
+            return !closed.add(hashCode);
         }
 
-        return false;
+        return closed.contains(hashCode);
     }
 
     private double computeHeuristic(Vec3d position, boolean onGround, Vec3d target) {
@@ -127,8 +121,7 @@ public class Pathfinder {
         } else {
             collisionScore += (Math.abs(0.3 - child.agent.velZ) + Math.abs(0.3 - child.agent.velX));
         }
-        assert TungstenMod.mc.world != null;
-        if (child.agent.isClimbing(TungstenMod.mc.world)) {
+        if (child.agent.isClimbing(world)) {
             collisionScore += CostConstants.Bonuses.CLIMBING_BONUS;
         }
         if (world.getBlockState(child.agent.getBlockPos()).getBlock() instanceof CobwebBlock) {
@@ -188,7 +181,7 @@ public class Pathfinder {
         return failing;
     }
 
-    private void updateNextClosestBlockNodeIDX(List<BlockNode> blockPath, Node node, Set<Long> closed) {
+    private void updateNextClosestBlockNodeIDX(WorldView world, List<BlockNode> blockPath, Node node, Set<Long> closed) {
         if (blockPath == null) return;
 
         BlockNode lastClosestPos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get() - 1);
@@ -196,31 +189,42 @@ public class Pathfinder {
         if (NEXT_CLOSEST_BLOCKNODE_IDX.get() + 1 >= blockPath.size()) return;
         BlockNode nextNodePos = blockPath.get(NEXT_CLOSEST_BLOCKNODE_IDX.get() + 1);
 
-        boolean isRunningLongDist = lastClosestPos.getPos(true).distanceTo(closestPos.getPos(true)) > 7;
+        boolean isLongDist = lastClosestPos.getPos(true).distanceTo(closestPos.getPos(true)) > PathfindingConstants.WaypointAdvance.LONG_DISTANCE_THRESHOLD;
+        double xzRange = isLongDist ? PathfindingConstants.WaypointAdvance.LONG_DIST_XZ_RANGE : PathfindingConstants.WaypointAdvance.SHORT_DIST_XZ_RANGE;
+        double yRange = isLongDist ? PathfindingConstants.WaypointAdvance.LONG_DIST_Y_RANGE : PathfindingConstants.WaypointAdvance.SHORT_DIST_Y_RANGE;
 
         Vec3d nodePos = node.agent.getPos();
+        if (!nodePos.isWithinRangeOf(closestPos.getPos(true), xzRange, yRange)) return;
+        if (!areParentsWithinRange(node, closestPos.getPos(true), xzRange, yRange)) return;
 
-        if (!nodePos.isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80)))
-            return;
-
-        Node p = node.parent;
-        for (int i = 0; i < 4; i++) {
-            if (p != null && !p.agent.getPos().isWithinRangeOf(closestPos.getPos(true), (isRunningLongDist ? 2.80 : 1.10), (isRunningLongDist ? 1.20 : 0.80)))
-                return;
-            if (p != null) p = p.parent;
-        }
-
-        boolean isNextNodeAbove = nextNodePos.getBlockPos().getY() > closestPos.getBlockPos().getY();
-        boolean isNextNodeBelow = nextNodePos.getBlockPos().getY() < closestPos.getBlockPos().getY();
-
-        WorldView world = TungstenMod.mc.world;
         BlockPos nodeBlockPos = new BlockPos(node.agent.blockX, node.agent.blockY, node.agent.blockZ);
         int closestPosIDX = findClosestPositionIDX(world, nodeBlockPos, blockPath);
+
+        if (closestPosIDX + 1 <= NEXT_CLOSEST_BLOCKNODE_IDX.get() || closestPosIDX + 1 >= blockPath.size()) return;
+
+        if (isValidWaypointAdvance(world, node, closestPos, nextNodePos, nodePos, nodeBlockPos, isLongDist)) {
+            NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX + 1);
+            RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
+            closed.clear();
+        }
+    }
+
+    private boolean areParentsWithinRange(Node node, Vec3d target, double xzRange, double yRange) {
+        Node p = node.parent;
+        for (int i = 0; i < PathfindingConstants.WaypointAdvance.PARENT_CHECK_DEPTH; i++) {
+            if (p != null && !p.agent.getPos().isWithinRangeOf(target, xzRange, yRange)) return false;
+            if (p != null) p = p.parent;
+        }
+        return true;
+    }
+
+    private boolean isValidWaypointAdvance(WorldView world, Node node, BlockNode closestPos, BlockNode nextNodePos,
+                                           Vec3d nodePos, BlockPos nodeBlockPos, boolean isLongDist) {
         BlockState state = world.getBlockState(closestPos.getBlockPos());
         BlockState stateBelow = world.getBlockState(closestPos.getBlockPos().down());
         double closestBlockBelowHeight = BlockShapeChecker.getBlockHeight(closestPos.getBlockPos().down());
         double closestBlockVolume = BlockShapeChecker.getShapeVolume(closestPos.getBlockPos());
-        double distanceToClosestPos = nodePos.distanceTo(closestPos.getPos(true));
+        double distToClosest = nodePos.distanceTo(closestPos.getPos(true));
         int heightDiff = DistanceCalculator.getJumpHeight((int) Math.ceil(nodePos.y), closestPos.y);
 
         boolean isWater = BlockStateChecker.isAnyWater(state);
@@ -231,59 +235,46 @@ public class Pathfinder {
         boolean isBelowBottomSlab = BlockStateChecker.isBottomSlab(stateBelow);
         boolean isBelowClosedTrapDoor = BlockStateChecker.isClosedBottomTrapdoor(stateBelow);
         boolean isBelowGlassPane = (stateBelow.getBlock() instanceof PaneBlock) || (stateBelow.getBlock() instanceof StainedGlassPaneBlock);
-        boolean isBlockBelowTall = closestBlockBelowHeight > 1.3;
+        boolean isBlockBelowTall = closestBlockBelowHeight > PathfindingConstants.WaypointAdvance.TALL_BLOCK_HEIGHT;
 
-        boolean validWaterProximity = isWater && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.9, 1.2);
-        // Agent state conditions
-        boolean agentOnGroundOrClimbingOrOnTallBlock = node.agent.onGround || node.agent.isClimbing(world) || isBelowLadder || isBlockBelowTall;
-
-        // Ladder-specific conditions
-        boolean validLadderProximity = (isLadder || isBelowLadder || isVine)
-                && (!isLadder && isBelowLadder || node.agent.isClimbing(world))
-                && (nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.4, 0.9) ||
-                node.agent.isClimbing(world) &&
-                        (isNextNodeAbove && nodePos.getY() > closestPos.getBlockPos().getY() || !isNextNodeBelow && nodePos.getY() < closestPos.getBlockPos().getY())
-                        && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos), 0.7, 3.7));
-
-        // Tall block position conditions. Things like fences and walls
-        boolean validTallBlockProximity = isBlockBelowTall
-                && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.4, 0.58);
-
-        boolean validBottomSlabProximity = isBelowBottomSlab && distanceToClosestPos < 0.90
-                && heightDiff < 2;
-
-        boolean validClosedTrapDoorProximity = isBelowClosedTrapDoor && nodePos.isWithinRangeOf(closestPos.getPos(true), 0.88, 2.2);
-
-        // General position conditions
-        boolean validStandardProximity = !isLadder && !isBelowLadder && !isBelowGlassPane
-                && !isBlockBelowTall
-                && distanceToClosestPos < (isRunningLongDist ? 1.80 : 1.05)
-                && heightDiff < 1.6;
-
-        // Glass pane conditions
-        boolean validGlassPaneProximity = isBelowGlassPane && distanceToClosestPos < 0.5;
-
-        // Block volume conditions
-        boolean validSmallBlockProximity = !isBelowGlassPane && closestBlockVolume > 0 && closestBlockVolume < 1 && distanceToClosestPos < 0.7;
-
-        if (closestPosIDX + 1 > NEXT_CLOSEST_BLOCKNODE_IDX.get() && closestPosIDX + 1 < blockPath.size()
-                && (validWaterProximity || !isConnected
-                && agentOnGroundOrClimbingOrOnTallBlock
-                && (
-                validLadderProximity
-                        || validTallBlockProximity
-                        || validStandardProximity
-                        || validGlassPaneProximity
-                        || validSmallBlockProximity
-                        || validBottomSlabProximity
-                        || validClosedTrapDoorProximity
-        )
-        )
-        ) {
-            NEXT_CLOSEST_BLOCKNODE_IDX.set(closestPosIDX + 1);
-            RenderHelper.renderBlockPath(blockPath, NEXT_CLOSEST_BLOCKNODE_IDX.get());
-            closed.clear();
+        // Water always valid if in range
+        if (isWater && nodePos.isWithinRangeOf(BlockPosShifter.getPosOnLadder(closestPos),
+                PathfindingConstants.WaypointAdvance.WATER_XZ_RANGE, PathfindingConstants.WaypointAdvance.WATER_Y_RANGE)) {
+            return true;
         }
+
+        // All remaining checks require: not connected, and on ground/climbing/tall block
+        if (isConnected) return false;
+        boolean grounded = node.agent.onGround || node.agent.isClimbing(world) || isBelowLadder || isBlockBelowTall;
+        if (!grounded) return false;
+
+        boolean isNextAbove = nextNodePos.getBlockPos().getY() > closestPos.getBlockPos().getY();
+        boolean isNextBelow = nextNodePos.getBlockPos().getY() < closestPos.getBlockPos().getY();
+
+        return isValidLadderAdvance(node, closestPos, nodePos, isLadder, isBelowLadder, isVine, isNextAbove, isNextBelow, world)
+            || (isBlockBelowTall && nodePos.isWithinRangeOf(closestPos.getPos(true), PathfindingConstants.WaypointAdvance.TALL_BLOCK_XZ, PathfindingConstants.WaypointAdvance.TALL_BLOCK_Y))
+            || (!isLadder && !isBelowLadder && !isBelowGlassPane && !isBlockBelowTall
+                && distToClosest < (isLongDist ? PathfindingConstants.WaypointAdvance.STANDARD_LONG_DIST : PathfindingConstants.WaypointAdvance.STANDARD_SHORT_DIST)
+                && heightDiff < PathfindingConstants.WaypointAdvance.STANDARD_HEIGHT_DIFF)
+            || (isBelowGlassPane && distToClosest < PathfindingConstants.WaypointAdvance.GLASS_PANE_DIST)
+            || (!isBelowGlassPane && closestBlockVolume > 0 && closestBlockVolume < 1 && distToClosest < PathfindingConstants.WaypointAdvance.SMALL_BLOCK_DIST)
+            || (isBelowBottomSlab && distToClosest < PathfindingConstants.WaypointAdvance.BOTTOM_SLAB_DIST && heightDiff < PathfindingConstants.WaypointAdvance.BOTTOM_SLAB_HEIGHT_DIFF)
+            || (isBelowClosedTrapDoor && nodePos.isWithinRangeOf(closestPos.getPos(true), PathfindingConstants.WaypointAdvance.TRAPDOOR_XZ, PathfindingConstants.WaypointAdvance.TRAPDOOR_Y));
+    }
+
+    private boolean isValidLadderAdvance(Node node, BlockNode closestPos, Vec3d nodePos,
+                                         boolean isLadder, boolean isBelowLadder, boolean isVine,
+                                         boolean isNextAbove, boolean isNextBelow, WorldView world) {
+        if (!isLadder && !isBelowLadder && !isVine) return false;
+        if (isLadder && !isBelowLadder && !node.agent.isClimbing(world)) return false;
+
+        Vec3d ladderPos = BlockPosShifter.getPosOnLadder(closestPos);
+        if (nodePos.isWithinRangeOf(ladderPos, PathfindingConstants.WaypointAdvance.LADDER_CLOSE_XZ, PathfindingConstants.WaypointAdvance.LADDER_CLOSE_Y)) {
+            return true;
+        }
+        return node.agent.isClimbing(world)
+            && (isNextAbove && nodePos.getY() > closestPos.getBlockPos().getY() || !isNextBelow && nodePos.getY() < closestPos.getBlockPos().getY())
+            && nodePos.isWithinRangeOf(ladderPos, PathfindingConstants.WaypointAdvance.LADDER_CLIMB_XZ, PathfindingConstants.WaypointAdvance.LADDER_CLIMB_Y);
     }
 
     public synchronized void find(WorldView world, Vec3d target) {
@@ -311,10 +302,9 @@ public class Pathfinder {
         thread.start();
     }
 
-    private boolean checkForFallDamage(Node n) {
+    private boolean checkForFallDamage(WorldView world, Node n) {
         if (TungstenMod.ignoreFallDamage) return false;
-        assert TungstenMod.mc.world != null;
-        if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(n.agent.getBlockPos()))) return false;
+        if (BlockStateChecker.isAnyWater(world.getBlockState(n.agent.getBlockPos()))) return false;
         if (n.parent == null) return false;
         if (Thread.currentThread().isInterrupted()) return false;
         Node prev = null;
@@ -385,16 +375,16 @@ public class Pathfinder {
 
                 Node next = openSet.removeLowest();
                 // Search for a path without fall damage
-                if (checkForFallDamage(next)) {
+                if (checkForFallDamage(world, next)) {
                     continue;
                 }
 
-                if (shouldSkipNode(next, target, closed, blockPath)) {
+                if (shouldSkipNode(world, next, target, closed, blockPath)) {
                     continue;
                 }
 
 
-                if (isPathComplete(next, target)) {
+                if (isPathComplete(world, next, target)) {
                     if (tryExecutePath(next, target)) {
                         TungstenMod.RENDERERS.clear();
                         TungstenMod.TEST.clear();
@@ -424,11 +414,11 @@ public class Pathfinder {
                 }
 
                 if ((numNodesConsidered & (timeCheckInterval - 1)) == 0) {
-                    if (handleTimeout(startTime, primaryTimeoutTime, next, target, start, player, closed)) {
+                    if (handleTimeout(world, startTime, primaryTimeoutTime, next, target, start, player, closed)) {
                         return;
                     }
                 }
-                updateNextClosestBlockNodeIDX(blockPath.get(), next, closed);
+                updateNextClosestBlockNodeIDX(world, blockPath.get(), next, closed);
 
                 RenderHelper.renderExploredNode(next);
 
@@ -461,39 +451,40 @@ public class Pathfinder {
             taskManager.cancelAll();
         }
 
-        // RenderHelper.clearRenderers();
         closed.clear();
         this.blockPath = Optional.empty();
     }
 
-    private void clearParentsForBestSoFar(Node node) {
+    private void clearBestSoFar() {
         for (int i = 0; i < PathfindingConstants.Coefficients.PATHFINDING_COEFFICIENTS.length; i++) {
             bestSoFar.set(i, null);
         }
     }
 
-    private boolean shouldSkipNode(Node node, Vec3d target, Set<Long> closed, Optional<List<BlockNode>> blockPath) {
+    private boolean shouldSkipNode(WorldView world, Node node, Vec3d target, Set<Long> closed, Optional<List<BlockNode>> blockPath) {
         BlockNode bN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get());
         BlockNode lBN = blockPath.get().get(NEXT_CLOSEST_BLOCKNODE_IDX.get() - 1);
-        boolean isBottomSlab = BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(bN.getBlockPos().down()));
+        boolean isBottomSlab = BlockStateChecker.isBottomSlab(world.getBlockState(bN.getBlockPos().down()));
         Vec3d agentPos = node.agent.getPos();
         Vec3d parentAgentPos = node.parent == null ? null : node.parent.agent.getPos();
         if (!isBottomSlab && !node.agent.onGround && agentPos.y < bN.y && lBN != null && lBN.y <= bN.y && parentAgentPos != null && parentAgentPos.y > agentPos.y) {
             return true;
         }
-        return shouldNodeBeSkipped(node, target, closed, true, false, blockPath.isPresent());
+        return shouldNodeBeSkipped(node, target, closed, true);
+    }
+
+    private Node initializeStartNode(SimulatedPlayer agent, Vec3d target) {
+        Node start = new Node(null, agent, Color.GREEN, 0);
+        start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
+        return start;
     }
 
     private Node initializeStartNode(Node node, Vec3d target) {
-        Node start = new Node(null, node.agent, Color.GREEN, 0);
-        start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
-        return start;
+        return initializeStartNode(node.agent, target);
     }
 
     private Node initializeStartNode(ClientPlayerEntity player, Vec3d target) {
-        Node start = new Node(null, new SimulatedPlayer(player), Color.GREEN, 0);
-        start.combinedCost = computeHeuristic(start.agent.getPos(), start.agent.onGround, target);
-        return start;
+        return initializeStartNode(new SimulatedPlayer(player), target);
     }
 
     private Optional<List<BlockNode>> findBlockPath(WorldView world, Vec3d target) {
@@ -513,10 +504,11 @@ public class Pathfinder {
         return bestHeuristicSoFar;
     }
 
-    private boolean isPathComplete(Node node, Vec3d target) {
-        if (BlockStateChecker.isAnyWater(TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ()))))
+    private boolean isPathComplete(WorldView world, Node node, Vec3d target) {
+        BlockPos targetPos = new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ());
+        if (BlockStateChecker.isAnyWater(world.getBlockState(targetPos)))
             return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
-        if (TungstenMod.mc.world.getBlockState(new BlockPos((int) target.getX(), (int) target.getY(), (int) target.getZ())).getBlock() instanceof LadderBlock)
+        if (world.getBlockState(targetPos).getBlock() instanceof LadderBlock)
             return node.agent.getPos().squaredDistanceTo(target) <= 0.9D;
         return node.agent.getPos().squaredDistanceTo(target) <= 0.2D;
     }
@@ -528,8 +520,8 @@ public class Pathfinder {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                Debug.logWarning("Interrupted while waiting for executor: " + e.getMessage());
             }
         }
         List<Node> path = constructPath(node);
@@ -584,7 +576,7 @@ public class Pathfinder {
         return Optional.empty();
     }
 
-    private boolean handleTimeout(long startTime, long primaryTimeoutTime, Node next, Vec3d target, Node start, ClientPlayerEntity player, Set<Long> closed) {
+    private boolean handleTimeout(WorldView world, long startTime, long primaryTimeoutTime, Node next, Vec3d target, Node start, ClientPlayerEntity player, Set<Long> closed) {
         long now = System.currentTimeMillis();
         Optional<List<Node>> result = bestSoFar(start);
 
@@ -596,7 +588,7 @@ public class Pathfinder {
             TungstenMod.EXECUTOR.setPath(result.get());
             RenderHelper.renderPathCurrentlyExecuted();
             Node newStart = initializeStartNode(result.get().getLast(), target);
-            clearParentsForBestSoFar(newStart);
+            clearBestSoFar();
             closed.clear();
             bestHeuristicSoFar = initializeBestHeuristics(newStart);
             openSet = new BinaryHeapOpenSet<>();
@@ -604,29 +596,28 @@ public class Pathfinder {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                Debug.logWarning("Interrupted during timeout handler: " + e.getMessage());
             }
             RenderHelper.clearRenderers();
-            search(TungstenMod.mc.world, newStart, target);
+            search(world, newStart, target);
             return true;
         }
         return false;
     }
 
-    private boolean filterChildren(Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock) {
-        boolean isLadder = TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock;
-        boolean isLadderBelow = TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos().down()).getBlock() instanceof LadderBlock;
+    private boolean filterChildren(WorldView world, Node child, BlockNode lastBlockNode, BlockNode nextBlockNode, boolean isSmallBlock) {
+        boolean isLadder = world.getBlockState(nextBlockNode.getBlockPos()).getBlock() instanceof LadderBlock;
+        boolean isLadderBelow = world.getBlockState(nextBlockNode.getBlockPos().down()).getBlock() instanceof LadderBlock;
         if (isLadder || isLadderBelow) return false;
         double distB = DistanceCalculator.getHorizontalEuclideanDistance(lastBlockNode.getPos(true), nextBlockNode.getPos(true));
 
-        if (distB > 6 || child.agent.isClimbing(TungstenMod.mc.world))
+        if (distB > 6 || child.agent.isClimbing(world))
             return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 0.8);
 
         if (isSmallBlock) return child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY());
 
-
-        return !BlockStateChecker.isBottomSlab(TungstenMod.mc.world.getBlockState(nextBlockNode.getBlockPos().down())) && child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 2.5);
+        return !BlockStateChecker.isBottomSlab(world.getBlockState(nextBlockNode.getBlockPos().down())) && child.agent.getPos().getY() < (nextBlockNode.getPos(true).getY() - 2.5);
     }
 
     private boolean processNodeChildren(WorldView world, Node parent, Vec3d target, Optional<List<BlockNode>> blockPath,
@@ -647,9 +638,9 @@ public class Pathfinder {
             if (stop.get()) return null;
             if (Thread.currentThread().isInterrupted()) return null;
 
-            boolean skip = filterChildren(child, lastBlockNode, nextBlockNode, isSmallBlock);
+            boolean skip = filterChildren(world, child, lastBlockNode, nextBlockNode, isSmallBlock);
 
-            if (skip || checkForFallDamage(child)) {
+            if (skip || checkForFallDamage(world, child)) {
                 return null;
             }
 
@@ -690,15 +681,16 @@ public class Pathfinder {
         }
 
 
-        // Use TaskManager for node updates - no need for new executor
-        Object openSetLock = new Object();  // if openSet is not thread-safe
+        // Lock for thread-safe access to the non-thread-safe openSet
+        Object openSetLock = new Object();
 
         List<Runnable> processingTasks = validChildren.stream()
                 .filter(Objects::nonNull)  // Filter out null children
                 .map(child -> (Runnable) () -> {
                     if (stop.get()) return;
                     if (Thread.currentThread().isInterrupted()) return;
-                    // Skip children already in the closed set before computing costs and inserting
+                    // Pre-filter: skip children already in the closed set (don't add yet —
+                    // actual insertion happens in shouldNodeBeSkipped when dequeued from open set)
                     if (closed.contains(child.closedSetHashCode())) return;
                     updateNode(world, parent, child, target, blockPath.get(), closed);
 

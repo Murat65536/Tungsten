@@ -10,6 +10,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 
+import kaptainwutax.tungsten.Debug;
 import kaptainwutax.tungsten.commandsystem.Arg;
 import kaptainwutax.tungsten.commandsystem.CommandException;
 import kaptainwutax.tungsten.world.Dimension;
@@ -127,8 +128,7 @@ public class BlockTarget implements ArgumentType<BlockTarget> {
 		try {
 		    dimension = (Dimension) Arg.parseEnum(part, Dimension.class);
 		} catch (CommandException e1) {
-		    // TODO Auto-generated catch block
-		    e1.printStackTrace();
+		    Debug.logWarning("Failed to parse dimension: " + e1.getMessage());
 		}
 		break;
 	    }

@@ -122,9 +122,6 @@ public class BlockSpacePathfinder {
 				return Optional.of(path);
 			}
 			
-			// if(TungstenMod.RENDERERS.size() > 3000) {
-			// 	TungstenMod.RENDERERS.clear();
-			// }
 			RenderHelper.renderExploredNode(next);
 
 			for(BlockNode child : next.getChildren(world, goal, generateDeep)) {

@@ -1,6 +1,5 @@
 package kaptainwutax.tungsten.path.blockSpaceSearchAssist.validation;
 
-import kaptainwutax.tungsten.TungstenMod;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,12 +36,10 @@ public class CompositeValidator implements NodeValidator {
 
     @Override
     public boolean isValid(ValidationContext context) {
-        // Check if pathfinding should stop
-        if (TungstenMod.PATHFINDER.stop.get()) {
+        if (context.stop() != null && context.stop().get()) {
             return false;
         }
 
-        // Run all validators
         for (NodeValidator validator : validators) {
             if (!validator.isValid(context)) {
                 return false;

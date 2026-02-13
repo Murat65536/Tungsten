@@ -1,6 +1,7 @@
 package kaptainwutax.tungsten.path.blockSpaceSearchAssist;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.path.blockSpaceSearchAssist.generation.BlockNodeGenerator;
@@ -61,7 +62,8 @@ public class BlockNodeProcessor {
      * @return true if the movement is valid
      */
     public boolean isValidMovement(WorldView world, BlockNode from, BlockNode to) {
-        ValidationContext context = ValidationContext.from(world, from, to);
+        ValidationContext context = ValidationContext.from(world, from, to,
+            TungstenMod.ignoreFallDamage, TungstenMod.PATHFINDER.stop);
         return validator.isValid(context);
     }
 

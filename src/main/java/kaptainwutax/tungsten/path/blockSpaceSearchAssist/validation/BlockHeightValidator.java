@@ -1,6 +1,5 @@
 package kaptainwutax.tungsten.path.blockSpaceSearchAssist.validation;
 
-import kaptainwutax.tungsten.TungstenMod;
 import kaptainwutax.tungsten.helpers.BlockStateChecker;
 import net.minecraft.util.math.Direction.Axis;
 
@@ -29,7 +28,7 @@ public class BlockHeightValidator implements NodeValidator {
         double toBlockHeight = context.toBlockHeight();
 
         // Check for fall damage if enabled
-        if (!TungstenMod.ignoreFallDamage &&
+        if (!context.ignoreFallDamage() &&
             !BlockStateChecker.isAnyWater(context.toState()) &&
             heightDiff < -MAX_FALL_HEIGHT) {
             return false;

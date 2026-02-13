@@ -52,41 +52,39 @@ public class PathExecutor {
         return this.path != null && this.tick <= this.path.size();
     }
 
+    private void releaseAllKeys(GameOptions options) {
+        options.forwardKey.setPressed(false);
+        options.backKey.setPressed(false);
+        options.leftKey.setPressed(false);
+        options.rightKey.setPressed(false);
+        options.jumpKey.setPressed(false);
+        options.sneakKey.setPressed(false);
+        options.sprintKey.setPressed(false);
+    }
+
+    private void finishExecution(GameOptions options, ClientPlayerEntity player) {
+        releaseAllKeys(options);
+        player.getAbilities().allowFlying = allowedFlying;
+        this.path = null;
+        stop = false;
+        TungstenMod.RUNNING_PATH_RENDERER.clear();
+        TungstenMod.BLOCK_PATH_RENDERER.clear();
+    }
+
     public void tick(ClientPlayerEntity player, GameOptions options) {
     	player.getAbilities().allowFlying = false;
     	if(TungstenMod.pauseKeyBinding.isPressed() || stop) {
     		this.tick = this.path.size();
-		    options.forwardKey.setPressed(false);
-		    options.backKey.setPressed(false);
-		    options.leftKey.setPressed(false);
-		    options.rightKey.setPressed(false);
-		    options.jumpKey.setPressed(false);
-		    options.sneakKey.setPressed(false);
-		    options.sprintKey.setPressed(false);
-		    player.getAbilities().allowFlying = allowedFlying;
-		    this.path = null;
-		    stop = false;
-		    TungstenMod.RUNNING_PATH_RENDERER.clear();
-		    TungstenMod.BLOCK_PATH_RENDERER.clear();
+    		finishExecution(options, player);
      		return;
      	}
     	if(this.tick == this.path.size()) {
-		    options.forwardKey.setPressed(false);
-		    options.backKey.setPressed(false);
-		    options.leftKey.setPressed(false);
-		    options.rightKey.setPressed(false);
-		    options.jumpKey.setPressed(false);
-		    options.sneakKey.setPressed(false);
-		    options.sprintKey.setPressed(false);
-		    player.getAbilities().allowFlying = allowedFlying;
-		    this.path = null;
-		    stop = false;
-		    TungstenMod.RUNNING_PATH_RENDERER.clear();
-		    TungstenMod.BLOCK_PATH_RENDERER.clear();
-		    if (cb != null) {
-		    	cb.run();
-		    	cb = null;
-		    }
+    		Runnable callback = cb;
+    		cb = null;
+    		finishExecution(options, player);
+    		if (callback != null) {
+    			callback.run();
+    		}
  	    } else {
 		    Node node = this.path.get(this.tick);
 		    if(this.tick != 0) {

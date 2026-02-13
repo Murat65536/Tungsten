@@ -7,6 +7,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.WorldView;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * Immutable context object containing all information needed for node validation.
  * This record encapsulates the state needed by validators to make decisions
@@ -26,7 +28,9 @@ public record ValidationContext(
     VoxelShape fromBelowShape,
     VoxelShape toBelowShape,
     double fromBlockHeight,
-    double toBlockHeight
+    double toBlockHeight,
+    boolean ignoreFallDamage,
+    AtomicBoolean stop
 ) {
     /**
      * Factory method to create a validation context from two nodes.
@@ -34,9 +38,12 @@ public record ValidationContext(
      * @param world The world view
      * @param from The starting node
      * @param to The destination node
+     * @param ignoreFallDamage Whether fall damage checks should be skipped
+     * @param stop Shared stop signal for cooperative cancellation
      * @return A new validation context
      */
-    public static ValidationContext from(WorldView world, BlockNode from, BlockNode to) {
+    public static ValidationContext from(WorldView world, BlockNode from, BlockNode to,
+                                         boolean ignoreFallDamage, AtomicBoolean stop) {
         BlockState fromState = world.getBlockState(from.getBlockPos());
         BlockState fromBelowState = world.getBlockState(from.getBlockPos().down());
         BlockState toState = world.getBlockState(to.getBlockPos());
@@ -72,7 +79,9 @@ public record ValidationContext(
             fromBelowShape,
             toBelowShape,
             fromBlockHeight,
-            toBlockHeight
+            toBlockHeight,
+            ignoreFallDamage,
+            stop
         );
     }
 
