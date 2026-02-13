@@ -14,7 +14,7 @@ public final class CostConstants {
         private BaseCosts() {}
 
         /** Cost representing infinity (impossible action) */
-        public static final double COST_INFINITY = -1000000.0;
+        public static final double COST_INFINITY = 1_000_000.0;
         /** Cost to walk one block horizontally (20 ticks / 4.317 blocks per second) */
         public static final double WALK_ONE_BLOCK_COST = 20.0 / 4.317; // ~4.633
     }

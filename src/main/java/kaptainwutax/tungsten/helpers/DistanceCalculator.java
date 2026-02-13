@@ -55,7 +55,7 @@ public class DistanceCalculator {
 	public static double getHorizontalManhattanDistance(Vec3d startPos, Vec3d endPos) {
 		double dx = endPos.getX() - startPos.getX();
     	double dz = endPos.getZ() - startPos.getZ();
-    	return dx + dz;
+    	return Math.abs(dx) + Math.abs(dz);
 	}
 	
 	/**

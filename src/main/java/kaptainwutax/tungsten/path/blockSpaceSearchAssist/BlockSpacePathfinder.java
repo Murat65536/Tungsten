@@ -167,7 +167,7 @@ public class BlockSpacePathfinder {
             }
             // Use simple distance heuristic for bestSoFar selection if cost is high
             // Or just pick the one that got closest to the target
-            double distSq = getDistFromStartSq(bestSoFar[i], startNode.getPos());
+            double distSq = getDistToTargetSq(bestSoFar[i], startNode.getPos());
             if (distSq > bestDist) {
                 bestDist = distSq;
                 bestNode = bestSoFar[i];
@@ -227,7 +227,7 @@ public class BlockSpacePathfinder {
 	    }
 	}
 	
-	private static double getDistFromStartSq(BlockNode n, Vec3d target) {
+	private static double getDistToTargetSq(BlockNode n, Vec3d target) {
         double xDiff = n.getPos().x - target.x;
         double yDiff = n.getPos().y - target.y;
         double zDiff = n.getPos().z - target.z;

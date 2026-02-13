@@ -90,17 +90,17 @@ public class Node implements HeapNode {
         int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
 
         if (this.agent != null) {
-            // Quantize velocities to 0.1 blocks/tick
-            quantizedVelX = (int)(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-            quantizedVelY = (int)(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
-            quantizedVelZ = (int)(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            // Quantize velocities to 0.1 blocks/tick (use rounding for consistency with closedSetHashCode)
+            quantizedVelX = (int) Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            quantizedVelY = (int) Math.round(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
+            quantizedVelZ = (int) Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING);
 
             Vec3d pos = this.agent.getPos();
             if (pos != null) {
                 // Quantize positions to 0.01 blocks
-                quantizedPosX = (int)(pos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-                quantizedPosY = (int)(pos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
-                quantizedPosZ = (int)(pos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosX = (int) Math.round(pos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosY = (int) Math.round(pos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
+                quantizedPosZ = (int) Math.round(pos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING);
             }
         }
 
@@ -131,8 +131,9 @@ public class Node implements HeapNode {
      * Hash based only on physical state (position + velocity) for the closed set.
      * Input state is excluded because the same position+velocity leads to the same
      * future possibilities regardless of which inputs were used to reach it.
+     * Returns a 64-bit hash to minimize collision probability in the closed set.
      */
-    public int closedSetHashCode() {
+    public long closedSetHashCode() {
         int quantizedPosX = 0, quantizedPosY = 0, quantizedPosZ = 0;
         int quantizedVelX = 0, quantizedVelY = 0, quantizedVelZ = 0;
         int flags = 0;
@@ -158,9 +159,11 @@ public class Node implements HeapNode {
             if (this.agent.sprinting) flags |= 16;
         }
 
-        return Objects.hash(flags,
-                           quantizedVelX, quantizedVelY, quantizedVelZ,
-                           quantizedPosX, quantizedPosY, quantizedPosZ);
+        // 64-bit hash: pack position into upper bits, velocity+flags into lower bits
+        long h = ((long) quantizedPosX * 73856093L) ^ ((long) quantizedPosY * 19349669L) ^ ((long) quantizedPosZ * 83492791L);
+        h = h * 31L + ((long) quantizedVelX * 48611L) ^ ((long) quantizedVelY * 96857L) ^ ((long) quantizedVelZ * 27644437L);
+        h = h * 31L + flags;
+        return h;
     }
 
     @Override
@@ -182,12 +185,12 @@ public class Node implements HeapNode {
             return thisPos == otherPos;
         }
 
-        if (!((int)(thisPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int)(otherPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
-                (int)(thisPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int)(otherPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
-                (int)(thisPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int)(otherPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
-                (int)(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int)(other.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
-                (int)(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int)(other.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
-                (int)(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int)(other.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING))) {
+        if (!((int) Math.round(thisPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int) Math.round(otherPos.x * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
+                (int) Math.round(thisPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int) Math.round(otherPos.y * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
+                (int) Math.round(thisPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) == (int) Math.round(otherPos.z * PathfindingConstants.ClosedSetScale.POSITION_ROUNDING) &&
+                (int) Math.round(this.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int) Math.round(other.agent.velX * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
+                (int) Math.round(this.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int) Math.round(other.agent.velY * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) &&
+                (int) Math.round(this.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING) == (int) Math.round(other.agent.velZ * PathfindingConstants.ClosedSetScale.VELOCITY_ROUNDING))) {
             return false;
         }
 
@@ -296,6 +299,8 @@ public class Node implements HeapNode {
             if (!newNode.agent.touchingWater && sneak && Math.abs(newNode.parent.agent.yaw - newNode.agent.yaw) > 80)
                 return;
             double addNodeCost = calculateNodeCost(forward, sprint, jump, sneak, newNode.agent);
+            // Apply single-tick cost (multi-tick cost is accumulated in the loop below)
+            newNode.cost = this.cost + addNodeCost;
             double newNodeDistanceToBlockNode = Math.ceil(newNode.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
             double parentNodeDistanceToBlockNode = Math.ceil(newNode.parent.agent.getPos().distanceTo(nextBlockNode.getPos(true)) * 1e5);
 
