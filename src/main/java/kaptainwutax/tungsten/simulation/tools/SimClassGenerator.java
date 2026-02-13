@@ -57,8 +57,26 @@ public final class SimClassGenerator {
 
 	private static final String LEAF_CLASS = "net.minecraft.client.network.ClientPlayerEntity";
 	private static final String CLIENT_PLAYER_INTERNAL = "net/minecraft/client/network/ClientPlayerEntity";
+	private static final String ENTITY_INTERNAL = "net/minecraft/entity/Entity";
+	private static final String LIVING_ENTITY_INTERNAL = "net/minecraft/entity/LivingEntity";
 
 	private SimClassGenerator() {
+	}
+
+	/**
+	 * Methods that must NOT be stubbed even if the analyzer classified them as non-movement-affecting.
+	 * setSprinting and setFlag are required for the sprint speed modifier to be applied during
+	 * simulation. Without them, the simulation runs at base speed while execution runs at sprint
+	 * speed (~30% faster), causing path divergence.
+	 */
+	private static boolean isForceKeptMethod(String owner, String name, String desc) {
+		if ("setSprinting".equals(name) && "(Z)V".equals(desc)) {
+			return ENTITY_INTERNAL.equals(owner) || LIVING_ENTITY_INTERNAL.equals(owner);
+		}
+		if ("setFlag".equals(name) && "(IZ)V".equals(desc)) {
+			return ENTITY_INTERNAL.equals(owner);
+		}
+		return false;
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -172,6 +190,10 @@ public final class SimClassGenerator {
 					transformed.tryCatchBlocks.clear();
 					transformed.instructions.add(new InsnNode(Opcodes.ICONST_1));
 					transformed.instructions.add(new InsnNode(Opcodes.IRETURN));
+				} else if (isForceKeptMethod(internalName, transformed.name, transformed.desc)) {
+					// Force-keep: these methods affect movement but were incorrectly auto-stubbed.
+					// Apply normal transforms instead of stubbing.
+					transformMethod(internalName, transformed, config, hierarchy);
 				} else if (config.isStubbedInHierarchy(transformed.name, new ArrayList<>(hierarchy))) {
 					// Stub out method body
 					transformed.instructions.clear();
