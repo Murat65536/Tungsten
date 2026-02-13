@@ -5,8 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [],
   "client": [
-    "AccessorEntity",
-    "AccessorLivingEntity",
     "MixinMinecraftClient",
     "MixinClientPlayerEntity",
     "MixinDebugRenderer",

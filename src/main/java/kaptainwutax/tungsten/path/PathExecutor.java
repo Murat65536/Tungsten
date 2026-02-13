@@ -10,6 +10,7 @@ public class PathExecutor {
 
     protected List<Node> path;
     protected int tick = 0;
+    protected int nodeTickProgress = 0;
     protected boolean allowedFlying = false;
     public boolean stop = false;
     public Runnable cb = null;
@@ -26,7 +27,11 @@ public class PathExecutor {
     	this.allowedFlying = TungstenMod.mc.player.getAbilities().allowFlying;
 	    stop = false;
     	this.path = path;
-    	this.tick = 0;
+        this.nodeTickProgress = 0;
+        this.tick = 0;
+        while (this.path != null && this.tick < this.path.size() && this.path.get(this.tick).input == null) {
+            this.tick++;
+        }
 	}
 	
 	public List<Node> getPath() {
@@ -62,11 +67,12 @@ public class PathExecutor {
 		    options.sprintKey.setPressed(false);
 		    player.getAbilities().allowFlying = allowedFlying;
 		    this.path = null;
+            this.nodeTickProgress = 0;
 		    stop = false;
 		    TungstenMod.RUNNING_PATH_RENDERER.clear();
 		    TungstenMod.BLOCK_PATH_RENDERER.clear();
-    		return;
-    	}
+     		return;
+     	}
     	if(this.tick == this.path.size()) {
 		    options.forwardKey.setPressed(false);
 		    options.backKey.setPressed(false);
@@ -77,17 +83,17 @@ public class PathExecutor {
 		    options.sprintKey.setPressed(false);
 		    player.getAbilities().allowFlying = allowedFlying;
 		    this.path = null;
+            this.nodeTickProgress = 0;
 		    stop = false;
 		    TungstenMod.RUNNING_PATH_RENDERER.clear();
 		    TungstenMod.BLOCK_PATH_RENDERER.clear();
-			player.setVelocity(0, 0, 0);
 		    if (cb != null) {
 		    	cb.run();
 		    	cb = null;
 		    }
-	    } else {
+ 	    } else {
 		    Node node = this.path.get(this.tick);
-		    if(this.tick != 0) {
+		    if(this.tick != 0 && this.nodeTickProgress == 0) {
 			    this.path.get(this.tick - 1).agent.compare(player, true);
 		    }
 
@@ -111,8 +117,13 @@ public class PathExecutor {
 			    	TungstenMod.RUNNING_PATH_RENDERER.remove(TungstenMod.RUNNING_PATH_RENDERER.toArray()[TungstenMod.RUNNING_PATH_RENDERER.size()-1]);
 		    	}
 		    }
-	    }
-	    this.tick++;
+            int requiredTicks = Math.max(1, node.simulatedTicks);
+            this.nodeTickProgress++;
+            if (this.nodeTickProgress >= requiredTicks) {
+                this.nodeTickProgress = 0;
+                this.tick++;
+            }
+ 	    }
     }
 
 }

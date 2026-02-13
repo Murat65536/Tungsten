@@ -54,12 +54,18 @@ public class SimulatedPlayer {
     public SimulatedPlayer(ClientPlayerEntity player) {
         this.handle = SimulatedPlayerFactory.createFrom(player);
         SimulatedPlayerFactory.attachInput(this.handle, this.input);
+        if (player.input != null) {
+            this.input.playerInput = player.input.playerInput;
+            this.input.setMovementVector(player.input.getMovementInput());
+        }
         this.syncFromHandle();
     }
 
     public SimulatedPlayer(SimulatedPlayer parent, PathInput input) {
         this.handle = SimulatedPlayerFactory.copyFrom(parent.handle);
         SimulatedPlayerFactory.attachInput(this.handle, this.input);
+        this.input.playerInput = parent.input.playerInput;
+        this.input.setMovementVector(parent.input.getMovementInput());
         this.syncFromHandle();
         this.applyInput(input);
     }
@@ -81,7 +87,6 @@ public class SimulatedPlayer {
         this.handle.setPitch(input.pitch());
         this.yaw = input.yaw();
         this.pitch = input.pitch();
-        this.input.tick();
     }
 
     public Vec3d getPos() {
@@ -131,7 +136,6 @@ public class SimulatedPlayer {
 
         if (this.velX != player.getVelocity().x || this.velY != player.getVelocity().y || this.velZ != player.getVelocity().z) {
             if (TungstenMod.EXECUTOR.isRunning()) {
-                player.setVelocity(this.velX, this.velY, this.velZ);
                 Node node = TungstenMod.EXECUTOR.getCurrentNode();
                 if (node != null) {
                     RenderHelper.renderNode(node, TungstenMod.ERROR);

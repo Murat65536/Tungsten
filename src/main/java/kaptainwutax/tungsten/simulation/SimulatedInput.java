@@ -36,4 +36,8 @@ public class SimulatedInput extends Input {
         float g = getMovementMultiplier(this.playerInput.left(), this.playerInput.right());
         this.movementVector = new Vec2f(g, f).normalize();
     }
+
+    public void setMovementVector(Vec2f vec) {
+        this.movementVector = vec;
+    }
 }

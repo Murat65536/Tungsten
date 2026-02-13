@@ -39,6 +39,7 @@ public class Node implements HeapNode {
     public int heapPosition;
     public double combinedCost;
     public Color color;
+    public int simulatedTicks;
 
     // HeapNode interface implementation
     @Override
@@ -63,6 +64,7 @@ public class Node implements HeapNode {
         this.cost = pathCost;
         this.combinedCost = 0;
         this.heapPosition = -1;
+        this.simulatedTicks = 1;
     }
 
     public Node(Node parent, WorldView world, PathInput input, Color color, double pathCost) {
@@ -73,6 +75,7 @@ public class Node implements HeapNode {
         this.cost = pathCost;
         this.combinedCost = 0;
         this.heapPosition = -1;
+        this.simulatedTicks = 1;
     }
 
     public boolean isOpen() {
@@ -316,7 +319,8 @@ public class Node implements HeapNode {
                     PathInput tickInput = new PathInput(forward, false, left, right, jump, sneak, sprint, agent.pitch, yaw);
                     Color tickColor = jump ? new Color(0, 255, 255) : new Color(sneak ? 220 : 0, 255, sneak ? 50 : 0);
                     double prevDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
-                    double accumulatedCost = 0;
+                    double accumulatedCost = addNodeCost;
+                    int totalTicks = 1;
                     for (int j = 0; j < maxTicks; j++) {
                         Box adjustedBox = newNode.agent.box.offset(0, -0.5, 0).expand(-0.001, 0, -0.001);
                         Stream<VoxelShape> blockCollisions = Streams.stream(agent.getBlockCollisions(TungstenMod.mc.world, adjustedBox));
@@ -327,11 +331,13 @@ public class Node implements HeapNode {
                         newNode.input = tickInput;
                         newNode.color = jump ? new Color(0, 255, 255) : tickColor;
                         accumulatedCost += addNodeCost;
+                        totalTicks++;
                         if (!isDoingLongJump && jump && j > 1) break;
                         double curDist = newNode.agent.getPos().squaredDistanceTo(nextBlockNode.getPos(true));
                         if (j > 1 && curDist > prevDist) break;
                         prevDist = curDist;
                     }
+                    newNode.simulatedTicks = totalTicks;
                     newNode.cost = this.cost + accumulatedCost;
                 }
             }
