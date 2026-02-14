@@ -53,7 +53,8 @@ public final class DeepCopy {
 		"java.security.CodeSource",
 		"java.security.AccessControlContext",
 		"sun.misc.Unsafe",
-		"net.minecraft.util.math.ChunkPos"
+		"net.minecraft.util.math.ChunkPos",
+		"net.minecraft.entity.attribute.EntityAttribute" // registry singleton (exact match to avoid matching EntityAttributeInstance)
 	);
 
 	/** Package prefixes where all types are treated as shared singletons. */
@@ -63,10 +64,11 @@ public final class DeepCopy {
 		"org.slf4j.",
 		"org.apache.logging.",
 		"com.google.common.",
-		"io.netty.",
+		"com.mojang.authlib.", // GameProfile — immutable auth data
 		"com.mojang.serialization.",
 		"com.mojang.datafixers.",
 		"com.mojang.brigadier.",
+		"io.netty.",
 		"net.minecraft.registry.",
 		"net.minecraft.network.",
 		"net.minecraft.server.",
@@ -79,20 +81,34 @@ public final class DeepCopy {
 		"net.minecraft.entity.EntityCollisionHandler", // collision infrastructure
 		"net.minecraft.entity.TrackedPosition", // tracked position
 		"net.minecraft.entity.effect.", // StatusEffects — registry singletons
+		"net.minecraft.entity.attribute.DefaultAttributeContainer", // immutable template (covers $Builder inner class)
+		"net.minecraft.entity.attribute.EntityAttributeModifier", // immutable value object (covers $Operation enum)
+		"net.minecraft.entity.attribute.ClampedEntityAttribute", // registry singleton
 		"net.minecraft.entity.mob.ElytraFlightController", // controller singleton
 		"net.minecraft.entity.player.PlayerAbilities", // abilities — not mutated during pathfinding
 		"net.minecraft.entity.player.HungerManager", // hunger state — not mutated during pathfinding
+		"net.minecraft.entity.player.PlayerInventory", // inventory — not mutated during tickMovement
+		"net.minecraft.entity.player.ItemCooldownManager", // cooldowns — not mutated during tickMovement
 		"net.minecraft.entity.EntityDimensions", // immutable dimensions
+		"net.minecraft.entity.EntityEquipment", // equipment tracking — not mutated during tickMovement
+		"net.minecraft.entity.LimbAnimator", // rendering animation — not needed for movement
+		"net.minecraft.entity.PositionInterpolator", // interpolation — not needed for movement
+		"net.minecraft.entity.LazyEntityReference", // lazy ref — not mutated during tickMovement
+		"net.minecraft.entity.damage.", // DamageTracker — not mutated during tickMovement
+		"net.minecraft.entity.ai.brain.", // Brain — not used for player movement
 		"net.minecraft.client.MinecraftClient",
+		"net.minecraft.client.world.", // ClientWorld, ClientChunkManager — large world infrastructure
 		"net.minecraft.client.option.",
 		"net.minecraft.client.render.",
 		"net.minecraft.client.sound.",
 		"net.minecraft.client.network.ClientPlayNetworkHandler",
+		"net.minecraft.client.network.PlayerListEntry", // player list entry — not mutated
 		"net.minecraft.client.tutorial.",
 		"net.minecraft.client.input.", // input objects — we replace with our own via attachInput
 		"net.minecraft.stat.",
 		"net.minecraft.recipe.",
 		"net.minecraft.client.recipebook.",
+		"net.minecraft.screen.", // ScreenHandler — not used during tickMovement
 		"net.minecraft.item.", // ItemStack, Item — registry singletons
 		"net.minecraft.sound.", // SoundEvent etc.
 		"net.minecraft.particle.", // ParticleEffect etc.
@@ -100,6 +116,7 @@ public final class DeepCopy {
 		"net.minecraft.text.", // Text components
 		"net.minecraft.nbt.", // NBT data
 		"net.minecraft.util.math.random.", // Random — shared RNG, not worth copying
+		"net.minecraft.util.Cooldown", // Cooldown timer — not mutated during tickMovement
 	};
 
 	public DeepCopy(SimMetadata metadata) {
@@ -113,7 +130,7 @@ public final class DeepCopy {
 	}
 
 	public Object copyToSimulated(Object source, Class<?> simClass) {
-		IdentityHashMap<Object, Object> seen = new IdentityHashMap<>();
+		IdentityHashMap<Object, Object> seen = new IdentityHashMap<>(256);
 		return deepCopyObject(source, simClass, seen);
 	}
 
@@ -202,7 +219,8 @@ public final class DeepCopy {
 		if (type.isPrimitive() || type.isEnum() || type.isRecord()
 				|| value instanceof String
 				|| value instanceof Number || value instanceof Boolean
-				|| value instanceof Character) {
+				|| value instanceof Character
+				|| value instanceof java.util.Optional<?>) {
 			return value;
 		}
 
